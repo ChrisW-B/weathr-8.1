@@ -36,7 +36,6 @@
                         <StackPanel>
                             <StackPanel>
                                 <Rectangle  Name="radarCover" Height="200" Tapped="radarMap_Tap" Fill="Transparent" Margin="10,0,0,0"/>
-
                             </StackPanel>
                             <Rectangle   Name="satCover" Height="200" Margin="10,20,0,0" Tapped="satMap_Tap" Fill="Transparent" />
                         </StackPanel>
@@ -44,28 +43,17 @@
                     <Grid Canvas.ZIndex="0">
                         <StackPanel>
                             <StackPanel>
-                            <Rectangle Opacity=".3" Name="radarMapBox" Height="200" Tapped="radarMap_Tap" Fill="Black" Margin="10,0,0,0"/>
-                                
+                                <Rectangle Opacity=".3" Name="radarMapBox" Height="200" Tapped="radarMap_Tap" Fill="Black" Margin="10,0,0,0"/>
                             </StackPanel>
                             <Rectangle  Opacity=".3" Name="satMapBox" Height="200" Margin="10,20,0,0" Tapped="satMap_Tap" Fill="Black" />
                         </StackPanel>
-
                         <TextBlock  Text="radar" Margin="222,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Tapped="radarMap_Tap" Foreground="White" Width="117"/>
                         <TextBlock  Text="satellite" Margin="222,300,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Tapped="satMap_Tap" Foreground="White" Height="42"/>
-
                     </Grid>
                     <Grid Canvas.ZIndex="1" Name="maps">
                         <StackPanel>
                             <Maps:MapControl MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="radarMap" Height="200" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Tapped="radarMap_Tap" Margin="10,0,0,0" Loaded="radarMap_Loaded" ZoomLevel="5" Center="{Binding center}" IsEnabled="{Binding enabled}"/>
                             <Maps:MapControl MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="satMap" Height="200" Width="200" Margin="10,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Tapped="satMap_Tap" Loaded="satMap_Loaded"  ZoomLevel="5" Center="{Binding center}" IsEnabled="{Binding enabled}">
-                                <!--<Maps:MapControl.TileSources>
-                                    <Maps:MapTileSource Layer="BackgroundReplacement">
-                                        <Maps:MapTileSource.DataSource>
-                                            <Maps:HttpMapTileDataSource --><!--UriFormatString="{Binding satMapUri}"--><!-- />
-                                        </Maps:MapTileSource.DataSource>
-                                    </Maps:MapTileSource>
-                                </Maps:MapControl.TileSources>-->
-
                             </Maps:MapControl>
                         </StackPanel>
                     </Grid>
@@ -74,25 +62,25 @@
         </HubSection>
         <HubSection Header="forecast" x:Name="forecast" HeaderTemplate="{StaticResource smallHeader}">
             <DataTemplate>
-                <Grid>
-                    <ListBox x:Name="forecastListBox" Margin="10,0,0,30" Background="Transparent">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Vertical">
-                                    <TextBlock x:Name="title"
+                <ScrollViewer>
+                <ItemsControl x:Name="forecastListBox" ItemsSource="{Binding forecast.forecastList}" Margin="10,0,0,10" Background="Transparent">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Vertical">
+                                <TextBlock x:Name="title"
                                                Text="{Binding title}" Foreground="White" FontFamily="Segoe UI SemiLight" FontSize="30"
                                                />
-                                    <TextBlock x:Name="forecast"
+                                <TextBlock x:Name="forecast"
                                     Text="{Binding text}" 
                                            FontSize="20"
                                            Margin="15,0,0,15"
                                            Foreground="White" FontFamily="Segoe UI" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top"                                          
                                            />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                </ScrollViewer>
             </DataTemplate>
         </HubSection>
         <HubSection Header="alerts" x:Name="alerts" HeaderTemplate="{StaticResource smallHeader}">

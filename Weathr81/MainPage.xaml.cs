@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using Windows.Devices.Geolocation;
 using Windows.UI.Xaml.Controls.Maps;
 using Weathr81.DataTemplates;
+using System.Collections.ObjectModel;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -97,7 +98,18 @@ namespace Weathr81
         {
             hub.Header = f.city + ", " + f.state;
             now.DataContext = new nowTemplate() { temp = f.tempC + "°", conditions = f.currentConditions.ToUpper(), feelsLike = "Feels like: " + f.feelsLikeC + "°", humidity = "Humidity: " + f.humidity, tempCompare ="TOMORROW WILL BE " + f.tempCompareC + " TODAY", wind = "Wind " + f.windSpeedM + " " + f.windDir };
+            forecast.DataContext = createForecastList(f.forecastC);
+        }
 
+        private object createForecastList(ObservableCollection<ForecastC> forecast)
+        {
+            ObservableCollection<ForecastItem> forecastData = new ObservableCollection<ForecastItem>();
+            foreach (ForecastC day in forecast)
+            {
+                forecastData.Add( new ForecastItem() { title = day.title, text = day.text, pop = day.pop });
+            }
+
+            return new ForecastTemplate() { forecast = new ForecastList() { forecastList = forecastData } };
         }
 
 
@@ -190,15 +202,15 @@ namespace Weathr81
         //maps
         async private void satMap_Loaded(object sender, RoutedEventArgs e)
         {
-            maps.DataContext = new mapsTemplates() { enabled = false, center = await getGeo()};
+            maps.DataContext = new mapsTemplates() {center = await getGeo()};
 
             //satTilesString = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{0}/{1}/{2}.png"
             //radTilesString = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{0}/{1}/{2}.png"
         }
 
-        private void radarMap_Loaded(object sender, RoutedEventArgs e)
+       async private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
-
+            maps.DataContext = new mapsTemplates() { center = await getGeo() };
         }
 
         //buttons and stuff
@@ -215,10 +227,6 @@ namespace Weathr81
 
         }
         private void LocationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-        private void locationName_Tap(object sender, TappedRoutedEventArgs e)
         {
 
         }
