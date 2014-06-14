@@ -85,9 +85,9 @@
         </HubSection>
         <HubSection Header="alerts" x:Name="alerts" HeaderTemplate="{StaticResource smallHeader}">
             <DataTemplate>
-                <Grid>
-                    <ListBox x:Name="alertListBox" Margin="10,0,0,42" SelectionChanged="alertListBox_SelectionChanged" Background="Transparent">
-                        <ListBox.ItemTemplate>
+                    <ScrollViewer>
+                    <ItemsControl x:Name="alertListBox" Margin="10,0,0,42"  Background="Transparent" ItemsSource="{Binding alerts.alertList}">
+                        <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock x:Name="entry"
@@ -99,9 +99,9 @@
                                     </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    </ScrollViewer>
             </DataTemplate>
         </HubSection>
         <HubSection Header="locations" x:Name="locations" HeaderTemplate="{StaticResource smallHeader}">
@@ -115,7 +115,7 @@
                                                      Content="{Binding LocName}"
                                                      FontFamily="Segoe UI SemiLight"
                                                      FontSize="40"
-                                                     Tapped="locationName_Tap"
+                                                     Tapped="locationName_Tapped"
                                                       Foreground="White" Margin="0,0,0,15"
                                         >
                                     </ListBoxItem>

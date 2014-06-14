@@ -24,6 +24,7 @@ using Windows.Devices.Geolocation;
 using Windows.UI.Xaml.Controls.Maps;
 using Weathr81.DataTemplates;
 using System.Collections.ObjectModel;
+using WeatherDotGovAlerts;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -52,8 +53,8 @@ namespace Weathr81
 
         //String wundApiKey = "102b8ec7fbd47a05";
         //testkey:
-        string wundApiKey = "fb1dd3f4321d048d";
-        String flickrApiKey = "2781c025a4064160fc77a52739b552ff";
+        const string wundApiKey = "fb1dd3f4321d048d";
+        const string flickrApiKey = "2781c025a4064160fc77a52739b552ff";
         public MainPage()
         {
             this.InitializeComponent();
@@ -83,37 +84,76 @@ namespace Weathr81
         async private void runApp()
         {
             //central point of app, runs other methods
-            Geopoint pt = await getGeo();
-            GetWundergroundData d = new GetWundergroundData(wundApiKey, pt.Position.Latitude, pt.Position.Longitude);
-            WeatherInfo f = await d.getConditions();
-            updateWeatherInfo(f);
-            Uri bg = await GetHubBGUri(f.currentConditions, true, true, pt.Position.Latitude, pt.Position.Longitude, 0);
-            if (bg != null)
-            {
-                setHubBG(bg);
-            }
+            Geopoint point = await getGeo();
+            updateUI(point);
         }
-
-        private void updateWeatherInfo(WeatherInfo f)
+        async private void updateUI(Geopoint point)
         {
-            hub.Header = f.city + ", " + f.state;
-            now.DataContext = new nowTemplate() { temp = f.tempC + "°", conditions = f.currentConditions.ToUpper(), feelsLike = "Feels like: " + f.feelsLikeC + "°", humidity = "Humidity: " + f.humidity, tempCompare ="TOMORROW WILL BE " + f.tempCompareC + " TODAY", wind = "Wind " + f.windSpeedM + " " + f.windDir };
-            forecast.DataContext = createForecastList(f.forecastC);
+            //updates the ui/weather conditions of app
+            setFavoriteLocations();
+            WeatherInfo downloadedForecast = await setWeather(point.Position.Latitude, point.Position.Longitude);
+            updateWeatherInfo(downloadedForecast);
+            setBG(downloadedForecast.currentConditions, point.Position.Latitude, point.Position.Longitude);
+            setAlerts(point.Position.Latitude, point.Position.Longitude);
         }
 
+        private void setFavoriteLocations()
+        {
+            throw new NotImplementedException();
+        }
+
+        //set up weather
+        async private Task<WeatherInfo> setWeather(double lat, double lon)
+        {
+            GetWundergroundData weatherData = new GetWundergroundData(wundApiKey, lat, lon);
+            WeatherInfo downloadedForecast = await weatherData.getConditions();
+            return downloadedForecast;
+        }
+        private void updateWeatherInfo(WeatherInfo downloadedForecast)
+        {
+            hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
+            now.DataContext = new nowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir };
+            forecast.DataContext = createForecastList(downloadedForecast.forecastC);
+        }
         private object createForecastList(ObservableCollection<ForecastC> forecast)
         {
             ObservableCollection<ForecastItem> forecastData = new ObservableCollection<ForecastItem>();
             foreach (ForecastC day in forecast)
             {
-                forecastData.Add( new ForecastItem() { title = day.title, text = day.text, pop = day.pop });
+                forecastData.Add(new ForecastItem() { title = day.title, text = day.text, pop = day.pop });
             }
-
             return new ForecastTemplate() { forecast = new ForecastList() { forecastList = forecastData } };
         }
 
+        //set up alerts
+        async private void setAlerts(double lat, double lon)
+        {
+            GetAlerts a = new GetAlerts(lat, lon);
+            AlertData d = await a.getAlerts();
+            if (!d.fail)
+            {
+                alerts.DataContext = createAlertsList(d.alerts);
+            }
+        }
+        private object createAlertsList(ObservableCollection<Alert> alerts)
+        {
+            ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
+            foreach (Alert item in alerts)
+            {
+                alertsData.Add(new AlertItem() { Headline = item.headline, TextUrl = item.url });
+            }
+            return new AlertsTemplate() { alerts = new AlertList() { alertList = alertsData } };
+        }
 
         //setting a background
+        async private void setBG(string conditions, double lat, double lon)
+        {
+            Uri bg = await GetHubBGUri(conditions, true, true, lat, lon, 0);
+            if (bg != null)
+            {
+                setHubBG(bg);
+            }
+        }
         async private Task<Uri> GetHubBGUri(string cond, bool useGroup, bool useLoc, double lat, double lon, int timesRun)
         {
             //gets a uri for a background image from flickr
@@ -188,8 +228,6 @@ namespace Weathr81
             }
         }
 
-
-
         //helpers
         async private Task<Geopoint> getGeo()
         {
@@ -198,17 +236,15 @@ namespace Weathr81
             return (await geo.GetGeopositionAsync(new TimeSpan(2, 0, 0), new TimeSpan(0, 0, 0, 2))).Coordinate.Point;
         }
 
-
         //maps
         async private void satMap_Loaded(object sender, RoutedEventArgs e)
         {
-            maps.DataContext = new mapsTemplates() {center = await getGeo()};
+            maps.DataContext = new mapsTemplates() { center = await getGeo() };
 
             //satTilesString = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{0}/{1}/{2}.png"
             //radTilesString = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{0}/{1}/{2}.png"
         }
-
-       async private void radarMap_Loaded(object sender, RoutedEventArgs e)
+        async private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
             maps.DataContext = new mapsTemplates() { center = await getGeo() };
         }
@@ -230,6 +266,9 @@ namespace Weathr81
         {
 
         }
+        private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
+        {
 
+        }
     }
 }
