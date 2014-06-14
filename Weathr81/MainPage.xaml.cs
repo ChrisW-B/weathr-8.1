@@ -1,30 +1,24 @@
-﻿using Weathr81.Common;
+﻿using FlickrInfo;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Graphics.Display;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
+using WeatherData;
+using WeatherDotGovAlerts;
+using Weathr81.Common;
+using Weathr81.DataTemplates;
+using Windows.Devices.Geolocation;
+using Windows.Storage;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using WundergroundData;
-using WeatherData;
-using FlickrInfo;
-using Windows.UI.Xaml.Media.Imaging;
-using System.Threading.Tasks;
-using Windows.Devices.Geolocation;
-using Windows.UI.Xaml.Controls.Maps;
-using Weathr81.DataTemplates;
-using System.Collections.ObjectModel;
-using WeatherDotGovAlerts;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -51,10 +45,15 @@ namespace Weathr81
         }
         #endregion
 
+        #region variables
         //String wundApiKey = "102b8ec7fbd47a05";
         //testkey:
         const string wundApiKey = "fb1dd3f4321d048d";
         const string flickrApiKey = "2781c025a4064160fc77a52739b552ff";
+        ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
+        ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+        #endregion
+
         public MainPage()
         {
             this.InitializeComponent();
@@ -99,7 +98,70 @@ namespace Weathr81
 
         private void setFavoriteLocations()
         {
-            throw new NotImplementedException();
+            LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
+            //store.Values.Remove("locList");
+            if (store.Values.ContainsKey("locList"))
+            {
+                locTemplate.locations = getLocFromRoaming("locList");
+            }
+            else
+            {
+                locTemplate.locations = new LocationList();
+                locTemplate.locations.locationList = new ObservableCollection<Location>();
+                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true });
+                saveLocToRoaming(locTemplate.locations, "locList");
+
+            }
+            locList.DataContext = locTemplate;
+        }
+
+        //serialize and deserialize so locations can be synced
+        private void saveLocToRoaming(LocationList locations, string value)
+        {
+            String serialized = serialize(locations);
+            if (serialized.Length > 0)
+            {
+                store.Values[value] = serialized;
+            }
+        }
+        private LocationList getLocFromRoaming(string value)
+        {
+            string locAsXml = (string)store.Values[value];
+            try
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(LocationList));
+                LocationList locs = new LocationList();
+                using (var reader = new StringReader(locAsXml))
+                {
+                    locs = (LocationList)serializer.Deserialize(reader);
+                }
+                return locs;
+            }
+
+            catch (Exception exc)
+            {
+                System.Diagnostics.Debug.WriteLine(exc);
+                LocationList emptyList = new LocationList();
+                return emptyList;
+            }
+
+        }
+        private string serialize(LocationList locations)
+        {
+            try
+            {
+                XmlSerializer xmlIzer = new XmlSerializer(typeof(LocationList));
+                var writer = new StringWriter();
+                xmlIzer.Serialize(writer, locations);
+                System.Diagnostics.Debug.WriteLine(writer.ToString());
+                return writer.ToString();
+            }
+
+            catch (Exception exc)
+            {
+                System.Diagnostics.Debug.WriteLine(exc);
+                return String.Empty;
+            }
         }
 
         //set up weather
@@ -258,15 +320,15 @@ namespace Weathr81
         {
             throw new NotImplementedException();
         }
-        private void alertListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
         private void LocationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+
+        }
+        private void Alert_Tapped(object sender, TappedRoutedEventArgs e)
         {
 
         }
