@@ -14,5 +14,6 @@ namespace Weathr81.DataTemplates
     {
         public string Headline { get; set; }
         public string TextUrl { get; set; }
+        public bool allClear { get; set; }
     }
 }

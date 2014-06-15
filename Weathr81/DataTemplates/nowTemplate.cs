@@ -1,7 +1,7 @@
 ﻿
 namespace Weathr81.DataTemplates
 {
-   public class nowTemplate
+   public class NowTemplate
     {
         public string temp { get; set; }
         public string conditions { get; set; }

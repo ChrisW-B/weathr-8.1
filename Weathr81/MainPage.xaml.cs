@@ -14,6 +14,7 @@ using Windows.Storage;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls.Maps;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
@@ -83,8 +84,23 @@ namespace Weathr81
         async private void runApp()
         {
             //central point of app, runs other methods
-            Geopoint point = await getGeo();
-            updateUI(point);
+            GeoTemplate point = await getGeo();
+            if (!point.fail)
+            {
+                updateUI(point.position);
+            }
+            else
+            {
+                displayGeoLocError();
+            }
+        }
+
+        private void displayGeoLocError()
+        {
+            now.DataContext = new NowTemplate() { errorText = "Could not find your location!" };
+            forecast.DataContext = null;
+            maps.DataContext = null;
+            alerts.DataContext = null;
         }
         async private void updateUI(Geopoint point)
         {
@@ -94,29 +110,30 @@ namespace Weathr81
             updateWeatherInfo(downloadedForecast);
             setBG(downloadedForecast.currentConditions, point.Position.Latitude, point.Position.Longitude);
             setAlerts(point.Position.Latitude, point.Position.Longitude);
+            setMaps(point);
         }
 
         private void setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
-            //store.Values.Remove("locList");
+            store.Values.Remove("locList");
             if (store.Values.ContainsKey("locList"))
             {
-                locTemplate.locations = getLocFromRoaming("locList");
+                locTemplate.locations.locationList = getLocFromRoaming("locList");
             }
             else
             {
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
-                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true });
-                saveLocToRoaming(locTemplate.locations, "locList");
+                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location" });
+                saveLocToRoaming(locTemplate.locations.locationList, "locList");
 
             }
             locList.DataContext = locTemplate;
         }
 
         //serialize and deserialize so locations can be synced
-        private void saveLocToRoaming(LocationList locations, string value)
+        private void saveLocToRoaming(ObservableCollection<Location> locations, string value)
         {
             String serialized = serialize(locations);
             if (serialized.Length > 0)
@@ -124,16 +141,16 @@ namespace Weathr81
                 store.Values[value] = serialized;
             }
         }
-        private LocationList getLocFromRoaming(string value)
+        private ObservableCollection<Location> getLocFromRoaming(string value)
         {
             string locAsXml = (string)store.Values[value];
             try
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(LocationList));
-                LocationList locs = new LocationList();
+                XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<Location>));
+                ObservableCollection<Location> locs = new ObservableCollection<Location>();
                 using (var reader = new StringReader(locAsXml))
                 {
-                    locs = (LocationList)serializer.Deserialize(reader);
+                    locs = (ObservableCollection<Location>)serializer.Deserialize(reader);
                 }
                 return locs;
             }
@@ -141,16 +158,16 @@ namespace Weathr81
             catch (Exception exc)
             {
                 System.Diagnostics.Debug.WriteLine(exc);
-                LocationList emptyList = new LocationList();
+                ObservableCollection<Location> emptyList = new ObservableCollection<Location>();
                 return emptyList;
             }
 
         }
-        private string serialize(LocationList locations)
+        private string serialize(ObservableCollection<Location> locations)
         {
             try
             {
-                XmlSerializer xmlIzer = new XmlSerializer(typeof(LocationList));
+                XmlSerializer xmlIzer = new XmlSerializer(typeof(ObservableCollection<Location>));
                 var writer = new StringWriter();
                 xmlIzer.Serialize(writer, locations);
                 System.Diagnostics.Debug.WriteLine(writer.ToString());
@@ -174,7 +191,7 @@ namespace Weathr81
         private void updateWeatherInfo(WeatherInfo downloadedForecast)
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
-            now.DataContext = new nowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir };
+            now.DataContext = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir };
             forecast.DataContext = createForecastList(downloadedForecast.forecastC);
         }
         private object createForecastList(ObservableCollection<ForecastC> forecast)
@@ -185,6 +202,11 @@ namespace Weathr81
                 forecastData.Add(new ForecastItem() { title = day.title, text = day.text, pop = day.pop });
             }
             return new ForecastTemplate() { forecast = new ForecastList() { forecastList = forecastData } };
+        }
+        //set up maps
+        private void setMaps(Geopoint pos)
+        {
+            maps.DataContext = new MapsTemplate() { center = pos };
         }
 
         //set up alerts
@@ -202,7 +224,18 @@ namespace Weathr81
             ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
             foreach (Alert item in alerts)
             {
-                alertsData.Add(new AlertItem() { Headline = item.headline, TextUrl = item.url });
+                AlertItem alert = new AlertItem();
+                if (item.url != null)
+                {
+                    alert.allClear = false;
+                }
+                else
+                {
+                    alert.allClear = true;
+                }
+                alert.Headline = item.headline;
+                alert.TextUrl = item.url;
+                alertsData.Add(alert);
             }
             return new AlertsTemplate() { alerts = new AlertList() { alertList = alertsData } };
         }
@@ -291,24 +324,25 @@ namespace Weathr81
         }
 
         //helpers
-        async private Task<Geopoint> getGeo()
+        async private Task<GeoTemplate> getGeo()
         {
             //returns the phone's current position
             Geolocator geo = new Geolocator();
-            return (await geo.GetGeopositionAsync(new TimeSpan(2, 0, 0), new TimeSpan(0, 0, 0, 2))).Coordinate.Point;
-        }
+            GeoTemplate template = new GeoTemplate();
+            try
+            {
+                Geoposition pos = await geo.GetGeopositionAsync(new TimeSpan(0, 15, 0), new TimeSpan(0, 0, 10));
+                template.position = pos.Coordinate.Point;
+                template.fail = false;
+            }
+            catch (Exception e)
+            {
+                template.errorMsg = e.Message;
+                template.fail = true;
+            }
 
-        //maps
-        async private void satMap_Loaded(object sender, RoutedEventArgs e)
-        {
-            maps.DataContext = new mapsTemplates() { center = await getGeo() };
+            return template;
 
-            //satTilesString = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{0}/{1}/{2}.png"
-            //radTilesString = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{0}/{1}/{2}.png"
-        }
-        async private void radarMap_Loaded(object sender, RoutedEventArgs e)
-        {
-            maps.DataContext = new mapsTemplates() { center = await getGeo() };
         }
 
         //buttons and stuff
@@ -320,17 +354,36 @@ namespace Weathr81
         {
             throw new NotImplementedException();
         }
-        private void LocationListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
-
+           Location loc = (Location)(sender as StackPanel).DataContext;
+           string url = loc.LocUrl;
         }
         private void Alert_Tapped(object sender, TappedRoutedEventArgs e)
         {
+            AlertItem alert = (AlertItem)(sender as StackPanel).DataContext;
+            if (!alert.allClear)
+            {
+                string url = alert.TextUrl;
+            }
+            else
+            {
+                return;
+            }
+        }
 
+        private void radarMap_Loaded(object sender, RoutedEventArgs e)
+        {
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            MapTileSource tileSource = new MapTileSource(dataSource);
+            (sender as MapControl).TileSources.Add(tileSource);
+        }
+
+        private void satMap_Loaded(object sender, RoutedEventArgs e)
+        {
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            MapTileSource tileSource = new MapTileSource(dataSource);
+            (sender as MapControl).TileSources.Add(tileSource);
         }
     }
 }
