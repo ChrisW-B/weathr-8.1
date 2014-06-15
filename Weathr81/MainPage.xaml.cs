@@ -1,4 +1,5 @@
 ﻿using FlickrInfo;
+using LocationHelper;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -8,7 +9,6 @@ using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.DataTemplates;
-using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;

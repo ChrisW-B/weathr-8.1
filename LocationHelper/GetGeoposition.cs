@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using Weathr81;
 using Weathr81.DataTemplates;
 using Windows.Devices.Geolocation;
 
-namespace LocationHelper
+namespace Weathr81.HelperClasses
 {
     class GetGeoposition
     {
