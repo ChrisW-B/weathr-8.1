@@ -10,7 +10,9 @@ using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.DataTemplates;
 using Windows.Devices.Geolocation;
+using Windows.Foundation;
 using Windows.Storage;
+using Windows.UI;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -19,6 +21,7 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
+using Windows.UI.Xaml.Shapes;
 using WundergroundData;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
@@ -208,6 +211,49 @@ namespace Weathr81
         {
             maps.DataContext = new MapsTemplate() { center = pos };
         }
+        async private void radarMap_Loaded(object sender, RoutedEventArgs e)
+        {
+            MapControl radMap = (sender as MapControl);
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            MapTileSource tileSource = new MapTileSource(dataSource);
+            radMap.TileSources.Add(tileSource);
+            GeoTemplate template = await getGeo();
+            if (!template.fail)
+            {
+                Polygon triangle = createMapMarker();
+                radMap.Children.Add(triangle);
+                MapControl.SetLocation(triangle, template.position);
+            }
+        }
+        async private void satMap_Loaded(object sender, RoutedEventArgs e)
+        {
+            MapControl satMap = (sender as MapControl);
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            MapTileSource tileSource = new MapTileSource(dataSource);
+            satMap.TileSources.Add(tileSource);
+            GeoTemplate template = await getGeo();
+            if (!template.fail)
+            {
+                Polygon triangle = createMapMarker();
+                satMap.Children.Add(triangle);
+                MapControl.SetLocation(triangle, template.position);
+            }
+        }
+        private Polygon createMapMarker()
+        {
+            //create a marker
+            Polygon triangle = new Polygon();
+            triangle.Fill = new SolidColorBrush(Colors.Black);
+            triangle.Points.Add((new Point(0, 0)));
+            triangle.Points.Add((new Point(0, 40)));
+            triangle.Points.Add((new Point(20, 40)));
+            triangle.Points.Add((new Point(20, 20)));
+            ScaleTransform flip = new ScaleTransform();
+            flip.ScaleY = -1;
+            triangle.RenderTransform = flip;
+
+            return triangle;
+        }
 
         //set up alerts
         async private void setAlerts(double lat, double lon)
@@ -356,8 +402,8 @@ namespace Weathr81
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
-           Location loc = (Location)(sender as StackPanel).DataContext;
-           string url = loc.LocUrl;
+            Location loc = (Location)(sender as StackPanel).DataContext;
+            string url = loc.LocUrl;
         }
         private void Alert_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -370,20 +416,6 @@ namespace Weathr81
             {
                 return;
             }
-        }
-
-        private void radarMap_Loaded(object sender, RoutedEventArgs e)
-        {
-            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
-            MapTileSource tileSource = new MapTileSource(dataSource);
-            (sender as MapControl).TileSources.Add(tileSource);
-        }
-
-        private void satMap_Loaded(object sender, RoutedEventArgs e)
-        {
-            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
-            MapTileSource tileSource = new MapTileSource(dataSource);
-            (sender as MapControl).TileSources.Add(tileSource);
         }
     }
 }

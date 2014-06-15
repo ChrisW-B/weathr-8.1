@@ -18,14 +18,14 @@
                         <ColumnDefinition Width="11*"/>
                         <ColumnDefinition Width="9*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Name="temp" Text="{Binding temp}"  FontSize="90" Margin="0,0,159,0" VerticalAlignment="Top" Height="87" Width="261" HorizontalAlignment="Right" Foreground="White" TextAlignment="Right" Grid.ColumnSpan="2" LineStackingStrategy="BlockLineHeight" LineHeight="90" FontFamily="Segoe WP" FontWeight="ExtraLight" />
+                    <TextBlock Name="temp" Text="{Binding temp}"  FontSize="80" Margin="0,-30,5.5,0" VerticalAlignment="Top" Height="112" Width="172" HorizontalAlignment="Right" Foreground="White" TextAlignment="Right" FontFamily="Segoe WP" FontWeight="ExtraLight" />
                     <TextBlock Name="conditions" Text="{Binding conditions}"  Margin="-43,87,9,0" Height="102"  FontSize="34" FontFamily="Segoe UI Black" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top" LineHeight="30" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" Width="221" Foreground="White" TextAlignment="Right"/>
                     <TextBlock Text="{Binding feelsLike}" Name="feelsLike"  HorizontalAlignment="Left" Margin="15,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="32" Width="154" Foreground="White" FontFamily="Segoe UI" FontSize="20" Grid.Column="1" LineStackingStrategy="BlockLineHeight" LineHeight="28" TextTrimming="WordEllipsis"/>
                     <TextBlock Text="{Binding wind}" Name="wind" HorizontalAlignment="Left" Margin="15,32,0,0" TextWrapping="Wrap" VerticalAlignment="Top" RenderTransformOrigin="-0.491,1.49" Height="55" Width="154" Foreground="White" FontSize="22" Grid.Column="1" LineStackingStrategy="BlockLineHeight" LineHeight="20" />
                     <TextBlock Text="{Binding humidity}" Name="humidity" Grid.Column="1" HorizontalAlignment="Left" Margin="15,79,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="34" Width="154" Foreground="White" FontSize="20" LineStackingStrategy="BlockLineHeight" LineHeight="22"/>
                     <TextBlock Text="{Binding tempCompare}" Name="tempCompare" Margin="10,174,-0.167,200" TextWrapping="Wrap" FontSize="24" Grid.ColumnSpan="2" FontWeight="Bold" TextAlignment="Right" LineStackingStrategy="BlockLineHeight" LineHeight="24" Foreground="White"/>
                     <TextBlock Name="time" HorizontalAlignment="Left" Margin="10,-92,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="69" Width="179" Foreground="White" FontSize="40" LineStackingStrategy="BlockLineHeight" TextAlignment="Right" LineHeight="50" Grid.Column="1"/>
-                    <TextBlock Name="errorText" Text="{Binding errorText}" Grid.ColumnSpan="2" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="White"/>
+                    <TextBlock Name="errorText" Text="{Binding errorText}" Grid.ColumnSpan="2" Margin="0,0,0,0" FontSize="25" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="White"/>
                 </Grid>
             </DataTemplate>
         </HubSection>
@@ -53,7 +53,7 @@
                     <Grid Canvas.ZIndex="1" Name="maps">
                         <StackPanel>
                             <Maps:MapControl MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="radarMap" Height="200" Width="200" HorizontalAlignment="Left" VerticalAlignment="Top" Tapped="radarMap_Tap" Margin="10,0,0,0" ZoomLevel="5" Center="{Binding center}" Loaded="radarMap_Loaded">
-                                
+
                             </Maps:MapControl>
                             <Maps:MapControl MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="satMap" Height="200" Width="200" Margin="10,20,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Tapped="satMap_Tap" ZoomLevel="5" Center="{Binding center}" Loaded="satMap_Loaded" >
                             </Maps:MapControl>
@@ -68,7 +68,7 @@
                     <ItemsControl x:Name="forecastListBox" ItemsSource="{Binding forecast.forecastList}" Margin="10,0,0,10" Background="Transparent">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Orientation="Vertical" Tapped="Alert_Tapped">
+                                <StackPanel Orientation="Vertical">
                                     <TextBlock x:Name="title"
                                                Text="{Binding title}" Foreground="White" FontFamily="Segoe UI SemiLight" FontSize="30"
                                                />
