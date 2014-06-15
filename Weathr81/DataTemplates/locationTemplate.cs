@@ -15,8 +15,8 @@ namespace Weathr81.DataTemplates
         public string LocName { get; set; }
         public string LocUrl { get; set; }
         public bool IsCurrent { get; set; }
-        public bool IsDefualt { get; set; }
-        public string Lat { get; set; }
-        public string Lon { get; set; }
+        public bool IsDefault { get; set; }
+        public double Lat { get; set; }
+        public double Lon { get; set; }
     }
 }

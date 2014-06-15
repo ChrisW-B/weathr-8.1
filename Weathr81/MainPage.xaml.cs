@@ -3,12 +3,13 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Serialization;
 using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.DataTemplates;
+using Weathr81.HelperClasses;
+using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Storage;
@@ -56,6 +57,8 @@ namespace Weathr81
         const string flickrApiKey = "2781c025a4064160fc77a52739b552ff";
         ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+        GetGeoposition getGeoposition;
+        Location currentLocation;
         #endregion
 
         public MainPage()
@@ -73,6 +76,7 @@ namespace Weathr81
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
+            store.Values.Clear();
             hideStatusBar();
             runApp();
         }
@@ -87,52 +91,84 @@ namespace Weathr81
         async private void runApp()
         {
             //central point of app, runs other methods
-            GeoTemplate point = await getGeo();
-            if (!point.fail)
+            setFavoriteLocations();
+            getGeoposition = new GetGeoposition(currentLocation);
+            if (!(await getGeoposition.getLocation()).fail) //gets geoLocation
             {
-                updateUI(point.position);
+                updateUI();
             }
             else
             {
-                displayGeoLocError();
+                displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
             }
         }
-
-        private void displayGeoLocError()
+        private void displayError(string errorMsg)
         {
-            now.DataContext = new NowTemplate() { errorText = "Could not find your location!" };
+            now.DataContext = new NowTemplate() { errorText = errorMsg };
             forecast.DataContext = null;
             maps.DataContext = null;
             alerts.DataContext = null;
         }
-        async private void updateUI(Geopoint point)
+        async private void updateUI()
         {
             //updates the ui/weather conditions of app
-            setFavoriteLocations();
-            WeatherInfo downloadedForecast = await setWeather(point.Position.Latitude, point.Position.Longitude);
-            updateWeatherInfo(downloadedForecast);
-            setBG(downloadedForecast.currentConditions, point.Position.Latitude, point.Position.Longitude);
-            setAlerts(point.Position.Latitude, point.Position.Longitude);
-            setMaps(point);
+            WeatherInfo downloadedForecast;
+            GeoTemplate geo = await getGeoposition.getLocation();
+            if (geo.useCoord)
+            {
+                downloadedForecast = await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude);
+            }
+            else
+            {
+                downloadedForecast = await setWeather(geo.wUrl);
+            }
+            if (!downloadedForecast.fail)
+            {
+                updateWeatherInfo(downloadedForecast);
+                setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
+                setMaps(geo.position);
+            }
+            else
+            {
+                displayError(downloadedForecast.error);
+            }
         }
 
         private void setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
-            store.Values.Remove("locList");
             if (store.Values.ContainsKey("locList"))
             {
-                locTemplate.locations.locationList = getLocFromRoaming("locList");
+                ObservableCollection<Location> list = getLocFromRoaming("locList");
+                if (list != null)
+                {
+                    locTemplate.locations.locationList = list;
+                }
+                else
+                {
+                    //something wrong with the list, reset roaming and try again
+                    store.Values.Remove("locList");
+                    setFavoriteLocations();
+                }
             }
             else
             {
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
-                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location" });
+                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, LocUrl = "hello world", Lat = 0, Lon = 0 });
                 saveLocToRoaming(locTemplate.locations.locationList, "locList");
 
             }
             locList.DataContext = locTemplate;
+            foreach (Location loc in locTemplate.locations.locationList)
+            {
+                if (loc.IsDefault)
+                {
+                    currentLocation = loc;
+                    break;
+                }
+            }
         }
 
         //serialize and deserialize so locations can be synced
@@ -157,10 +193,8 @@ namespace Weathr81
                 }
                 return locs;
             }
-
-            catch (Exception exc)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine(exc);
                 ObservableCollection<Location> emptyList = new ObservableCollection<Location>();
                 return emptyList;
             }
@@ -173,7 +207,6 @@ namespace Weathr81
                 XmlSerializer xmlIzer = new XmlSerializer(typeof(ObservableCollection<Location>));
                 var writer = new StringWriter();
                 xmlIzer.Serialize(writer, locations);
-                System.Diagnostics.Debug.WriteLine(writer.ToString());
                 return writer.ToString();
             }
 
@@ -188,6 +221,12 @@ namespace Weathr81
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
             GetWundergroundData weatherData = new GetWundergroundData(wundApiKey, lat, lon);
+            WeatherInfo downloadedForecast = await weatherData.getConditions();
+            return downloadedForecast;
+        }
+        async private Task<WeatherInfo> setWeather(string wUrl)
+        {
+            GetWundergroundData weatherData = new GetWundergroundData(wundApiKey, wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
         }
@@ -213,16 +252,17 @@ namespace Weathr81
         }
         async private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
+
             MapControl radMap = (sender as MapControl);
             HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
             MapTileSource tileSource = new MapTileSource(dataSource);
             radMap.TileSources.Add(tileSource);
-            GeoTemplate template = await getGeo();
-            if (!template.fail)
+            GeoTemplate point = await tryGetLocation();
+            if (!point.fail)
             {
                 Polygon triangle = createMapMarker();
+                MapControl.SetLocation(triangle, point.position);
                 radMap.Children.Add(triangle);
-                MapControl.SetLocation(triangle, template.position);
             }
         }
         async private void satMap_Loaded(object sender, RoutedEventArgs e)
@@ -231,12 +271,12 @@ namespace Weathr81
             HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
             MapTileSource tileSource = new MapTileSource(dataSource);
             satMap.TileSources.Add(tileSource);
-            GeoTemplate template = await getGeo();
-            if (!template.fail)
+            GeoTemplate point = await tryGetLocation();
+            if (!point.fail)
             {
                 Polygon triangle = createMapMarker();
+                MapControl.SetLocation(triangle, point.position);
                 satMap.Children.Add(triangle);
-                MapControl.SetLocation(triangle, template.position);
             }
         }
         private Polygon createMapMarker()
@@ -251,8 +291,25 @@ namespace Weathr81
             ScaleTransform flip = new ScaleTransform();
             flip.ScaleY = -1;
             triangle.RenderTransform = flip;
-
             return triangle;
+        }
+        async private Task<GeoTemplate> tryGetLocation()
+        {
+            //keeps from SystemAccessViolation, hopefully
+            GeoTemplate origTemplate = await getGeoposition.getLocation();
+            GeoTemplate newTemplate = new GeoTemplate() { fail = origTemplate.fail, errorMsg = origTemplate.errorMsg, useCoord = origTemplate.useCoord, wUrl = origTemplate.wUrl };
+            Geopoint point;
+            if (origTemplate.position != null)
+            {
+                point = new Geopoint(new BasicGeoposition() { Latitude = origTemplate.position.Position.Latitude, Longitude = origTemplate.position.Position.Longitude });
+                newTemplate.position = point;
+            }
+            else
+            {
+                newTemplate.fail = true;
+                newTemplate.errorMsg = "pos not defined";
+            }
+            return newTemplate;
         }
 
         //set up alerts
@@ -369,28 +426,6 @@ namespace Weathr81
             }
         }
 
-        //helpers
-        async private Task<GeoTemplate> getGeo()
-        {
-            //returns the phone's current position
-            Geolocator geo = new Geolocator();
-            GeoTemplate template = new GeoTemplate();
-            try
-            {
-                Geoposition pos = await geo.GetGeopositionAsync(new TimeSpan(0, 15, 0), new TimeSpan(0, 0, 10));
-                template.position = pos.Coordinate.Point;
-                template.fail = false;
-            }
-            catch (Exception e)
-            {
-                template.errorMsg = e.Message;
-                template.fail = true;
-            }
-
-            return template;
-
-        }
-
         //buttons and stuff
         private void satMap_Tap(object sender, TappedRoutedEventArgs e)
         {
@@ -416,6 +451,36 @@ namespace Weathr81
             {
                 return;
             }
+        }
+
+        private void refresh_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void settings_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void pinLoc_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void changePic_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void about_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void addLoc_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AddLocation));
         }
     }
 }

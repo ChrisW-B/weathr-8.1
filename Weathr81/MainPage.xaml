@@ -122,4 +122,22 @@
             </DataTemplate>
         </HubSection>
     </Hub>
+    <Page.BottomAppBar>
+        <CommandBar>
+            <CommandBar.PrimaryCommands>
+                <AppBarButton Label="add place" x:Name="addLoc" Click="addLoc_Click" Icon="Add"/>
+                <AppBarButton Label="refresh" x:Name="refresh" Click="refresh_Click">
+                    <AppBarButton.Icon>
+                        <BitmapIcon UriSource="Assets/refresh.png"/>
+                    </AppBarButton.Icon>
+                </AppBarButton>
+                <AppBarButton Label="settings" Icon="Setting" x:Name="settings" Click="settings_Click"/>
+                <AppBarButton Label="pin" x:Name="pinLoc" Icon="Pin" Click="pinLoc_Click"/>
+            </CommandBar.PrimaryCommands>
+            <CommandBar.SecondaryCommands>
+                <AppBarButton Label="change picture" x:Name="changePic" Click="changePic_Click"></AppBarButton>
+                <AppBarButton Label="about" x:Name="about" Click="about_Click"></AppBarButton>
+            </CommandBar.SecondaryCommands>
+        </CommandBar>
+    </Page.BottomAppBar>
 </Page>

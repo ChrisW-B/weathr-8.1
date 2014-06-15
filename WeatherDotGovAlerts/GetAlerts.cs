@@ -54,9 +54,13 @@ namespace WeatherDotGovAlerts
             {
                 foreach (XElement elm in paramDesc)
                 {
-                    var hazard = elm.Element("hazard-conditions").Element("hazard");
-                    var hazardHeadline = (string)hazard.Attribute("headline").Value;
-                    var hazardUrl = (string)hazard.Element("hazardTextURL").Value;
+                    XElement hazard = elm.Element("hazard-conditions").Element("hazard");
+                    string hazardHeadline = (string)hazard.Attribute("headline").Value;
+                    if (hazardHeadline == "")
+                    {
+                        hazardHeadline = "Unknown Alert";
+                    }
+                    string hazardUrl = (string)hazard.Element("hazardTextURL").Value;
                     alerts.Add(new Alert() { headline = hazardHeadline, url = hazardUrl });
                 }
             }
