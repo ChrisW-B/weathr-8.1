@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Weathr81.DataTemplates;
 using Windows.Devices.Geolocation;
 
-namespace Weathr81.HelperClasses
+namespace LocationHelper
 {
-    class GetGeoposition
+  public class GetGeoposition
     {
         private Location currentLocation;
         private GeoTemplate geoTemplate;

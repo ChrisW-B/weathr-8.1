@@ -1,5 +1,4 @@
 ﻿using FlickrInfo;
-using LocationHelper;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -23,7 +22,9 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
+using LocationHelper;
 using WundergroundData;
+using Serializer;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -53,18 +54,18 @@ namespace Weathr81
         #region variables
         //String wundApiKey = "102b8ec7fbd47a05";
         //testkey:
-        const string wundApiKey = "fb1dd3f4321d048d";
-        const string flickrApiKey = "2781c025a4064160fc77a52739b552ff";
-        ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
-        ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
-        GetGeoposition getGeoposition;
-        Location currentLocation;
+        private const string WUND_API = "fb1dd3f4321d048d";
+        private const string FLICKR_API = "2781c025a4064160fc77a52739b552ff";
+        private const string LOC_STORE = "locList";
+        private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
+        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+        private GetGeoposition getGeoposition;
+        private Location currentLocation;
         #endregion
 
         public MainPage()
         {
             this.InitializeComponent();
-
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
@@ -76,7 +77,6 @@ namespace Weathr81
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
-            store.Values.Clear();
             hideStatusBar();
             runApp();
         }
@@ -93,7 +93,7 @@ namespace Weathr81
             //central point of app, runs other methods
             setFavoriteLocations();
             getGeoposition = new GetGeoposition(currentLocation);
-            if (!(await getGeoposition.getLocation()).fail) //gets geoLocation
+            if (!(await getGeoposition.getLocation()).fail) //gets geoLocation too
             {
                 updateUI();
             }
@@ -138,9 +138,9 @@ namespace Weathr81
         private void setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
-            if (store.Values.ContainsKey("locList"))
+            if (store.Values.ContainsKey(LOC_STORE))
             {
-                ObservableCollection<Location> list = getLocFromRoaming("locList");
+                ObservableCollection<Location> list = SerializerClass.get(LOC_STORE);
                 if (list != null)
                 {
                     locTemplate.locations.locationList = list;
@@ -148,7 +148,7 @@ namespace Weathr81
                 else
                 {
                     //something wrong with the list, reset roaming and try again
-                    store.Values.Remove("locList");
+                    store.Values.Remove(LOC_STORE);
                     setFavoriteLocations();
                 }
             }
@@ -157,7 +157,7 @@ namespace Weathr81
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
                 locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, LocUrl = "hello world", Lat = 0, Lon = 0 });
-                saveLocToRoaming(locTemplate.locations.locationList, "locList");
+                SerializerClass.save(locTemplate.locations.locationList, LOC_STORE);
 
             }
             locList.DataContext = locTemplate;
@@ -172,61 +172,18 @@ namespace Weathr81
         }
 
         //serialize and deserialize so locations can be synced
-        private void saveLocToRoaming(ObservableCollection<Location> locations, string value)
-        {
-            String serialized = serialize(locations);
-            if (serialized.Length > 0)
-            {
-                store.Values[value] = serialized;
-            }
-        }
-        private ObservableCollection<Location> getLocFromRoaming(string value)
-        {
-            string locAsXml = (string)store.Values[value];
-            try
-            {
-                XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<Location>));
-                ObservableCollection<Location> locs = new ObservableCollection<Location>();
-                using (var reader = new StringReader(locAsXml))
-                {
-                    locs = (ObservableCollection<Location>)serializer.Deserialize(reader);
-                }
-                return locs;
-            }
-            catch
-            {
-                ObservableCollection<Location> emptyList = new ObservableCollection<Location>();
-                return emptyList;
-            }
-
-        }
-        private string serialize(ObservableCollection<Location> locations)
-        {
-            try
-            {
-                XmlSerializer xmlIzer = new XmlSerializer(typeof(ObservableCollection<Location>));
-                var writer = new StringWriter();
-                xmlIzer.Serialize(writer, locations);
-                return writer.ToString();
-            }
-
-            catch (Exception exc)
-            {
-                System.Diagnostics.Debug.WriteLine(exc);
-                return String.Empty;
-            }
-        }
+       
 
         //set up weather
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
-            GetWundergroundData weatherData = new GetWundergroundData(wundApiKey, lat, lon);
+            GetWundergroundData weatherData = new GetWundergroundData(WUND_API, lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
         }
         async private Task<WeatherInfo> setWeather(string wUrl)
         {
-            GetWundergroundData weatherData = new GetWundergroundData(wundApiKey, wUrl);
+            GetWundergroundData weatherData = new GetWundergroundData(WUND_API, wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
         }
@@ -359,7 +316,7 @@ namespace Weathr81
             {
                 return null;
             }
-            GetFlickrInfo f = new GetFlickrInfo(flickrApiKey);
+            GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
             FlickrData imgList = await f.getImages(getTags(cond), useGroup, useLoc, lat, lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {

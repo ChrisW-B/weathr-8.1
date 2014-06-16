@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Windows.Devices.Geolocation;
 
-namespace Weathr81
+namespace LocationHelper
 {
     public class GeoTemplate
     {

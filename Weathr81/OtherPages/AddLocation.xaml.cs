@@ -18,6 +18,11 @@ using Windows.UI.Xaml.Navigation;
 using System.Collections.ObjectModel;
 using System.Net.Http;
 using System.Xml.Linq;
+using Serializer;
+using LocationHelper;
+using System.Threading.Tasks;
+using Windows.Devices.Geolocation;
+using System.Globalization;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -28,6 +33,7 @@ namespace Weathr81.OtherPages
     /// </summary>
     public sealed partial class AddLocation : Page
     {
+        #region navigation stuff
         private NavigationHelper navigationHelper;
         private ObservableDictionary defaultViewModel = new ObservableDictionary();
 
@@ -99,30 +105,36 @@ namespace Weathr81.OtherPages
         /// </summary>
         /// <param name="e">Provides data for navigation methods and event
         /// handlers that cannot cancel the navigation request.</param>
+
+
+        #endregion
+        #endregion
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
+            suggestions = new ObservableCollection<SearchItemTemplate>();
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedFrom(e);
-            suggestions = new ObservableCollection<SearchItemTemplate>();
-           // SearchBox.DataContext = suggestions;
         }
 
-        #endregion
+
+        #region variables
         ObservableCollection<SearchItemTemplate> suggestions = new ObservableCollection<SearchItemTemplate>();
-        async private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        private const string LOC_STORE = "locList";
+        private const string GOOGLE_URL = "http://maps.googleapis.com/maps/api/geocode/xml?address=";
+        private const string GOOGLE_POST = "&sensor=true";
+        #endregion
+        async private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
-            {
-                suggestions.Clear();
-                Uri searchUri = new Uri("http://autocomplete.wunderground.com/aq?query=" + SearchBox.Text + "&format=XML");
-                HttpClient client = new HttpClient();
-                Stream str = await client.GetStreamAsync(searchUri);
-                populateSuggestions(XDocument.Load(str));
-            }
+
+            suggestions.Clear();
+            Uri searchUri = new Uri("http://autocomplete.wunderground.com/aq?query=" + SearchBox.Text + "&format=XML");
+            HttpClient client = new HttpClient();
+            Stream str = await client.GetStreamAsync(searchUri);
+            populateSuggestions(XDocument.Load(str));
         }
 
         private void populateSuggestions(XDocument doc)
@@ -148,20 +160,52 @@ namespace Weathr81.OtherPages
                 suggestions.Add(new SearchItemTemplate() { locName = locationName, wUrl = wuUrl });
 
             }
-            //SearchBox.DataContext = suggestions;
+            results.ItemsSource = suggestions;
         }
 
-        private void SearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        {
-            SearchItemTemplate item = (SearchItemTemplate)sender.DataContext;
-            string name = item.locName;
-        }
 
-        private void SearchBox_Tapped(object sender, TappedRoutedEventArgs e)
+        async private void results_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (SearchBox.Text.Contains("enter location"))
+            ListBox lb = sender as ListBox;
+            SearchItemTemplate item = (lb.SelectedItem as SearchItemTemplate);
+            ObservableCollection<Location> locs = SerializerClass.get(LOC_STORE);
+            GeoTemplate coordinates = await getCoordinates(item.locName);
+            if (!coordinates.fail)
             {
-                SearchBox.Text = "";
+                locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
+            }
+            SerializerClass.save(locs, LOC_STORE);
+            Frame.GoBack();
+        }
+
+        async private Task<GeoTemplate> getCoordinates(string locName)
+        {
+            Uri googleUri = new Uri(GOOGLE_URL + locName + GOOGLE_POST);
+            HttpClient c = new HttpClient();
+            Stream str = await c.GetStreamAsync(googleUri);
+            return readCoordinates(XDocument.Load(str));
+        }
+
+        private GeoTemplate readCoordinates(XDocument doc)
+        {
+            try
+            {
+                var location = doc.Element("GeocodeResponse").Element("result").Element("geometry").Element("location");
+                string lat = (string)location.Element("lat").Value;
+                string lon = (string)location.Element("lng").Value;
+                if (lat.Contains(","))
+                {
+                    lat = lat.Replace(',', '.');
+                }
+                if (lon.Contains(","))
+                {
+                    lon = lon.Replace(',', '.');
+                }
+                return new GeoTemplate() { fail = false, position = new Geopoint(new BasicGeoposition() { Latitude = Convert.ToDouble(lat, new CultureInfo("en-US")), Longitude = Convert.ToDouble(lon, new CultureInfo("en-US")) }) };
+            }
+            catch
+            {
+                return new GeoTemplate() { fail = true, errorMsg = "google returned invalid coordinates" };
             }
         }
     }

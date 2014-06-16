@@ -31,13 +31,15 @@
 
             <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,490">
                 <StackPanel Orientation="Vertical" Margin="0,0,0,-470">
-                    <AutoSuggestBox Name="SearchBox" Tapped="SearchBox_Tapped" HorizontalAlignment="Left" VerticalAlignment="Top" TextChanged="SearchBox_TextChanged" Width="338" Margin="0,0,0,0" SuggestionChosen="SearchBox_SuggestionChosen" ItemsSource="{Binding suggestions}">
-                        <AutoSuggestBox.ItemTemplate>
+                    <TextBox Name="SearchBox" HorizontalAlignment="Left" VerticalAlignment="Top" TextChanged="SearchBox_TextChanged" Width="338" Margin="0,0,0,0">
+                    </TextBox>
+                    <ListBox x:Name="results" SelectionChanged="results_SelectionChanged" DataContext="{Binding suggestions}">
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Foreground="White" Text="{Binding locName}"/>
+                                <TextBlock x:Name="entry" FontSize="18" Text="{Binding locName}"/>
                             </DataTemplate>
-                        </AutoSuggestBox.ItemTemplate>
-                    </AutoSuggestBox>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </StackPanel>
             </Grid>
         </Grid>

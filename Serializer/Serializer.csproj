@@ -6,11 +6,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{05D2C99B-E1CE-4290-AEFA-C60D39B59D29}</ProjectGuid>
+    <ProjectGuid>{56229CF6-90A9-4B6F-B379-016BD40D7969}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LocationHelper</RootNamespace>
-    <AssemblyName>LocationHelper</AssemblyName>
+    <RootNamespace>Serializer</RootNamespace>
+    <AssemblyName>Serializer</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
@@ -80,11 +80,13 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <ProjectReference Include="..\LocationHelper\LocationHelper.csproj">
+      <Project>{05d2c99b-e1ce-4290-aefa-c60d39b59d29}</Project>
+      <Name>LocationHelper</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataTemplates\geoTemplate.cs" />
-    <Compile Include="DataTemplates\locationTemplate.cs" />
-    <Compile Include="GetGeoposition.cs" />
+    <Compile Include="Serializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
