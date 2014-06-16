@@ -13,7 +13,8 @@ namespace WundergroundData
     {
         private Uri uri;
         private const string WUND_PRE = "http://api.wunderground.com/api/";
-        private const string WUND_MID = "/conditions/forecast/q/";
+        private const string WUND_MID = "/conditions/forecast/";
+        private const string SEARCH = "q/";
         private const string WUND_POST = ".xml";
 
 
@@ -24,11 +25,11 @@ namespace WundergroundData
 
         public GetWundergroundData(string apiKey, double lat, double lon)
         {
-            uri = new Uri(WUND_PRE + apiKey + WUND_MID + lat + "," + lon + WUND_POST, UriKind.Absolute);
+            uri = new Uri(WUND_PRE + apiKey + WUND_MID + SEARCH + lat + "," + lon + WUND_POST, UriKind.Absolute);
         }
         public GetWundergroundData(string apiKey, string lat, string lon)
         {
-            uri = new Uri(WUND_PRE + apiKey + WUND_MID + lat + "," + lon + WUND_POST, UriKind.Absolute);
+            uri = new Uri(WUND_PRE + apiKey + WUND_MID + SEARCH + lat + "," + lon + WUND_POST, UriKind.Absolute);
         }
 
         async public Task<WeatherInfo> getConditions()

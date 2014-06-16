@@ -64,6 +64,7 @@ namespace LocationHelper
                     geoTemplate = new GeoTemplate();
                     geoTemplate.position = new Geopoint(new BasicGeoposition() { Latitude = currentLocation.Lat, Longitude = currentLocation.Lon });
                     geoTemplate.fail = false;
+                    geoTemplate.wUrl = currentLocation.LocUrl;
                     geoTemplate.useCoord = (currentLocation.LocUrl == null);
                     if (currentLocation.IsCurrent)
                     {

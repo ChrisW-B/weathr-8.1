@@ -60,7 +60,7 @@ namespace Weathr81
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition getGeoposition;
-        private Location currentLocation;
+        public Location currentLocation;
         #endregion
 
         public MainPage()
@@ -77,6 +77,10 @@ namespace Weathr81
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
+            if (e.Parameter != null)
+            {
+                this.currentLocation = (e.Parameter as Location);
+            }
             hideStatusBar();
             runApp();
         }
@@ -156,17 +160,20 @@ namespace Weathr81
             {
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
-                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, LocUrl = "hello world", Lat = 0, Lon = 0 });
+                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, Lat = 0, Lon = 0 });
                 SerializerClass.save(locTemplate.locations.locationList, LOC_STORE);
 
             }
             locList.DataContext = locTemplate;
-            foreach (Location loc in locTemplate.locations.locationList)
+            if (currentLocation == null)
             {
-                if (loc.IsDefault)
+                foreach (Location loc in locTemplate.locations.locationList)
                 {
-                    currentLocation = loc;
-                    break;
+                    if (loc.IsDefault)
+                    {
+                        currentLocation = loc;
+                        break;
+                    }
                 }
             }
         }
@@ -395,7 +402,7 @@ namespace Weathr81
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
             Location loc = (Location)(sender as StackPanel).DataContext;
-            string url = loc.LocUrl;
+            Frame.Navigate(typeof(MainPage), loc);
         }
         private void Alert_Tapped(object sender, TappedRoutedEventArgs e)
         {
