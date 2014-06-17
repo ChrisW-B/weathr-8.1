@@ -1,10 +1,14 @@
-﻿using System;
+﻿using LocationHelper;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
+using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -97,6 +101,19 @@ namespace Weathr81
                 }
             }
 
+            if (e != null && e.Arguments != "")
+            {
+                // The app was launched from a Secondary Tile
+                // Navigate to the item's page
+                Location loc = getLocationFromArgs(e);
+                rootFrame.Navigate(typeof(MainPage), loc);
+            }
+            else
+            {
+                // Navigate to the initial page
+                rootFrame.Navigate(typeof(MainPage));
+            }
+
             // Ensure the current window is active
             Window.Current.Activate();
         }
@@ -106,9 +123,10 @@ namespace Weathr81
         /// </summary>
         /// <param name="sender">The object where the handler is attached.</param>
         /// <param name="e">Details about the navigation event.</param>
+        Frame rootFrame;
         private void RootFrame_FirstNavigated(object sender, NavigationEventArgs e)
         {
-            var rootFrame = sender as Frame;
+            rootFrame = sender as Frame;
             rootFrame.ContentTransitions = this.transitions ?? new TransitionCollection() { new NavigationThemeTransition() };
             rootFrame.Navigated -= this.RootFrame_FirstNavigated;
         }
@@ -126,6 +144,20 @@ namespace Weathr81
 
             // TODO: Save application state and stop any background activity
             deferral.Complete();
+        }
+
+
+
+        private Location getLocationFromArgs(LaunchActivatedEventArgs args)
+        {
+            String[] latLong = (args.TileId).Split('_');
+
+            Location loc = new Location() { IsCurrent = (args.Arguments == null), Lat = Convert.ToDouble(latLong[0], new CultureInfo("en-US")), Lon = Convert.ToDouble(latLong[1], new CultureInfo("en-US")) };
+            if (args.Arguments != null)
+            {
+                loc.LocUrl = args.Arguments;
+            }
+            return loc;
         }
     }
 }

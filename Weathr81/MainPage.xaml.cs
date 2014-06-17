@@ -431,26 +431,19 @@ namespace Weathr81
       async  private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
             Uri logo = new Uri("ms-appx:///Assets/SunCloud202.png");
-            try
-            {
+
                 SecondaryTile secondaryTile = new SecondaryTile();
                 secondaryTile.Arguments = currentLocation.LocUrl;
                 secondaryTile.TileId = currentLocation.Lat + "_" + currentLocation.Lon;
                 secondaryTile.DisplayName = currentLocation.LocName;
-                //secondaryTile.Logo=secondaryTile.WideLogo = logo;
                 secondaryTile.RoamingEnabled = true;
-
                 secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
                 secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
                 secondaryTile.VisualElements.Square150x150Logo = logo;
                 secondaryTile.VisualElements.Square310x310Logo = logo;
                 secondaryTile.VisualElements.Wide310x150Logo = logo;
                 await secondaryTile.RequestCreateAsync();
-            }
-            catch (Exception exc)
-            {
-                string fail = e.ToString();
-            }
+
         }
 
         async private void changePic_Click(object sender, RoutedEventArgs e)
