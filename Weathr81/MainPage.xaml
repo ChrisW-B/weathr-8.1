@@ -112,7 +112,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Tapped="locationName_Tapped">
-                                    <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="40" Foreground="White" Margin="0,0,0,15">
+                                    <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="30" Foreground="White" Margin="0,0,0,15">
                                     </TextBlock>
                                 </StackPanel>
                             </DataTemplate>
@@ -123,7 +123,7 @@
         </HubSection>
     </Hub>
     <Page.BottomAppBar>
-        <CommandBar>
+        <CommandBar Opacity="0.75">
             <CommandBar.PrimaryCommands>
                 <AppBarButton Label="add place" x:Name="addLoc" Click="addLoc_Click" Icon="Add"/>
                 <AppBarButton Label="refresh" x:Name="refresh" Click="refresh_Click">

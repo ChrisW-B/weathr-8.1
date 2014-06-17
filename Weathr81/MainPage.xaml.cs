@@ -1,9 +1,9 @@
 ﻿using FlickrInfo;
+using LocationHelper;
+using Serializer;
 using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
@@ -13,6 +13,7 @@ using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Storage;
 using Windows.UI;
+using Windows.UI.StartScreen;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -22,9 +23,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
-using LocationHelper;
 using WundergroundData;
-using Serializer;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -59,8 +58,9 @@ namespace Weathr81
         private const string LOC_STORE = "locList";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
-        private GetGeoposition getGeoposition;
-        public Location currentLocation;
+        private GetGeoposition GetGeoposition;
+        private Location currentLocation;
+        private string flickrTags;
         #endregion
 
         public MainPage()
@@ -96,8 +96,8 @@ namespace Weathr81
         {
             //central point of app, runs other methods
             setFavoriteLocations();
-            getGeoposition = new GetGeoposition(currentLocation);
-            if (!(await getGeoposition.getLocation()).fail) //gets geoLocation too
+            GetGeoposition = new GetGeoposition(currentLocation);
+            if (!(await GetGeoposition.getLocation()).fail) //gets geoLocation too
             {
                 updateUI();
             }
@@ -117,7 +117,7 @@ namespace Weathr81
         {
             //updates the ui/weather conditions of app
             WeatherInfo downloadedForecast;
-            GeoTemplate geo = await getGeoposition.getLocation();
+            GeoTemplate geo = await GetGeoposition.getLocation();
             if (geo.useCoord)
             {
                 downloadedForecast = await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude);
@@ -179,7 +179,7 @@ namespace Weathr81
         }
 
         //serialize and deserialize so locations can be synced
-       
+
 
         //set up weather
         async private Task<WeatherInfo> setWeather(double lat, double lon)
@@ -260,7 +260,7 @@ namespace Weathr81
         async private Task<GeoTemplate> tryGetLocation()
         {
             //keeps from SystemAccessViolation, hopefully
-            GeoTemplate origTemplate = await getGeoposition.getLocation();
+            GeoTemplate origTemplate = await GetGeoposition.getLocation();
             GeoTemplate newTemplate = new GeoTemplate() { fail = origTemplate.fail, errorMsg = origTemplate.errorMsg, useCoord = origTemplate.useCoord, wUrl = origTemplate.wUrl };
             Geopoint point;
             if (origTemplate.position != null)
@@ -324,7 +324,8 @@ namespace Weathr81
                 return null;
             }
             GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
-            FlickrData imgList = await f.getImages(getTags(cond), useGroup, useLoc, lat, lon);
+            flickrTags = getTags(cond);
+            FlickrData imgList = await f.getImages(flickrTags, useGroup, useLoc, lat, lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
                 Random r = new Random();
@@ -419,7 +420,7 @@ namespace Weathr81
 
         private void refresh_Click(object sender, RoutedEventArgs e)
         {
-
+            updateUI();
         }
 
         private void settings_Click(object sender, RoutedEventArgs e)
@@ -427,14 +428,32 @@ namespace Weathr81
 
         }
 
-        private void pinLoc_Click(object sender, RoutedEventArgs e)
+      async  private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
-
+            string tileId = currentLocation.Lat + ", " + currentLocation.Lon;
+            string displayName = currentLocation.LocName;
+            string args = currentLocation.LocUrl;
+            Uri logo = new Uri("ms-appx:///Assets/SunCloud202.png");
+            try
+            {
+                SecondaryTile secondaryTile = new SecondaryTile();
+                secondaryTile.Arguments = "world";
+                secondaryTile.TileId = "tileA";
+                secondaryTile.DisplayName = "hello";
+                secondaryTile.Logo=secondaryTile.WideLogo = logo;
+                secondaryTile.RoamingEnabled = true;
+                await secondaryTile.RequestCreateAsync();
+            }
+            catch (Exception exc)
+            {
+                string fail = e.ToString();
+            }
         }
 
-        private void changePic_Click(object sender, RoutedEventArgs e)
+        async private void changePic_Click(object sender, RoutedEventArgs e)
         {
-
+            GeoTemplate loc = await GetGeoposition.getLocation();
+            setBG(flickrTags, loc.position.Position.Latitude, loc.position.Position.Longitude);
         }
 
         private void about_Click(object sender, RoutedEventArgs e)

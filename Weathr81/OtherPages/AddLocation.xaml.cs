@@ -186,7 +186,7 @@ namespace Weathr81.OtherPages
             return readCoordinates(XDocument.Load(str));
         }
 
-        private GeoTemplate readCoordinates(XDocument doc)
+       private GeoTemplate readCoordinates(XDocument doc)
         {
             try
             {
