@@ -140,7 +140,6 @@ namespace Weathr81
                 displayError(downloadedForecast.error);
             }
         }
-
         private void setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
@@ -180,9 +179,6 @@ namespace Weathr81
             }
         }
 
-        //serialize and deserialize so locations can be synced
-
-
         //set up weather
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
@@ -211,6 +207,7 @@ namespace Weathr81
             }
             return new ForecastTemplate() { forecast = new ForecastList() { forecastList = forecastData } };
         }
+
         //set up maps
         private void setMaps(Geopoint pos)
         {
@@ -394,12 +391,12 @@ namespace Weathr81
         }
 
         //buttons and stuff
-       async private void satMap_Tap(object sender, TappedRoutedEventArgs e)
+        async private void satMap_Tap(object sender, TappedRoutedEventArgs e)
         {
             MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(), type = MapLaunchClass.mapType.satellite };
             Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
         }
-      async  private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
+        async private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
         {
             MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(), type = MapLaunchClass.mapType.radar };
             Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
@@ -416,19 +413,16 @@ namespace Weathr81
             {
                 Launcher.LaunchUriAsync(new Uri(alert.TextUrl));
             }
-                return;
+            return;
         }
-
         private void refresh_Click(object sender, RoutedEventArgs e)
         {
             updateUI();
         }
-
         private void settings_Click(object sender, RoutedEventArgs e)
         {
 
         }
-
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
             Uri logo = new Uri("ms-appx:///Assets/Logo.png");
@@ -442,18 +436,15 @@ namespace Weathr81
             await secondaryTile.RequestCreateAsync();
 
         }
-
         async private void changePic_Click(object sender, RoutedEventArgs e)
         {
             GeoTemplate loc = await GetGeoposition.getLocation();
             setBG(flickrTags, loc.position.Position.Latitude, loc.position.Position.Longitude);
         }
-
         private void about_Click(object sender, RoutedEventArgs e)
         {
 
         }
-
         private void addLoc_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(AddLocation));
