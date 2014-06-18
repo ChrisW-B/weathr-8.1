@@ -430,7 +430,7 @@ namespace Weathr81
 
       async  private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
-            Uri logo = new Uri("ms-appx:///Assets/SunCloud202.png");
+            Uri logo = new Uri("ms-appx:///Assets/Logo.png"); 
 
                 SecondaryTile secondaryTile = new SecondaryTile();
                 secondaryTile.Arguments = currentLocation.LocUrl;
