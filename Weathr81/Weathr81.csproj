@@ -114,6 +114,7 @@
     <Compile Include="DataTemplates\forecastTemplate.cs" />
     <Compile Include="DataTemplates\mapsTemplate.cs" />
     <Compile Include="DataTemplates\nowTemplate.cs" />
+    <Compile Include="HelperClasses\MapLaunchClass.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -121,6 +122,9 @@
       <DependentUpon>AddLocation.xaml</DependentUpon>
     </Compile>
     <Compile Include="DataTemplates\searchItemTemplate.cs" />
+    <Compile Include="OtherPages\WeatherMap.xaml.cs">
+      <DependentUpon>WeatherMap.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -180,6 +184,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="OtherPages\AddLocation.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="OtherPages\WeatherMap.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

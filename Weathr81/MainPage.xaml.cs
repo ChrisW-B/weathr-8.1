@@ -8,10 +8,12 @@ using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.DataTemplates;
+using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Storage;
+using Windows.System;
 using Windows.UI;
 using Windows.UI.StartScreen;
 using Windows.UI.ViewManagement;
@@ -392,13 +394,15 @@ namespace Weathr81
         }
 
         //buttons and stuff
-        private void satMap_Tap(object sender, TappedRoutedEventArgs e)
+       async private void satMap_Tap(object sender, TappedRoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(), type = MapLaunchClass.mapType.satellite };
+            Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
         }
-        private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
+      async  private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
         {
-            throw new NotImplementedException();
+            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(), type = MapLaunchClass.mapType.radar };
+            Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -410,12 +414,9 @@ namespace Weathr81
             AlertItem alert = (AlertItem)(sender as StackPanel).DataContext;
             if (!alert.allClear)
             {
-                string url = alert.TextUrl;
+                Launcher.LaunchUriAsync(new Uri(alert.TextUrl));
             }
-            else
-            {
                 return;
-            }
         }
 
         private void refresh_Click(object sender, RoutedEventArgs e)
@@ -428,21 +429,17 @@ namespace Weathr81
 
         }
 
-      async  private void pinLoc_Click(object sender, RoutedEventArgs e)
+        async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
-            Uri logo = new Uri("ms-appx:///Assets/Logo.png"); 
+            Uri logo = new Uri("ms-appx:///Assets/Logo.png");
 
-                SecondaryTile secondaryTile = new SecondaryTile();
-                secondaryTile.Arguments = currentLocation.LocUrl;
-                secondaryTile.TileId = currentLocation.Lat + "_" + currentLocation.Lon;
-                secondaryTile.DisplayName = currentLocation.LocName;
-                secondaryTile.RoamingEnabled = true;
-                secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
-                secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
-                secondaryTile.VisualElements.Square150x150Logo = logo;
-                secondaryTile.VisualElements.Square310x310Logo = logo;
-                secondaryTile.VisualElements.Wide310x150Logo = logo;
-                await secondaryTile.RequestCreateAsync();
+            SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
+            secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
+            secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
+            secondaryTile.VisualElements.Square150x150Logo = logo;
+            secondaryTile.VisualElements.Square310x310Logo = logo;
+            secondaryTile.VisualElements.Wide310x150Logo = logo;
+            await secondaryTile.RequestCreateAsync();
 
         }
 
