@@ -15,6 +15,48 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocationHelper", "LocationH
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serializer", "Serializer\Serializer.csproj", "{56229CF6-90A9-4B6F-B379-016BD40D7969}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{A47E3BC1-D0FF-489C-950A-6BF8328AD4F7}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\Weathr Icons\SunCloud106.png = ..\..\Weathr Icons\SunCloud106.png
+		..\..\Weathr Icons\SunCloud120.png = ..\..\Weathr Icons\SunCloud120.png
+		..\..\Weathr Icons\SunCloud58.png = ..\..\Weathr Icons\SunCloud58.png
+		..\..\Weathr Icons\SunCloudTrans106.png = ..\..\Weathr Icons\SunCloudTrans106.png
+		..\..\Weathr Icons\SunCloudTrans120.png = ..\..\Weathr Icons\SunCloudTrans120.png
+		..\..\Weathr Icons\SunCloudTrans58.png = ..\..\Weathr Icons\SunCloudTrans58.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Large", "Large", "{8D2B520B-A9E7-4D09-B420-AB709259804A}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\Weathr Icons\Large\Cloudy360.png = ..\..\Weathr Icons\Large\Cloudy360.png
+		..\..\Weathr Icons\Large\Drizzle360.png = ..\..\Weathr Icons\Large\Drizzle360.png
+		..\..\Weathr Icons\Large\Flurry360.png = ..\..\Weathr Icons\Large\Flurry360.png
+		..\..\Weathr Icons\Large\Fog360.png = ..\..\Weathr Icons\Large\Fog360.png
+		..\..\Weathr Icons\Large\FreezingRain360.png = ..\..\Weathr Icons\Large\FreezingRain360.png
+		..\..\Weathr Icons\Large\PartlyCloudy360.png = ..\..\Weathr Icons\Large\PartlyCloudy360.png
+		..\..\Weathr Icons\Large\Rain360.png = ..\..\Weathr Icons\Large\Rain360.png
+		..\..\Weathr Icons\Large\Sleet360.png = ..\..\Weathr Icons\Large\Sleet360.png
+		..\..\Weathr Icons\Large\Snow360.png = ..\..\Weathr Icons\Large\Snow360.png
+		..\..\Weathr Icons\Large\SunCloudTrans360.png = ..\..\Weathr Icons\Large\SunCloudTrans360.png
+		..\..\Weathr Icons\Large\Thunder360.png = ..\..\Weathr Icons\Large\Thunder360.png
+		..\..\Weathr Icons\Large\Windy360.png = ..\..\Weathr Icons\Large\Windy360.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Medium", "Medium", "{690C176B-0A47-4C83-A7F7-C5E3BF4DEC51}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\Weathr Icons\Medium\Cloudy170.png = ..\..\Weathr Icons\Medium\Cloudy170.png
+		..\..\Weathr Icons\Medium\Drizzle170.png = ..\..\Weathr Icons\Medium\Drizzle170.png
+		..\..\Weathr Icons\Medium\Flurry170.png = ..\..\Weathr Icons\Medium\Flurry170.png
+		..\..\Weathr Icons\Medium\Fog170.png = ..\..\Weathr Icons\Medium\Fog170.png
+		..\..\Weathr Icons\Medium\FreezingRain170.png = ..\..\Weathr Icons\Medium\FreezingRain170.png
+		..\..\Weathr Icons\Medium\PartlyCloudy170.png = ..\..\Weathr Icons\Medium\PartlyCloudy170.png
+		..\..\Weathr Icons\Medium\Rain170.png = ..\..\Weathr Icons\Medium\Rain170.png
+		..\..\Weathr Icons\Medium\Sleet170.png = ..\..\Weathr Icons\Medium\Sleet170.png
+		..\..\Weathr Icons\Medium\Snow170.png = ..\..\Weathr Icons\Medium\Snow170.png
+		..\..\Weathr Icons\Medium\SunCloudTrans170.png = ..\..\Weathr Icons\Medium\SunCloudTrans170.png
+		..\..\Weathr Icons\Medium\Thunder170.png = ..\..\Weathr Icons\Medium\Thunder170.png
+		..\..\Weathr Icons\Medium\Windy170.png = ..\..\Weathr Icons\Medium\Windy170.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -106,5 +148,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8D2B520B-A9E7-4D09-B420-AB709259804A} = {A47E3BC1-D0FF-489C-950A-6BF8328AD4F7}
+		{690C176B-0A47-4C83-A7F7-C5E3BF4DEC51} = {A47E3BC1-D0FF-489C-950A-6BF8328AD4F7}
 	EndGlobalSection
 EndGlobal
