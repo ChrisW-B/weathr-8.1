@@ -72,6 +72,8 @@ namespace Weathr81
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
+
+            
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -238,6 +240,23 @@ namespace Weathr81
                 {
                     updateHourList(forecastIOClass.hours.hours);
                 }
+                if (forecastIOClass.flags.minsExists)
+                {
+                    tryDisplayNextHour(forecastIOClass.mins.summary);
+                }
+            }
+        }
+        private void tryDisplayNextHour(string minSum)
+        {
+            if (now.DataContext != null)
+            {
+                NowTemplate nowContext = (now.DataContext as NowTemplate);
+                if (nowContext != null)
+                {
+                    nowContext.nextHour = minSum;
+                    now.DataContext = null;
+                    now.DataContext = nowContext;
+                }
             }
         }
         private void updateHourList(ObservableCollection<HourForecast> hours)
@@ -253,7 +272,6 @@ namespace Weathr81
             }
             hourly.DataContext = forecastIOTemplate;
         }
-
         private DateTime unixTimeStampToDateTime(double unixTimeStamp)
         {
             // Unix timestamp is seconds past epoch
@@ -261,8 +279,6 @@ namespace Weathr81
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
         }
-
-
 
         //set up maps
         private void setMaps(Geopoint pos)

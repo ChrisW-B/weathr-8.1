@@ -70,7 +70,7 @@ namespace Weathr81
 
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
                 {
-                    // TODO: Load state from previously suspended application
+                   
                 }
 
                 // Place the frame in the current Window
@@ -95,10 +95,10 @@ namespace Weathr81
                 // When the navigation stack isn't restored navigate to the first page,
                 // configuring the new page by passing required information as a navigation
                 // parameter
-                if (!rootFrame.Navigate(typeof(MainPage), e.Arguments))
-                {
-                    throw new Exception("Failed to create initial page");
-                }
+                //if (!rootFrame.Navigate(typeof(MainPage), e.Arguments))
+                //{
+                //    throw new Exception("Failed to create initial page");
+                //}
             }
 
             if (e != null && e.Arguments != "")
@@ -120,6 +120,8 @@ namespace Weathr81
                 //clear history when launching from tile
                 rootFrame.BackStack.Clear();
             }
+
+            
 
             // Ensure the current window is active
             Window.Current.Activate();
