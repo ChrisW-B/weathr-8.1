@@ -106,12 +106,19 @@ namespace Weathr81
                 // The app was launched from a Secondary Tile
                 // Navigate to the item's page
                 Location loc = getLocationFromArgs(e);
+
                 rootFrame.Navigate(typeof(MainPage), loc);
+                //clear history when launching from tile
+                rootFrame.BackStack.Clear();
+
             }
             else
             {
                 // Navigate to the initial page
                 rootFrame.Navigate(typeof(MainPage));
+
+                //clear history when launching from tile
+                rootFrame.BackStack.Clear();
             }
 
             // Ensure the current window is active
