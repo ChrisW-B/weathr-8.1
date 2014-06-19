@@ -37,7 +37,9 @@ namespace WeatherDotGovAlerts
             }
             catch
             {
-                return new AlertData() { fail = true, error = "problem downloading info" };
+                ObservableCollection<Alert> alerts = new ObservableCollection<Alert>();
+                alerts.Add(new Alert() { headline = "Alerts unavailable, sorry!", url = null });
+                return new AlertData() { fail = true, error = "problem downloading info", alerts = alerts};
             }
         }
 

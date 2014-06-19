@@ -116,9 +116,8 @@
                                 <StackPanel Orientation="Horizontal" Tapped="Alert_Tapped">
                                     <TextBlock x:Name="entry"
                                     Text="{Binding Headline}" 
-                                           FontSize="32"
-                                           Margin="12,0,0,2"
-                                           Tag="{Binding TextUrl}" Foreground="White"  FontFamily="Segoe UI" LineHeight="48">
+                                           FontSize="28"
+                                           Tag="{Binding TextUrl}" Foreground="White"  FontFamily="Segoe UI" LineHeight="40" TextWrapping="Wrap">
                                     </TextBlock>
                                 </StackPanel>
                             </DataTemplate>

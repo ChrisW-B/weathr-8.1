@@ -248,8 +248,8 @@ namespace Weathr81
             foreach (HourForecast hour in hours)
             {
                 DateTime time = (unixTimeStampToDateTime(hour.time));
-                string timeString = time.ToString("h:mm tt")+ " on " + time.DayOfWeek;
-                forecastIOTemplate.forecastIO.hoursList.Add(new ForecastIOItem() { description = hour.summary, chanceOfPrecip = Convert.ToString(hour.precipProbability *100) + "% Chance of Precip", temp = Convert.ToString((int)hour.temperature) + "°", time = timeString });
+                string timeString = time.ToString("h:mm tt") + " on " + time.DayOfWeek;
+                forecastIOTemplate.forecastIO.hoursList.Add(new ForecastIOItem() { description = hour.summary, chanceOfPrecip = Convert.ToString(hour.precipProbability * 100) + "% Chance of Precip", temp = Convert.ToString((int)hour.temperature) + "°", time = timeString });
             }
             hourly.DataContext = forecastIOTemplate;
         }
@@ -336,10 +336,7 @@ namespace Weathr81
         {
             GetAlerts a = new GetAlerts(lat, lon);
             AlertData d = await a.getAlerts();
-            if (!d.fail)
-            {
-                alerts.DataContext = createAlertsList(d.alerts);
-            }
+            alerts.DataContext = createAlertsList(d.alerts);
         }
         private object createAlertsList(ObservableCollection<Alert> alerts)
         {
@@ -386,7 +383,6 @@ namespace Weathr81
                 Random r = new Random();
                 int num = r.Next(imgList.images.Count);
                 return f.getImageUri(imgList.images[num]);
-
             }
             else
             {
