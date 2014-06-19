@@ -29,6 +29,28 @@
                 </Grid>
             </DataTemplate>
         </HubSection>
+        <HubSection Header="hourly" x:Name="hourly" HeaderTemplate="{StaticResource smallHeader}">
+            <DataTemplate>
+                <ScrollViewer>
+                    <ItemsControl x:Name="forecastIOListBox" ItemsSource="{Binding forecastIO.hoursList}" Background="Transparent">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock x:Name="header" Text="{Binding time}" Foreground="White" FontFamily="Segoe UI SemiLight" FontSize="20"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <TextBlock x:Name="temp" Text="{Binding temp}" FontSize="55" FontFamily="Segoe WP" FontWeight="ExtraLight" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                        <StackPanel Margin="10, 0, 0, 0" Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                        <TextBlock  FontSize="17"  x:Name="descrip" Text="{Binding description}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                            <TextBlock FontSize="17"  x:Name="precip" Text="{Binding chanceOfPrecip}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DataTemplate>
+        </HubSection>
         <HubSection Header="maps" x:Name="maps" HeaderTemplate="{StaticResource smallHeader}">
             <DataTemplate>
                 <Grid>

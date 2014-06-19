@@ -155,16 +155,16 @@ namespace WundergroundData
 
                 //clear out forecast list first
 
-                currentWeather.forecastC = new ObservableCollection<ForecastC>();
-                currentWeather.forecastF = new ObservableCollection<ForecastF>();
+                currentWeather.forecastC = new ObservableCollection<WundForecastItem>();
+                currentWeather.forecastF = new ObservableCollection<WundForecastItem>();
 
                 currentWeather.forecastC.Clear();
                 currentWeather.forecastF.Clear();
 
                 foreach (XElement elm in forecastDaysTxt.Elements("forecastday"))
                 {
-                    ForecastC forecastC = new WeatherData.ForecastC();
-                    ForecastF forecastF = new WeatherData.ForecastF();
+                    WundForecastItem forecastC = new WeatherData.WundForecastItem();
+                    WundForecastItem forecastF = new WeatherData.WundForecastItem();
 
                     forecastC.title = forecastF.title = (string)elm.Element("title");
                     forecastC.text = (string)elm.Element("fcttext_metric");

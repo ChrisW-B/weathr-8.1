@@ -1,4 +1,5 @@
 ﻿using FlickrInfo;
+using ForecastIOData;
 using LocationHelper;
 using Serializer;
 using System;
@@ -130,7 +131,9 @@ namespace Weathr81
             }
             if (!downloadedForecast.fail)
             {
-                updateWeatherInfo(downloadedForecast);
+                bool isSI = unitsAreSI();
+                updateWeatherInfo(downloadedForecast, isSI);
+                updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
                 setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
                 setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
                 setMaps(geo.position);
@@ -139,6 +142,11 @@ namespace Weathr81
             {
                 displayError(downloadedForecast.error);
             }
+        }
+
+        private bool unitsAreSI()
+        {
+            return true;
         }
         private void setFavoriteLocations()
         {
@@ -179,7 +187,7 @@ namespace Weathr81
             }
         }
 
-        //set up weather
+        //set up Wunderground
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
             GetWundergroundData weatherData = new GetWundergroundData(WUND_API, lat, lon);
@@ -192,21 +200,69 @@ namespace Weathr81
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
         }
-        private void updateWeatherInfo(WeatherInfo downloadedForecast)
+        private void updateWeatherInfo(WeatherInfo downloadedForecast, bool isSI)
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
-            now.DataContext = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir };
-            forecast.DataContext = createForecastList(downloadedForecast.forecastC);
+            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir };
+            ForecastTemplate forecastTemplate = createForecastList(downloadedForecast.forecastC);
+
+            if (!isSI)
+            {
+                nowTemplate.temp = downloadedForecast.tempF + "°";
+                nowTemplate.feelsLike = "Feels like: " + downloadedForecast.feelsLikeF + "°";
+                nowTemplate.tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareF + " TODAY";
+                nowTemplate.wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir;
+                forecastTemplate = createForecastList(downloadedForecast.forecastF);
+            }
+            now.DataContext = nowTemplate;
+            forecast.DataContext = forecastTemplate;
         }
-        private object createForecastList(ObservableCollection<ForecastC> forecast)
+        private ForecastTemplate createForecastList(ObservableCollection<WundForecastItem> forecast)
         {
             ObservableCollection<ForecastItem> forecastData = new ObservableCollection<ForecastItem>();
-            foreach (ForecastC day in forecast)
+            foreach (WundForecastItem day in forecast)
             {
                 forecastData.Add(new ForecastItem() { title = day.title, text = day.text, pop = day.pop });
             }
             return new ForecastTemplate() { forecast = new ForecastList() { forecastList = forecastData } };
         }
+
+        //set up Forecast.IO
+        async private void updateForecastIO(double lat, double lon, bool isSI)
+        {
+            GetForecastIOData getForecastIOData = new GetForecastIOData(lat, lon, isSI);
+            ForecastIOClass forecastIOClass = await getForecastIOData.getForecast();
+            if (!forecastIOClass.fail)
+            {
+                if (forecastIOClass.flags.hoursExists)
+                {
+                    updateHourList(forecastIOClass.hours.hours);
+                }
+            }
+        }
+        private void updateHourList(ObservableCollection<HourForecast> hours)
+        {
+            ForecastIOTemplate forecastIOTemplate = new ForecastIOTemplate();
+            forecastIOTemplate.forecastIO = new ForecastIOList();
+            forecastIOTemplate.forecastIO.hoursList = new ObservableCollection<ForecastIOItem>();
+            foreach (HourForecast hour in hours)
+            {
+                DateTime time = (unixTimeStampToDateTime(hour.time));
+                string timeString = time.ToString("h:mm tt")+ " on " + time.DayOfWeek;
+                forecastIOTemplate.forecastIO.hoursList.Add(new ForecastIOItem() { description = hour.summary, chanceOfPrecip = Convert.ToString(hour.precipProbability *100) + "% Chance of Precip", temp = Convert.ToString((int)hour.temperature) + "°", time = timeString });
+            }
+            hourly.DataContext = forecastIOTemplate;
+        }
+
+        private DateTime unixTimeStampToDateTime(double unixTimeStamp)
+        {
+            // Unix timestamp is seconds past epoch
+            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return dtDateTime;
+        }
+
+
 
         //set up maps
         private void setMaps(Geopoint pos)
@@ -341,7 +397,7 @@ namespace Weathr81
         {
             //sets the background of the hub to a given image uri
             BitmapImage img = new BitmapImage(bg);
-            Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .7 };
+            Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .5 };
             hub.Background = imgBrush;
         }
         private string getTags(string cond)

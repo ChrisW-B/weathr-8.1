@@ -85,6 +85,10 @@
       <Project>{ded75474-5a33-44b5-a526-c1cd6be15ae1}</Project>
       <Name>FlickrInfo</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ForecastIOData\ForecastIOData.csproj">
+      <Project>{706b5052-ece9-4cb8-a484-0377ff0cd3bd}</Project>
+      <Name>ForecastIOData</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LocationHelper\LocationHelper.csproj">
       <Project>{05d2c99b-e1ce-4290-aefa-c60d39b59d29}</Project>
       <Name>LocationHelper</Name>
@@ -111,6 +115,7 @@
     <Compile Include="Common\RelayCommand.cs" />
     <Compile Include="Common\SuspensionManager.cs" />
     <Compile Include="DataTemplates\alertsTemplate.cs" />
+    <Compile Include="DataTemplates\forecastIOTemplate.cs" />
     <Compile Include="DataTemplates\forecastTemplate.cs" />
     <Compile Include="DataTemplates\mapsTemplate.cs" />
     <Compile Include="DataTemplates\nowTemplate.cs" />
@@ -118,10 +123,16 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="OtherPages\AboutPage.xaml.cs">
+      <DependentUpon>AboutPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="OtherPages\AddLocation.xaml.cs">
       <DependentUpon>AddLocation.xaml</DependentUpon>
     </Compile>
     <Compile Include="DataTemplates\searchItemTemplate.cs" />
+    <Compile Include="OtherPages\SettingsPivot.xaml.cs">
+      <DependentUpon>SettingsPivot.xaml</DependentUpon>
+    </Compile>
     <Compile Include="OtherPages\WeatherMap.xaml.cs">
       <DependentUpon>WeatherMap.xaml</DependentUpon>
     </Compile>
@@ -183,7 +194,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="OtherPages\AboutPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="OtherPages\AddLocation.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="OtherPages\SettingsPivot.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

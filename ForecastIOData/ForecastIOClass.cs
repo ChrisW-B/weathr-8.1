@@ -8,7 +8,7 @@ namespace ForecastIOData
         public Minutely mins { get; set; }
         public Hourly hours { get; set; }
         public Daily days { get; set; }
-        public ObservableCollection<Alert> Alerts { get; set; }
+        public ObservableCollection<ForecastIOAlert> Alerts { get; set; }
         public Flags flags { get; set; }
         public bool fail { get; set; }
         public string errorMsg { get; set; }
@@ -107,7 +107,7 @@ namespace ForecastIOData
         public string precipType { get; set; }
     }
 
-    public class Alert
+    public class ForecastIOAlert
     {
         public string title { get; set; }
         public double time { get; set; }

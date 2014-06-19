@@ -49,9 +49,9 @@ namespace WeatherData
 
         public string tomorrowLowF { get; set; }
 
-        public ObservableCollection<ForecastC> forecastC { get; set; }
+        public ObservableCollection<WundForecastItem> forecastC { get; set; }
 
-        public ObservableCollection<ForecastF> forecastF { get; set; }
+        public ObservableCollection<WundForecastItem> forecastF { get; set; }
 
         public int todayHighIntC { get; set; }
 
@@ -70,16 +70,7 @@ namespace WeatherData
         public string tomorrowShort { get; set; }
     }
 
-    public class ForecastC
-    {
-        public string title { get; set; }
-
-        public string text { get; set; }
-
-        public string pop { get; set; }
-    }
-
-    public class ForecastF
+    public class WundForecastItem
     {
         public string text { get; set; }
 
