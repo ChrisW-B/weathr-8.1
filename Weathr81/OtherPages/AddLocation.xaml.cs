@@ -1,28 +1,18 @@
-﻿using Weathr81.Common;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Graphics.Display;
-using Windows.UI.ViewManagement;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using System.Collections.ObjectModel;
-using System.Net.Http;
-using System.Xml.Linq;
+﻿using LocationHelper;
+using OtherPages;
 using Serializer;
-using LocationHelper;
-using System.Threading.Tasks;
-using Windows.Devices.Geolocation;
+using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using Weathr81.Common;
+using Windows.Devices.Geolocation;
+using Windows.Storage;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -109,6 +99,8 @@ namespace Weathr81.OtherPages
 
         #endregion
         #endregion
+
+        private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
@@ -168,13 +160,17 @@ namespace Weathr81.OtherPages
         {
             ListBox lb = sender as ListBox;
             SearchItemTemplate item = (lb.SelectedItem as SearchItemTemplate);
-            ObservableCollection<Location> locs = SerializerClass.get(LOC_STORE);
+            ObservableCollection<Location> locs = SerializerClass.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+            if (locs == null)
+            {
+                locs = new ObservableCollection<Location>();
+            }
             GeoTemplate coordinates = await getCoordinates(item.locName);
             if (!coordinates.fail)
             {
                 locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
             }
-            SerializerClass.save(locs, LOC_STORE);
+            SerializerClass.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
             Frame.GoBack();
         }
 
@@ -186,7 +182,7 @@ namespace Weathr81.OtherPages
             return readCoordinates(XDocument.Load(str));
         }
 
-       private GeoTemplate readCoordinates(XDocument doc)
+        private GeoTemplate readCoordinates(XDocument doc)
         {
             try
             {

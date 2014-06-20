@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Weathr81.OtherPages
+namespace OtherPages
 {
    public class SearchItemTemplate
     {

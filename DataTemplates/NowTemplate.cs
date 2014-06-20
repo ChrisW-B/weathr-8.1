@@ -1,5 +1,5 @@
 ﻿
-namespace Weathr81.DataTemplates
+namespace DataTemplates
 {
     public class NowTemplate
     {

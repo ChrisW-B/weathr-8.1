@@ -1,11 +1,5 @@
-﻿using LocationHelper;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Windows.Storage;
 
@@ -13,43 +7,41 @@ namespace Serializer
 {
     public class SerializerClass
     {
-        private static ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
-
-        public static void save(ObservableCollection<Location> locations, string value)
+        public static void save(Object locations, Type type, string value, ApplicationDataContainer store)
         {
-            String serialized = serialize(locations);
+            String serialized = serialize(locations, type);
             if (serialized.Length > 0)
             {
                 store.Values[value] = serialized;
             }
         }
-        public static ObservableCollection<Location> get(string value)
+        public static Object get(string value, Type type, ApplicationDataContainer store)
         {
             string locAsXml = (string)store.Values[value];
             try
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(ObservableCollection<Location>));
-                ObservableCollection<Location> locs = new ObservableCollection<Location>();
+                XmlSerializer serializer = new XmlSerializer(type);
+                Object val = new Object();
                 using (var reader = new StringReader(locAsXml))
                 {
-                    locs = (ObservableCollection<Location>)serializer.Deserialize(reader);
+                    val = serializer.Deserialize(reader);
                 }
-                return locs;
+                return val;
             }
             catch
             {
-                ObservableCollection<Location> emptyList = new ObservableCollection<Location>();
-                return emptyList;
+                Object empty = new Object();
+                return empty;
             }
 
         }
-        private static string serialize(ObservableCollection<Location> locations)
+        private static string serialize(Object obj, Type type)
         {
             try
             {
-                XmlSerializer xmlIzer = new XmlSerializer(typeof(ObservableCollection<Location>));
+                XmlSerializer xmlIzer = new XmlSerializer(type);
                 var writer = new StringWriter();
-                xmlIzer.Serialize(writer, locations);
+                xmlIzer.Serialize(writer, obj);
                 return writer.ToString();
             }
 

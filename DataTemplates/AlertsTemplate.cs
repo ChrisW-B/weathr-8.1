@@ -1,6 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 
-namespace Weathr81.DataTemplates
+namespace DataTemplates
 {
     public class AlertsTemplate
     {

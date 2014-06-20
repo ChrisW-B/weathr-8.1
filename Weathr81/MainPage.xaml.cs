@@ -1,4 +1,5 @@
-﻿using FlickrInfo;
+﻿using DataTemplates;
+using FlickrInfo;
 using ForecastIOData;
 using LocationHelper;
 using Serializer;
@@ -8,7 +9,6 @@ using System.Threading.Tasks;
 using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
-using Weathr81.DataTemplates;
 using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
@@ -59,6 +59,10 @@ namespace Weathr81
         private const string WUND_API = "fb1dd3f4321d048d";
         private const string FLICKR_API = "2781c025a4064160fc77a52739b552ff";
         private const string LOC_STORE = "locList";
+        private const string NOW_SAVE = "oldNow";
+        private const string HOURLY_SAVE = "hourSave";
+        private const string FORECAST_SAVE = "forecastSave";
+        private const string ALERT_SAVE = "alertSave";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition GetGeoposition;
@@ -73,11 +77,39 @@ namespace Weathr81
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
 
-            
+
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedFrom(e);
+            saveData();
+        }
+
+        private void saveData()
+        {
+            //saves all the data contexts into a super context that might be used later
+            AlertsTemplate alertsData = alerts.DataContext as AlertsTemplate;
+            ForecastIOTemplate forecastIOData = hourly.DataContext as ForecastIOTemplate;
+            NowTemplate nowData = now.DataContext as NowTemplate;
+            ForecastTemplate forecastData = forecast.DataContext as ForecastTemplate;
+            DataSaveClass save = new DataSaveClass();
+            if (alertsData != null)
+            {
+                SerializerClass.save(alertsData, typeof(AlertsTemplate), ALERT_SAVE, localStore);
+            }
+            if (forecastIOData != null)
+            {
+               // SerializerClass.save(forecastIOData, typeof(ForecastIOTemplate), HOURLY_SAVE, localStore);
+            }
+            if (nowData != null)
+            {
+                SerializerClass.save(nowData, typeof(NowTemplate), NOW_SAVE, localStore);
+            }
+            if (forecastData != null)
+            {
+                SerializerClass.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
+            }
+            
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -102,14 +134,51 @@ namespace Weathr81
             //central point of app, runs other methods
             setFavoriteLocations();
             GetGeoposition = new GetGeoposition(currentLocation);
-            if (!(await GetGeoposition.getLocation()).fail) //gets geoLocation too
+            if (!restoreData())
             {
-                updateUI();
+                if (!(await GetGeoposition.getLocation()).fail) //gets geoLocation too
+                {
+                    updateUI();
+                }
+                else
+                {
+                    displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                }
             }
-            else
+        }
+
+        private bool restoreData()
+        {
+            bool nowDone = false;
+            bool forecastDone = false;
+            bool alertDone = false;
+            if (localStore.Values.ContainsKey(NOW_SAVE))
             {
-                displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                NowTemplate nowTemplate = SerializerClass.get(NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
+                if(nowTemplate!=null){
+                    now.DataContext = nowTemplate;
+                    nowDone = true;
+                }
             }
+            if (localStore.Values.ContainsKey(FORECAST_SAVE))
+            {
+                ForecastTemplate forecastTemplate = SerializerClass.get(FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
+                if (forecastTemplate != null)
+                {
+                    forecast.DataContext = forecastTemplate;
+                    forecastDone = true;
+                }
+            }
+            if (localStore.Values.ContainsKey(ALERT_SAVE))
+            {
+                AlertsTemplate alertsTemplate = SerializerClass.get(ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
+                if (alertsTemplate != null)
+                {
+                    alerts.DataContext = alertsTemplate;
+                    alertDone = true;
+                }
+            }
+            return nowDone && forecastDone && alertDone;
         }
         private void displayError(string errorMsg)
         {
@@ -155,7 +224,7 @@ namespace Weathr81
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
             if (store.Values.ContainsKey(LOC_STORE))
             {
-                ObservableCollection<Location> list = SerializerClass.get(LOC_STORE);
+                ObservableCollection<Location> list = (SerializerClass.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
                 if (list != null)
                 {
                     locTemplate.locations.locationList = list;
@@ -172,7 +241,7 @@ namespace Weathr81
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
                 locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, Lat = 0, Lon = 0 });
-                SerializerClass.save(locTemplate.locations.locationList, LOC_STORE);
+                SerializerClass.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
 
             }
             locList.DataContext = locTemplate;
@@ -409,7 +478,7 @@ namespace Weathr81
         {
             //sets the background of the hub to a given image uri
             BitmapImage img = new BitmapImage(bg);
-            Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .5 };
+            Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .7 };
             hub.Background = imgBrush;
         }
         private string getTags(string cond)

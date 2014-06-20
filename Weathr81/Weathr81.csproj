@@ -81,6 +81,10 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <ProjectReference Include="..\DataTemplates\DataTemplates.csproj">
+      <Project>{79231e23-c5bc-4ce6-8f4c-f7a3bab80cc9}</Project>
+      <Name>DataTemplates</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FlickrInfo\FlickrInfo.csproj">
       <Project>{ded75474-5a33-44b5-a526-c1cd6be15ae1}</Project>
       <Name>FlickrInfo</Name>
@@ -114,11 +118,6 @@
     <Compile Include="Common\ObservableDictionary.cs" />
     <Compile Include="Common\RelayCommand.cs" />
     <Compile Include="Common\SuspensionManager.cs" />
-    <Compile Include="DataTemplates\alertsTemplate.cs" />
-    <Compile Include="DataTemplates\forecastIOTemplate.cs" />
-    <Compile Include="DataTemplates\forecastTemplate.cs" />
-    <Compile Include="DataTemplates\mapsTemplate.cs" />
-    <Compile Include="DataTemplates\nowTemplate.cs" />
     <Compile Include="HelperClasses\MapLaunchClass.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -129,7 +128,6 @@
     <Compile Include="OtherPages\AddLocation.xaml.cs">
       <DependentUpon>AddLocation.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DataTemplates\searchItemTemplate.cs" />
     <Compile Include="OtherPages\SettingsPivot.xaml.cs">
       <DependentUpon>SettingsPivot.xaml</DependentUpon>
     </Compile>

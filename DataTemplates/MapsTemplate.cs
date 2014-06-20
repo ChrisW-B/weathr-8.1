@@ -1,7 +1,7 @@
 ﻿using System;
 using Windows.Devices.Geolocation;
 
-namespace Weathr81.DataTemplates
+namespace DataTemplates
 {
     public class MapsTemplate
     {
