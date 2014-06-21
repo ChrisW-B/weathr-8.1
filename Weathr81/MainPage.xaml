@@ -150,7 +150,7 @@
         </HubSection>
     </Hub>
     <Page.BottomAppBar>
-        <CommandBar Opacity="0.75">
+        <CommandBar Opacity="0.85">
             <CommandBar.PrimaryCommands>
                 <AppBarButton Label="add place" x:Name="addLoc" Click="addLoc_Click" Icon="Add"/>
                 <AppBarButton Label="refresh" x:Name="refresh" Click="refresh_Click">

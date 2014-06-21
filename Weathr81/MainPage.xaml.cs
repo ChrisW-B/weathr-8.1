@@ -1,4 +1,5 @@
-﻿using DataTemplates;
+﻿using BackgroundTask;
+using DataTemplates;
 using FlickrInfo;
 using ForecastIOData;
 using LocationHelper;
@@ -67,11 +68,15 @@ namespace Weathr81
         private const string LAST_SAVE = "lastSaveTime";
         private const string UNITS_CHANGED = "unitsChanged";
         private const string UNITS_ARE_SI = "unitsAreSI";
+        private const string BG_REG = "bgRegistered";
+        private const string ALLOW_BG = "allowBackground";
+        private const string UPDATE_FREQ = "updateFreq";
+        private const string TASK_NAME = "Weathr Tile Updater";
+        
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition GetGeoposition;
         private Location currentLocation;
-        private string flickrTags;
         private StatusBar statusBar;
         #endregion
 
@@ -81,7 +86,71 @@ namespace Weathr81
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
+            registerBackgroundTask();
         }
+
+        //BG task registration
+        private void registerBackgroundTask()
+        {
+            //Runs a single instance of the backgrouond task to get the most up to date
+            //tile after the app is launched
+            UpdateTiles.RunFromApp();
+            //Registers app to run for the first time on a new phone
+            if (!localStore.Values.ContainsKey(BG_REG) || !rateIsUnchanged())
+            {
+                localStore.Values[BG_REG] = true;
+                if (store.Values.ContainsKey(ALLOW_BG))
+                {
+                    if ((bool)store.Values[ALLOW_BG])
+                    {
+                        if (store.Values.ContainsKey(UPDATE_FREQ))
+                        {
+                            var rate = Convert.ToUInt32(store.Values[UPDATE_FREQ]);
+                            UpdateTiles.Register(rate);
+                        }
+                        else
+                        {
+                            store.Values[UPDATE_FREQ] = 120;
+                            var rate = Convert.ToUInt32(120);
+                            UpdateTiles.Register(rate);
+                        }
+                    }
+                    else
+                    {
+                        UpdateTiles.Unregister(TASK_NAME);
+                    }
+                }
+                else
+                {
+                    store.Values[ALLOW_BG] = true;
+                    UpdateTiles.Register(Convert.ToUInt32(120));
+                }
+            }
+        }
+        private bool rateIsUnchanged()
+        {
+            //checks whether the update rate is unchanged on other devices,
+            //so the rate can then be synced accross devices
+            if (store.Values.ContainsKey(UPDATE_FREQ))
+            {
+                if (localStore.Values.ContainsKey(UPDATE_FREQ))
+                {
+                    uint roamVal = Convert.ToUInt32(store.Values[UPDATE_FREQ]);
+                    uint locVal = Convert.ToUInt32(localStore.Values[UPDATE_FREQ]);
+                    bool isUnchanged = roamVal == locVal;
+                    if (isUnchanged)
+                    {
+                        return isUnchanged;
+                    }
+                    localStore.Values[UPDATE_FREQ] = store.Values[UPDATE_FREQ];
+                    return isUnchanged;
+                }
+                localStore.Values[UPDATE_FREQ] = store.Values[UPDATE_FREQ];
+                return false;
+            }
+            return false;
+        }
+
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedFrom(e);
@@ -312,7 +381,7 @@ namespace Weathr81
             {
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
-                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, Lat = 0, Lon = 0 });
+                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", LocUrl="currLoc", IsDefault = true, Lat = 0, Lon = 0 });
                 Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
 
             }
@@ -536,7 +605,6 @@ namespace Weathr81
             {
                 setHubBG(bg);
             }
-            statusBar.HideAsync();
         }
         async private Task<Uri> GetHubBGUri(string cond, bool useGroup, bool useLoc, double lat, double lon, int timesRun)
         {
@@ -546,13 +614,12 @@ namespace Weathr81
                 return null;
             }
             GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
-            flickrTags = getTags(cond);
-            FlickrData imgList = await f.getImages(flickrTags, useGroup, useLoc, lat, lon);
+            FlickrData imgList = await f.getImages(getTags(cond), useGroup, useLoc, lat, lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
                 Random r = new Random();
                 int num = r.Next(imgList.images.Count);
-                return f.getImageUri(imgList.images[num]);
+                return f.getImageUri(imgList.images[num], GetFlickrInfo.ImageSize.large);
             }
             else
             {
@@ -565,6 +632,7 @@ namespace Weathr81
             BitmapImage img = new BitmapImage(bg);
             Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .7 };
             hub.Background = imgBrush;
+            statusBar.HideAsync();
         }
         private string getTags(string cond)
         {
@@ -647,8 +715,7 @@ namespace Weathr81
         }
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
-            Uri logo = new Uri("ms-appx:///Assets/Logo.png");
-
+            Uri logo = new Uri("ms-appx:///Assets/WeathrSmallLogo.png");
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
             secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
