@@ -15,6 +15,8 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using SerializerClass;
+using Windows.Storage;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -96,9 +98,32 @@ namespace Weathr81.OtherPages
         /// </summary>
         /// <param name="e">Provides data for navigation methods and event
         /// handlers that cannot cancel the navigation request.</param>
+        
+        private const string UNITS_CHANGED = "unitsChanged";
+        private const string UNITS_ARE_SI = "unitsAreSI";
+        private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
+        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+
+        bool doneSetting = false;
+
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
+            updateSettings();
+            doneSetting = true;
+        }
+
+        private void updateSettings()
+        {
+            if (store.Values.ContainsKey(UNITS_ARE_SI))
+            {
+                units.IsOn = (bool)Serializer.get(UNITS_ARE_SI, typeof(bool), store);
+            }
+            else
+            {
+                Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
+                units.IsOn = true;
+            }
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -107,5 +132,25 @@ namespace Weathr81.OtherPages
         }
 
         #endregion
+
+        private void Units_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                ToggleSwitch toggle = sender as ToggleSwitch;
+                Serializer.save(true, typeof(bool), UNITS_CHANGED, localStore);
+                if (toggle != null)
+                {
+                    if (toggle.IsOn)
+                    {
+                        Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
+                    }
+                    else
+                    {
+                        Serializer.save(false, typeof(bool), UNITS_ARE_SI, store);
+                    }
+                }
+            }
+        }
     }
 }

@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeatherDotGovAlerts", "Weat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LocationHelper", "LocationHelper\LocationHelper.csproj", "{05D2C99B-E1CE-4290-AEFA-C60D39B59D29}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Serializer", "Serializer\Serializer.csproj", "{56229CF6-90A9-4B6F-B379-016BD40D7969}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SerializerClass", "Serializer\SerializerClass.csproj", "{56229CF6-90A9-4B6F-B379-016BD40D7969}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ForecastIOData", "ForecastIOData\ForecastIOData.csproj", "{706B5052-ECE9-4CB8-A484-0377FF0CD3BD}"
 EndProject

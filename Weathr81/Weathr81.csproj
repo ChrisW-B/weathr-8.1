@@ -97,9 +97,9 @@
       <Project>{05d2c99b-e1ce-4290-aefa-c60d39b59d29}</Project>
       <Name>LocationHelper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Serializer\Serializer.csproj">
+    <ProjectReference Include="..\Serializer\SerializerClass.csproj">
       <Project>{56229cf6-90a9-4b6f-b379-016bd40d7969}</Project>
-      <Name>Serializer</Name>
+      <Name>SerializerClass</Name>
     </ProjectReference>
     <ProjectReference Include="..\WeatherDotGovAlerts\WeatherDotGovAlerts.csproj">
       <Project>{99d27bbb-8539-42ac-a082-a9e21d566a57}</Project>

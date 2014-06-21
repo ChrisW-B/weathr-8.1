@@ -1,6 +1,6 @@
 ﻿using LocationHelper;
 using OtherPages;
-using Serializer;
+using SerializerClass;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -160,7 +160,7 @@ namespace Weathr81.OtherPages
         {
             ListBox lb = sender as ListBox;
             SearchItemTemplate item = (lb.SelectedItem as SearchItemTemplate);
-            ObservableCollection<Location> locs = SerializerClass.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+            ObservableCollection<Location> locs = Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
             if (locs == null)
             {
                 locs = new ObservableCollection<Location>();
@@ -170,7 +170,7 @@ namespace Weathr81.OtherPages
             {
                 locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
             }
-            SerializerClass.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
+            Serializer.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
             Frame.GoBack();
         }
 

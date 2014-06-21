@@ -2,7 +2,7 @@
 using FlickrInfo;
 using ForecastIOData;
 using LocationHelper;
-using Serializer;
+using SerializerClass;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -66,6 +66,7 @@ namespace Weathr81
         private const string LAST_LOC = "lastLoc";
         private const string LAST_SAVE = "lastSaveTime";
         private const string UNITS_CHANGED = "unitsChanged";
+        private const string UNITS_ARE_SI = "unitsAreSI";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition GetGeoposition;
@@ -97,7 +98,7 @@ namespace Weathr81
             DataSaveClass save = new DataSaveClass();
             if (alertsData != null)
             {
-                SerializerClass.save(alertsData, typeof(AlertsTemplate), ALERT_SAVE, localStore);
+                Serializer.save(alertsData, typeof(AlertsTemplate), ALERT_SAVE, localStore);
             }
             if (forecastIOData != null)
             {
@@ -106,18 +107,18 @@ namespace Weathr81
                 {
                     shortForecast.Add(forecastIOData.forecastIO.hoursList[i]);
                 }
-                SerializerClass.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), HOURLY_SAVE, localStore);
+                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), HOURLY_SAVE, localStore);
             }
             if (nowData != null)
             {
-                SerializerClass.save(nowData, typeof(NowTemplate), NOW_SAVE, localStore);
+                Serializer.save(nowData, typeof(NowTemplate), NOW_SAVE, localStore);
             }
             if (forecastData != null)
             {
-                SerializerClass.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
+                Serializer.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
             }
-            SerializerClass.save(currentLocation, typeof(Location), LAST_LOC, localStore);
-            SerializerClass.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
+            Serializer.save(currentLocation, typeof(Location), LAST_LOC, localStore);
+            Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -196,6 +197,7 @@ namespace Weathr81
             }
             else
             {
+                setBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
                 displayError(downloadedForecast.error);
             }
         }
@@ -212,7 +214,7 @@ namespace Weathr81
             bool sameUnits = true;
             if (localStore.Values.ContainsKey(NOW_SAVE))
             {
-                NowTemplate nowTemplate = SerializerClass.get(NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
+                NowTemplate nowTemplate = Serializer.get(NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
                 if (nowTemplate != null)
                 {
                     now.DataContext = nowTemplate;
@@ -221,7 +223,7 @@ namespace Weathr81
             }
             if (localStore.Values.ContainsKey(FORECAST_SAVE))
             {
-                ForecastTemplate forecastTemplate = SerializerClass.get(FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
+                ForecastTemplate forecastTemplate = Serializer.get(FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
                 if (forecastTemplate != null)
                 {
                     forecast.DataContext = forecastTemplate;
@@ -230,7 +232,7 @@ namespace Weathr81
             }
             if (localStore.Values.ContainsKey(ALERT_SAVE))
             {
-                AlertsTemplate alertsTemplate = SerializerClass.get(ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
+                AlertsTemplate alertsTemplate = Serializer.get(ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
                 if (alertsTemplate != null)
                 {
                     alerts.DataContext = alertsTemplate;
@@ -239,7 +241,7 @@ namespace Weathr81
             }
             if (localStore.Values.ContainsKey(HOURLY_SAVE))
             {
-                ObservableCollection<ForecastIOItem> forecastList = SerializerClass.get(HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
+                ObservableCollection<ForecastIOItem> forecastList = Serializer.get(HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
                 if (forecastList != null)
                 {
                     ForecastIOTemplate forecastTemplate = new ForecastIOTemplate() { forecastIO = new ForecastIOList() { hoursList = forecastList } };
@@ -249,7 +251,7 @@ namespace Weathr81
             }
             if (localStore.Values.ContainsKey(LAST_LOC))
             {
-                Location lastLoc = SerializerClass.get(LAST_LOC, typeof(Location), localStore) as Location;
+                Location lastLoc = Serializer.get(LAST_LOC, typeof(Location), localStore) as Location;
                 if (lastLoc != null)
                 {
                     sameLoc = ((lastLoc.IsCurrent && currentLocation.IsCurrent) || (lastLoc.LocUrl == currentLocation.LocUrl));
@@ -263,7 +265,7 @@ namespace Weathr81
             {
                 try
                 {
-                    DateTime lastRun = (DateTime)SerializerClass.get(LAST_SAVE, typeof(DateTime), localStore);
+                    DateTime lastRun = (DateTime)Serializer.get(LAST_SAVE, typeof(DateTime), localStore);
                     TimeSpan elapsed = DateTime.Now - lastRun;
                     withinThirtyMins = elapsed.TotalMinutes < 30;
                 }
@@ -274,13 +276,25 @@ namespace Weathr81
             }
             if (localStore.Values.ContainsKey(UNITS_CHANGED))
             {
-                sameUnits = !(bool)(SerializerClass.get(UNITS_CHANGED, typeof(bool), store));
+                sameUnits = !(bool)(Serializer.get(UNITS_CHANGED, typeof(bool), localStore));
+                if (!sameUnits)
+                {
+                    Serializer.save(false, typeof(bool), UNITS_CHANGED, localStore);
+                }
             }
-            return nowDone && forecastDone && alertDone && hourlyDone && withinThirtyMins && sameLoc &&sameUnits;
+            return nowDone && forecastDone && alertDone && hourlyDone && withinThirtyMins && sameLoc && sameUnits;
         }
         private bool unitsAreSI()
         {
-            return true;
+            if (store.Values.ContainsKey(UNITS_ARE_SI))
+            {
+                return (bool)Serializer.get(UNITS_ARE_SI, typeof(bool), store);
+            }
+            else
+            {
+                Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
+                return true;
+            }
         }
 
         private void setFavoriteLocations()
@@ -288,7 +302,7 @@ namespace Weathr81
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
             if (store.Values.ContainsKey(LOC_STORE))
             {
-                ObservableCollection<Location> list = (SerializerClass.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                ObservableCollection<Location> list = (Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
                 if (list != null)
                 {
                     locTemplate.locations.locationList = list;
@@ -305,7 +319,7 @@ namespace Weathr81
                 locTemplate.locations = new LocationList();
                 locTemplate.locations.locationList = new ObservableCollection<Location>();
                 locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", IsDefault = true, Lat = 0, Lon = 0 });
-                SerializerClass.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+                Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
 
             }
             locList.DataContext = locTemplate;
@@ -622,7 +636,7 @@ namespace Weathr81
         }
         private void settings_Click(object sender, RoutedEventArgs e)
         {
-
+            Frame.Navigate(typeof(SettingsPivot));
         }
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
@@ -640,11 +654,20 @@ namespace Weathr81
         async private void changePic_Click(object sender, RoutedEventArgs e)
         {
             GeoTemplate loc = await GetGeoposition.getLocation();
-            setBG(flickrTags, loc.position.Position.Latitude, loc.position.Position.Longitude);
+            NowTemplate nowTemplate = (now.DataContext as NowTemplate);
+            if (nowTemplate != null)
+            {
+                setBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
+            }
+            else
+            {
+                setBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
+            }
+
         }
         private void about_Click(object sender, RoutedEventArgs e)
         {
-
+            Frame.Navigate(typeof(AboutPage));
         }
         private void addLoc_Click(object sender, RoutedEventArgs e)
         {

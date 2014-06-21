@@ -3,13 +3,13 @@ using System.IO;
 using System.Xml.Serialization;
 using Windows.Storage;
 
-namespace Serializer
+namespace SerializerClass
 {
-    public class SerializerClass
+    public class Serializer
     {
-        public static void save(Object locations, Type type, string value, ApplicationDataContainer store)
+        public static void save(Object obj, Type type, string value, ApplicationDataContainer store)
         {
-            String serialized = serialize(locations, type);
+            String serialized = serialize(obj, type);
             if (serialized.Length > 0)
             {
                 store.Values[value] = serialized;
