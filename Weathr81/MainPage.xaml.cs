@@ -63,6 +63,9 @@ namespace Weathr81
         private const string HOURLY_SAVE = "hourSave";
         private const string FORECAST_SAVE = "forecastSave";
         private const string ALERT_SAVE = "alertSave";
+        private const string LAST_LOC = "lastLoc";
+        private const string LAST_SAVE = "lastSaveTime";
+        private const string UNITS_CHANGED = "unitsChanged";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition GetGeoposition;
@@ -84,7 +87,6 @@ namespace Weathr81
             this.navigationHelper.OnNavigatedFrom(e);
             saveData();
         }
-
         private void saveData()
         {
             //saves all the data contexts into a super context that might be used later
@@ -99,7 +101,12 @@ namespace Weathr81
             }
             if (forecastIOData != null)
             {
-               // SerializerClass.save(forecastIOData, typeof(ForecastIOTemplate), HOURLY_SAVE, localStore);
+                ObservableCollection<ForecastIOItem> shortForecast = new ObservableCollection<ForecastIOItem>();
+                for (int i = 0; i < 13 && i < forecastIOData.forecastIO.hoursList.Count; i++)
+                {
+                    shortForecast.Add(forecastIOData.forecastIO.hoursList[i]);
+                }
+                SerializerClass.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), HOURLY_SAVE, localStore);
             }
             if (nowData != null)
             {
@@ -109,7 +116,8 @@ namespace Weathr81
             {
                 SerializerClass.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
             }
-            
+            SerializerClass.save(currentLocation, typeof(Location), LAST_LOC, localStore);
+            SerializerClass.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -145,41 +153,18 @@ namespace Weathr81
                     displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
                 }
             }
+            else
+            {
+                GeoTemplate geo = await GetGeoposition.getLocation();
+                setMaps(geo.position);
+                NowTemplate nowTemplate = (now.DataContext as NowTemplate);
+                if (nowTemplate != null)
+                {
+                    setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                }
+            }
         }
 
-        private bool restoreData()
-        {
-            bool nowDone = false;
-            bool forecastDone = false;
-            bool alertDone = false;
-            if (localStore.Values.ContainsKey(NOW_SAVE))
-            {
-                NowTemplate nowTemplate = SerializerClass.get(NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
-                if(nowTemplate!=null){
-                    now.DataContext = nowTemplate;
-                    nowDone = true;
-                }
-            }
-            if (localStore.Values.ContainsKey(FORECAST_SAVE))
-            {
-                ForecastTemplate forecastTemplate = SerializerClass.get(FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
-                if (forecastTemplate != null)
-                {
-                    forecast.DataContext = forecastTemplate;
-                    forecastDone = true;
-                }
-            }
-            if (localStore.Values.ContainsKey(ALERT_SAVE))
-            {
-                AlertsTemplate alertsTemplate = SerializerClass.get(ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
-                if (alertsTemplate != null)
-                {
-                    alerts.DataContext = alertsTemplate;
-                    alertDone = true;
-                }
-            }
-            return nowDone && forecastDone && alertDone;
-        }
         private void displayError(string errorMsg)
         {
             now.DataContext = new NowTemplate() { errorText = errorMsg };
@@ -205,20 +190,99 @@ namespace Weathr81
                 bool isSI = unitsAreSI();
                 updateWeatherInfo(downloadedForecast, isSI);
                 updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
-                setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
                 setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
                 setMaps(geo.position);
+                setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
             }
             else
             {
                 displayError(downloadedForecast.error);
             }
         }
-
+        private bool restoreData()
+        {
+            //attempts to restore everything, returns true if it can
+            //false if something goes wrong
+            bool nowDone = false;
+            bool forecastDone = false;
+            bool hourlyDone = false;
+            bool alertDone = false;
+            bool withinThirtyMins = false;
+            bool sameLoc = false;
+            bool sameUnits = true;
+            if (localStore.Values.ContainsKey(NOW_SAVE))
+            {
+                NowTemplate nowTemplate = SerializerClass.get(NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
+                if (nowTemplate != null)
+                {
+                    now.DataContext = nowTemplate;
+                    nowDone = true;
+                }
+            }
+            if (localStore.Values.ContainsKey(FORECAST_SAVE))
+            {
+                ForecastTemplate forecastTemplate = SerializerClass.get(FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
+                if (forecastTemplate != null)
+                {
+                    forecast.DataContext = forecastTemplate;
+                    forecastDone = true;
+                }
+            }
+            if (localStore.Values.ContainsKey(ALERT_SAVE))
+            {
+                AlertsTemplate alertsTemplate = SerializerClass.get(ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
+                if (alertsTemplate != null)
+                {
+                    alerts.DataContext = alertsTemplate;
+                    alertDone = true;
+                }
+            }
+            if (localStore.Values.ContainsKey(HOURLY_SAVE))
+            {
+                ObservableCollection<ForecastIOItem> forecastList = SerializerClass.get(HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
+                if (forecastList != null)
+                {
+                    ForecastIOTemplate forecastTemplate = new ForecastIOTemplate() { forecastIO = new ForecastIOList() { hoursList = forecastList } };
+                    hourly.DataContext = forecastTemplate;
+                    hourlyDone = true;
+                }
+            }
+            if (localStore.Values.ContainsKey(LAST_LOC))
+            {
+                Location lastLoc = SerializerClass.get(LAST_LOC, typeof(Location), localStore) as Location;
+                if (lastLoc != null)
+                {
+                    sameLoc = ((lastLoc.IsCurrent && currentLocation.IsCurrent) || (lastLoc.LocUrl == currentLocation.LocUrl));
+                    if (sameLoc)
+                    {
+                        hub.Header = lastLoc.LocName;
+                    }
+                }
+            }
+            if (localStore.Values.ContainsKey(LAST_SAVE))
+            {
+                try
+                {
+                    DateTime lastRun = (DateTime)SerializerClass.get(LAST_SAVE, typeof(DateTime), localStore);
+                    TimeSpan elapsed = DateTime.Now - lastRun;
+                    withinThirtyMins = elapsed.TotalMinutes < 30;
+                }
+                catch
+                {
+                    withinThirtyMins = false;
+                }
+            }
+            if (localStore.Values.ContainsKey(UNITS_CHANGED))
+            {
+                sameUnits = !(bool)(SerializerClass.get(UNITS_CHANGED, typeof(bool), store));
+            }
+            return nowDone && forecastDone && alertDone && hourlyDone && withinThirtyMins && sameLoc &&sameUnits;
+        }
         private bool unitsAreSI()
         {
             return true;
         }
+
         private void setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
