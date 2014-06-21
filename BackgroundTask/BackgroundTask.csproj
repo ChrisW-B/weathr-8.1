@@ -121,39 +121,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Icons\Large\Cloudy360.png" />
-    <Content Include="Icons\Large\Drizzle360.png" />
-    <Content Include="Icons\Large\Flurry360.png" />
-    <Content Include="Icons\Large\Fog360.png" />
-    <Content Include="Icons\Large\FreezingRain360.png" />
-    <Content Include="Icons\Large\PartlyCloudy360.png" />
-    <Content Include="Icons\Large\Rain360.png" />
-    <Content Include="Icons\Large\Sleet360.png" />
-    <Content Include="Icons\Large\Snow360.png" />
-    <Content Include="Icons\Large\SunCloudTrans360.png" />
-    <Content Include="Icons\Large\Thunder360.png" />
-    <Content Include="Icons\Large\Windy360.png" />
-    <Content Include="Icons\Medium\Cloudy170.png" />
-    <Content Include="Icons\Medium\Drizzle170.png" />
-    <Content Include="Icons\Medium\Flurry170.png" />
-    <Content Include="Icons\Medium\Fog170.png" />
-    <Content Include="Icons\Medium\FreezingRain170.png" />
-    <Content Include="Icons\Medium\PartlyCloudy170.png" />
-    <Content Include="Icons\Medium\Rain170.png" />
-    <Content Include="Icons\Medium\Sleet170.png" />
-    <Content Include="Icons\Medium\Snow170.png" />
-    <Content Include="Icons\Medium\SunCloudTrans170.png" />
-    <Content Include="Icons\Medium\Thunder170.png" />
-    <Content Include="Icons\Medium\Windy170.png" />
-    <Content Include="Icons\SunCloud106.png" />
-    <Content Include="Icons\SunCloud120.png" />
-    <Content Include="Icons\SunCloud58.png" />
-    <Content Include="Icons\SunCloudTrans106.png" />
-    <Content Include="Icons\SunCloudTrans120.png" />
-    <Content Include="Icons\SunCloudTrans58.scale-240.png" />
-    <Content Include="Icons\SunCloudWide.png" />
-  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>
   </PropertyGroup>
