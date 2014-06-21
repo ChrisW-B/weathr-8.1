@@ -72,6 +72,7 @@ namespace Weathr81
         private GetGeoposition GetGeoposition;
         private Location currentLocation;
         private string flickrTags;
+        private StatusBar statusBar;
         #endregion
 
         public MainPage()
@@ -80,45 +81,11 @@ namespace Weathr81
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
-
-
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedFrom(e);
             saveData();
-        }
-        private void saveData()
-        {
-            //saves all the data contexts into a super context that might be used later
-            AlertsTemplate alertsData = alerts.DataContext as AlertsTemplate;
-            ForecastIOTemplate forecastIOData = hourly.DataContext as ForecastIOTemplate;
-            NowTemplate nowData = now.DataContext as NowTemplate;
-            ForecastTemplate forecastData = forecast.DataContext as ForecastTemplate;
-            DataSaveClass save = new DataSaveClass();
-            if (alertsData != null)
-            {
-                Serializer.save(alertsData, typeof(AlertsTemplate), ALERT_SAVE, localStore);
-            }
-            if (forecastIOData != null)
-            {
-                ObservableCollection<ForecastIOItem> shortForecast = new ObservableCollection<ForecastIOItem>();
-                for (int i = 0; i < 13 && i < forecastIOData.forecastIO.hoursList.Count; i++)
-                {
-                    shortForecast.Add(forecastIOData.forecastIO.hoursList[i]);
-                }
-                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), HOURLY_SAVE, localStore);
-            }
-            if (nowData != null)
-            {
-                Serializer.save(nowData, typeof(NowTemplate), NOW_SAVE, localStore);
-            }
-            if (forecastData != null)
-            {
-                Serializer.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
-            }
-            Serializer.save(currentLocation, typeof(Location), LAST_LOC, localStore);
-            Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -127,21 +94,18 @@ namespace Weathr81
             {
                 this.currentLocation = (e.Parameter as Location);
             }
-            hideStatusBar();
+            statusBar = StatusBar.GetForCurrentView();
             runApp();
         }
 
-        //starting the app up
-        private void hideStatusBar()
-        {
-            //hides the status bar for app
-            StatusBar s = Windows.UI.ViewManagement.StatusBar.GetForCurrentView();
-            s.HideAsync();
-        }
         async private void runApp()
         {
             //central point of app, runs other methods
+            statusBar.BackgroundColor = Colors.Black;
+            statusBar.BackgroundOpacity = .25;
+            statusBar.ProgressIndicator.ShowAsync();
             setFavoriteLocations();
+            statusBar.ProgressIndicator.Text = "Getting your location...";
             GetGeoposition = new GetGeoposition(currentLocation);
             if (!restoreData())
             {
@@ -165,7 +129,6 @@ namespace Weathr81
                 }
             }
         }
-
         private void displayError(string errorMsg)
         {
             now.DataContext = new NowTemplate() { errorText = errorMsg };
@@ -296,7 +259,38 @@ namespace Weathr81
                 return true;
             }
         }
-
+        private void saveData()
+        {
+            //saves all the data contexts into a super context that might be used later
+            AlertsTemplate alertsData = alerts.DataContext as AlertsTemplate;
+            ForecastIOTemplate forecastIOData = hourly.DataContext as ForecastIOTemplate;
+            NowTemplate nowData = now.DataContext as NowTemplate;
+            ForecastTemplate forecastData = forecast.DataContext as ForecastTemplate;
+            DataSaveClass save = new DataSaveClass();
+            if (alertsData != null)
+            {
+                Serializer.save(alertsData, typeof(AlertsTemplate), ALERT_SAVE, localStore);
+            }
+            if (forecastIOData != null)
+            {
+                ObservableCollection<ForecastIOItem> shortForecast = new ObservableCollection<ForecastIOItem>();
+                for (int i = 0; i < 13 && i < forecastIOData.forecastIO.hoursList.Count; i++)
+                {
+                    shortForecast.Add(forecastIOData.forecastIO.hoursList[i]);
+                }
+                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), HOURLY_SAVE, localStore);
+            }
+            if (nowData != null)
+            {
+                Serializer.save(nowData, typeof(NowTemplate), NOW_SAVE, localStore);
+            }
+            if (forecastData != null)
+            {
+                Serializer.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
+            }
+            Serializer.save(currentLocation, typeof(Location), LAST_LOC, localStore);
+            Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
+        }
         private void setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
@@ -339,12 +333,16 @@ namespace Weathr81
         //set up Wunderground
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
+            statusBar.ShowAsync();
+            statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(WUND_API, lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
+            statusBar.HideAsync();
             return downloadedForecast;
         }
         async private Task<WeatherInfo> setWeather(string wUrl)
         {
+            statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(WUND_API, wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
@@ -379,6 +377,8 @@ namespace Weathr81
         //set up Forecast.IO
         async private void updateForecastIO(double lat, double lon, bool isSI)
         {
+            statusBar.ShowAsync();
+            statusBar.ProgressIndicator.Text = "Getting your forecast...";
             GetForecastIOData getForecastIOData = new GetForecastIOData(lat, lon, isSI);
             ForecastIOClass forecastIOClass = await getForecastIOData.getForecast();
             if (!forecastIOClass.fail)
@@ -392,6 +392,7 @@ namespace Weathr81
                     tryDisplayNextHour(forecastIOClass.mins.summary);
                 }
             }
+            statusBar.HideAsync();
         }
         private void tryDisplayNextHour(string minSum)
         {
@@ -497,9 +498,12 @@ namespace Weathr81
         //set up alerts
         async private void setAlerts(double lat, double lon)
         {
+            statusBar.ShowAsync();
+            statusBar.ProgressIndicator.Text = "Getting alerts...";
             GetAlerts a = new GetAlerts(lat, lon);
             AlertData d = await a.getAlerts();
             alerts.DataContext = createAlertsList(d.alerts);
+            statusBar.HideAsync();
         }
         private object createAlertsList(ObservableCollection<Alert> alerts)
         {
@@ -525,11 +529,14 @@ namespace Weathr81
         //setting a background
         async private void setBG(string conditions, double lat, double lon)
         {
+            statusBar.ShowAsync();
+            statusBar.ProgressIndicator.Text = "Getting your background...";
             Uri bg = await GetHubBGUri(conditions, true, true, lat, lon, 0);
             if (bg != null)
             {
                 setHubBG(bg);
             }
+            statusBar.HideAsync();
         }
         async private Task<Uri> GetHubBGUri(string cond, bool useGroup, bool useLoc, double lat, double lon, int timesRun)
         {
