@@ -17,6 +17,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using SerializerClass;
 using Windows.Storage;
+using BackgroundTask;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -98,12 +99,11 @@ namespace Weathr81.OtherPages
         /// </summary>
         /// <param name="e">Provides data for navigation methods and event
         /// handlers that cannot cancel the navigation request.</param>
-        
+
         private const string UNITS_CHANGED = "unitsChanged";
         private const string UNITS_ARE_SI = "unitsAreSI";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
-
         bool doneSetting = false;
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -124,7 +124,39 @@ namespace Weathr81.OtherPages
                 Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
                 units.IsOn = true;
             }
+            if (store.Values.ContainsKey("allowBackground"))
+            {
+                bool allowed = (bool)store.Values["allowBackground"];
+                enableBackground.IsChecked = allowed;
+                if (allowed)
+                {
+                    backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                }
+                else
+                {
+                    backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                store.Values["allowBackground"] = true;
+                enableBackground.IsChecked = true;
+                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
+            }
+            if (store.Values.ContainsKey("updateFreq"))
+            {
+                updateFreq.Value = Convert.ToInt32(store.Values["updateFreq"]);
+                currentRate.Text = printUpdateRate(updateFreq.Value);
+            }
+            else
+            {
+                updateFreq.Value = 120;
+                registerRecurringBG();
+                currentRate.Text = printUpdateRate(updateFreq.Value);
+            }
         }
+
+
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -151,6 +183,102 @@ namespace Weathr81.OtherPages
                     }
                 }
             }
+        }
+
+        private string printUpdateRate(double p)
+        {
+            if (p < 60)
+            {
+                return "Update every " + p + " minutes";
+            }
+            else
+            {
+                double hours = (int)(p / 60);
+                double mins = p % 60;
+                string hrS;
+                string minS;
+
+                if (hours == 1)
+                {
+                    hrS = " hour ";
+                }
+                else
+                {
+                    hrS = " hours ";
+                }
+                if (mins == 1)
+                {
+                    minS = " minute";
+                }
+                else
+                {
+                    minS = " minutes";
+                }
+                return "Update every " + hours + hrS + " and " + mins + minS;
+            }
+        }
+        DispatcherTimer timer = new DispatcherTimer();
+        private void updateFreq_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                if (timer.IsEnabled)
+                {
+                    timer.Stop();
+                    timer = null;
+                    timer = new DispatcherTimer();
+                }
+                currentRate.Text = printUpdateRate((sender as Slider).Value);
+                timer.Interval = new TimeSpan(0, 0, 0, 0, 500);
+                timer.Start();
+                timer.Tick += timer_Tick;
+
+            }
+            return;
+        }
+
+        void timer_Tick(object sender, object e)
+        {
+            registerRecurringBG(Convert.ToUInt32(updateFreq.Value));
+            timer.Stop();
+            timer = null;
+            timer = new DispatcherTimer();
+        }
+
+
+        private void enableBackground_Checked(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                store.Values["allowBackground"] = true;
+                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                registerRecurringBG();
+
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        private void enableBackground_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                store.Values["allowBackground"] = false;
+                UpdateTiles.Unregister("UV level updater");
+                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+            }
+            else
+            {
+                return;
+            }
+        }
+        private void registerRecurringBG(uint mins = 120)
+        {
+            store.Values["updateFreq"] = mins;
+            localStore.Values["updateFreq"] = mins;
+            UpdateTiles.Register(mins);
         }
     }
 }

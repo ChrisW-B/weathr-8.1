@@ -221,6 +221,7 @@ namespace Weathr81
             if (!downloadedForecast.fail)
             {
                 bool isSI = unitsAreSI();
+                Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
                 updateWeatherInfo(downloadedForecast, isSI);
                 updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
                 setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
@@ -358,7 +359,6 @@ namespace Weathr81
                 Serializer.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
             }
             Serializer.save(currentLocation, typeof(Location), LAST_LOC, localStore);
-            Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
         }
         private void setFavoriteLocations()
         {
@@ -419,14 +419,14 @@ namespace Weathr81
         private void updateWeatherInfo(WeatherInfo downloadedForecast, bool isSI)
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
-            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir };
+            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE" + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir };
             ForecastTemplate forecastTemplate = createForecastList(downloadedForecast.forecastC);
 
             if (!isSI)
             {
                 nowTemplate.temp = downloadedForecast.tempF + "°";
                 nowTemplate.feelsLike = "Feels like: " + downloadedForecast.feelsLikeF + "°";
-                nowTemplate.tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareF + " TODAY";
+                nowTemplate.tempCompare = "TOMORROW WILL BE" + downloadedForecast.tempCompareF + " TODAY";
                 nowTemplate.wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir;
                 forecastTemplate = createForecastList(downloadedForecast.forecastF);
             }

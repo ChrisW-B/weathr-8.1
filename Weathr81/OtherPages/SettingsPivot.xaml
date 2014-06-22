@@ -23,14 +23,26 @@
 
         <!-- Title Panel -->
         <StackPanel Grid.Row="0" Margin="19,0,0,0">
-            <TextBlock Text="WEATHR" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
-            <TextBlock Text="settings" Margin="0,-6.5,0,26.5" Style="{ThemeResource HeaderTextBlockStyle}" CharacterSpacing="{ThemeResource PivotHeaderItemCharacterSpacing}"/>
+            <TextBlock Text="SETTINGS" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
         </StackPanel>
 
         <!--TODO: Content should be placed within the following grid-->
-        <Grid Grid.Row="1" x:Name="ContentRoot" Margin="19,9.5,19,0">
+        <Pivot Grid.Row="1" x:Name="ContentRoot">
+            <PivotItem Header="general">
+                <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
+            </PivotItem>
+            <PivotItem Header="background">
+                <StackPanel>
+                    <CheckBox Name="enableBackground" Checked="enableBackground_Checked" Unchecked="enableBackground_Unchecked" Content="Allow background tile updates"/>
+                    <TextBlock Text="Allows the live tile to update without the app being launched" Style="{ThemeResource ControlContextualInfoTextBlockStyle}" Margin="44,-20,0,0"/>
+                    <StackPanel Margin="0,20,0,20" x:Name="backgroundPanel">
+                        <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency"/>
+                        <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
+                        <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </PivotItem>
+        </Pivot>
 
-        </Grid>
-        <ToggleSwitch x:Name="units" Header="Units" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,129,0,0" Grid.RowSpan="2" Width="384" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
     </Grid>
 </Page>
