@@ -35,13 +35,15 @@ namespace BackgroundTask
         private const string LOC_STORE = "locList";
         private const string SAVE_LOC = "ms-appdata:///local/";
         private static ObservableCollection<Location> locationList;
+        ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
+        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private enum TileSize
         {
             small,
             medium,
             wide
         }
-        ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
+        
 
         public async static void Register(uint mins)
         {
@@ -248,7 +250,12 @@ namespace BackgroundTask
 
         private bool isTransparent()
         {
-            return true;
+            if (localStore.Values.ContainsKey("flickrTile"))
+            {
+                return !(bool)(localStore.Values["flickrTile"]);
+            }
+            localStore.Values["flickrTile"] = true;
+            return false;
         }
 
         private StackPanel createOverlay(TileSize tileSize, bool transparent)

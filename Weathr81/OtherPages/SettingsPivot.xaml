@@ -39,6 +39,7 @@
                         <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency"/>
                         <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                         <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
+                        <ToggleSwitch Name="transparentToggle" Header="Use Flickr Images on tile" Toggled="TransparentTile_Toggled" OnContent="Use Images" OffContent="Transparent Tile" IsOn="True"/>
                     </StackPanel>
                 </StackPanel>
             </PivotItem>

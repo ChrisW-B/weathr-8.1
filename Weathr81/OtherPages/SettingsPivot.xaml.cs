@@ -115,6 +115,10 @@ namespace Weathr81.OtherPages
 
         private void updateSettings()
         {
+            if (localStore.Values.ContainsKey("flickrTile"))
+            {
+                transparentToggle.IsOn = (bool)localStore.Values["flickrTile"];
+            }
             if (store.Values.ContainsKey(UNITS_ARE_SI))
             {
                 units.IsOn = (bool)Serializer.get(UNITS_ARE_SI, typeof(bool), store);
@@ -279,6 +283,15 @@ namespace Weathr81.OtherPages
             store.Values["updateFreq"] = mins;
             localStore.Values["updateFreq"] = mins;
             UpdateTiles.Register(mins);
+        }
+
+        private void TransparentTile_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values["flickrTile"] = (sender as ToggleSwitch).IsOn;
+            }
+            return;
         }
     }
 }

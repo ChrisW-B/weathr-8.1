@@ -86,7 +86,6 @@ namespace Weathr81
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
-            registerBackgroundTask();
         }
 
         //BG task registration
@@ -94,7 +93,7 @@ namespace Weathr81
         {
             //Runs a single instance of the backgrouond task to get the most up to date
             //tile after the app is launched
-            UpdateTiles.RunFromApp();
+            //UpdateTiles.RunFromApp();
             //Registers app to run for the first time on a new phone
             if (!localStore.Values.ContainsKey(BG_REG) || !rateIsUnchanged())
             {
@@ -165,6 +164,7 @@ namespace Weathr81
             }
             statusBar = StatusBar.GetForCurrentView();
             runApp();
+            registerBackgroundTask();
         }
 
         async private void runApp()
