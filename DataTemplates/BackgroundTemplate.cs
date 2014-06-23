@@ -14,5 +14,6 @@ namespace DataTemplates
         public Uri imageUri { get; set; }
         public string wideName { get; set; }
         public string medName { get; set; }
+        public string smallName { get; set; }
     }
 }

@@ -83,7 +83,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AlertsTemplate.cs" />
-    <Compile Include="BackgroundClass.cs" />
+    <Compile Include="BackgroundTemplate.cs" />
     <Compile Include="DataSaveClass.cs" />
     <Compile Include="ForecastIOTemplate.cs" />
     <Compile Include="ForecastTemplate.cs" />

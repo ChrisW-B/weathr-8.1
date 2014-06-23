@@ -11,6 +11,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using WeatherData;
 using Windows.ApplicationModel.Background;
+using Windows.Data.Xml.Dom;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
@@ -34,10 +35,11 @@ namespace BackgroundTask
         private const string LOC_STORE = "locList";
         private const string SAVE_LOC = "ms-appdata:///local/";
         private static ObservableCollection<Location> locationList;
-        private enum tileSize
+        private enum TileSize
         {
+            small,
             medium,
-            large
+            wide
         }
         ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
 
@@ -129,8 +131,10 @@ namespace BackgroundTask
                 if (loc.IsDefault)
                 {
                     string name = "default";
+                    string smallTileName = name + "small.png";
                     string mediumTileName = name + "med.png";
                     string wideTileName = name + "wide.png";
+                    
                     GetGeoposition pos = new GetGeoposition(loc);
                     GeoTemplate geoTemplate = await pos.getLocation();
                     if (!geoTemplate.fail)
@@ -144,23 +148,30 @@ namespace BackgroundTask
                                 lat = geoTemplate.position.Position.Latitude,
                                 lon = geoTemplate.position.Position.Longitude,
                                 conditions = weatherInfo.currentConditions,
-                                tempCompare = "Tomorrow will be  " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
+                                tempCompare = "Tomorrow will be " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
                                 high = weatherInfo.todayHighC,
                                 low = weatherInfo.todayLowC,
                                 currentTemp = weatherInfo.tempC,
                                 medName = mediumTileName,
                                 wideName = wideTileName
                             };
+                            string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
+                            string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
+                            string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
                             if (!unitsAreSI())
                             {
                                 data.high = weatherInfo.todayHighF;
                                 data.low = weatherInfo.todayLowF;
                                 data.currentTemp = weatherInfo.tempF;
                                 data.tempCompare = "Tomorrow will be " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
+                                current = "Currently: " + weatherInfo.currentConditions + ", " + weatherInfo.tempF + "°F";
+                                today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
+                                tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
                             }
                             data.imageUri = await getBGUri(data, true, true, 0);
                             await createTileImage(data);
-                            pushImageToMainTile(SAVE_LOC + mediumTileName, SAVE_LOC + wideTileName, data.tempCompare);
+
+                            pushImageToMainTile(SAVE_LOC+smallTileName, SAVE_LOC + mediumTileName, SAVE_LOC + wideTileName, data.tempCompare, current, today, tomorrow);
                         }
                     }
                 }
@@ -190,8 +201,9 @@ namespace BackgroundTask
             //given lat, lon, and conditions, creates a tile image
             try
             {
-                await renderTile(data, data.medName, tileSize.medium);
-                await renderTile(data, data.wideName, tileSize.large);
+                await renderTile(data, data.medName, TileSize.medium);
+                await renderTile(data, data.wideName, TileSize.wide);
+                await renderTile(data, data.smallName, TileSize.small);
                 return true;
             }
             catch
@@ -199,7 +211,7 @@ namespace BackgroundTask
                 return false;
             }
         }
-        async private Task renderTile(BackgroundTemplate data, string tileName, tileSize tileSize)
+        async private Task renderTile(BackgroundTemplate data, string tileName, TileSize tileSize)
         {
             //given a image uri
             RenderTargetBitmap bm = new RenderTargetBitmap();
@@ -218,31 +230,187 @@ namespace BackgroundTask
                 await encoder.FlushAsync();
             }
         }
-        private UIElement createImage(BackgroundTemplate data, tileSize tileSize)
+        private UIElement createImage(BackgroundTemplate data, TileSize tileSize)
         {
-            Grid g = new Grid();
-            StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal, Height = 150, Width = 150, HorizontalAlignment = HorizontalAlignment.Center };
-            s.Background = new SolidColorBrush() { Color = Colors.Black, Opacity = .3 };
-            BitmapImage icon = new BitmapImage(new Uri("ms-appx:///Assets/Icons/Medium/" + getWeatherLogo(data.conditions) + ".png"));
-            Image weatherIcon = new Image() { Source = icon, Width = 50, Height = 50, Margin = new Thickness(10, 0, 10, 0) };
-            TextBlock temp = new TextBlock() { Text = data.currentTemp + "°", FontSize = 30 };
-            temp.VerticalAlignment = VerticalAlignment.Center;
-            weatherIcon.VerticalAlignment = VerticalAlignment.Center;
-            BitmapImage background = new BitmapImage(data.imageUri);
-            g.Height = g.Width = 150;
-            if (tileSize == UpdateTiles.tileSize.large)
+            bool transparent = isTransparent();
+            Grid g = createBackgroundGrid(data.imageUri, tileSize, transparent);
+            StackPanel overlay = createOverlay(tileSize, transparent);
+            StackPanel iconAndTemp = createIconStackPanel(data, tileSize);
+            if (tileSize != TileSize.small)
             {
-                g.Width = 310;
-                s.Width = 310;
-            }
-            g.Background = new ImageBrush() { ImageSource = background, Stretch = Stretch.UniformToFill };
-
-            s.Children.Add(weatherIcon);
-            s.Children.Add(temp);
-            g.Children.Add(s);
+                iconAndTemp.Children.Add(createIcon(data.conditions));
+            }            
+            iconAndTemp.Children.Add(createTemp(data.currentTemp));
+            overlay.Children.Add(iconAndTemp);
+            g.Children.Add(overlay);
             return g;
         }
 
+        private bool isTransparent()
+        {
+            return true;
+        }
+
+        private StackPanel createOverlay(TileSize tileSize, bool transparent)
+        {
+            StackPanel s = new StackPanel();
+            if (!transparent)
+            {
+                s.Background = new SolidColorBrush() { Color = Colors.Black, Opacity = .3 };
+            }
+            s.Height = 150;
+            s.Width=150;
+            s.Orientation= Orientation.Horizontal;
+            s.HorizontalAlignment= HorizontalAlignment.Left;
+            if(tileSize== TileSize.wide){
+                s.Width=310;
+            }
+            else if(tileSize==TileSize.small){
+                s.Width= s.Height=71;
+            }
+            return s;
+        }
+
+        private Grid createBackgroundGrid(Uri imageUri, TileSize tileSize, bool transparent)
+        {
+            Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
+            g.Height = g.Width = 150;
+            if (tileSize == TileSize.wide)
+            {
+                g.Width = 310;
+            }
+            if (!transparent)
+            {
+                BitmapImage background = new BitmapImage(imageUri);
+                g.Background = new ImageBrush() { ImageSource = background, Stretch = Stretch.UniformToFill };
+            }
+            return g;
+        }
+
+        private TextBlock createTemp(string currentTemp)
+        {
+            TextBlock temp = new TextBlock() { Text = currentTemp + "°", FontSize = 30 };
+            temp.VerticalAlignment = VerticalAlignment.Center;
+            temp.HorizontalAlignment = HorizontalAlignment.Center;
+            return temp;
+        }
+
+        private Image createIcon(string conditions)
+        {
+            BitmapImage icon = new BitmapImage(new Uri("ms-appx:///Assets/Icons/Medium/" + getWeatherLogo(conditions) + ".png"));
+            Image weatherIcon = new Image() { Source = icon, Width = 60, Height = 60, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            return weatherIcon;
+        }
+
+        private StackPanel createIconStackPanel(BackgroundTemplate data, TileSize tileSize)
+        {
+           StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, Height=100, Width = 80, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment= VerticalAlignment.Center, Margin = new Thickness(10,0,10,0) };
+           if (tileSize == TileSize.small)
+           {
+               s.Height = s.Width = 71;
+           }
+           return s;
+        }
+
+
+        private void pushImageToMainTile(string smallTileLoc, string mediumTileLoc, string wideTileLoc, string compare, string current, string today, string tomorrow)
+        {
+            //pushes the image to the tiles
+            XmlDocument tileXml = TileUpdateManager.GetTemplateContent(TileTemplateType.TileSquare71x71Image);
+            XmlNodeList tileImageAttributes = tileXml.GetElementsByTagName("image");
+            ((XmlElement)tileImageAttributes[0]).SetAttribute("src", smallTileLoc);
+            ((XmlElement)tileImageAttributes[0]).SetAttribute("alt", "altSmall");
+
+            ITileSquare150x150PeekImageAndText04 mediumTile = TileContentFactory.CreateTileSquare150x150PeekImageAndText04();
+            mediumTile.TextBodyWrap.Text = compare;
+            mediumTile.Branding = TileBranding.None;
+            mediumTile.Image.Alt = "altMed";
+            mediumTile.Image.Src = mediumTileLoc;
+            mediumTile.StrictValidation = true;
+
+            ITileWide310x150PeekImageAndText02 wideTile = TileContentFactory.CreateTileWide310x150PeekImageAndText02();
+            wideTile.TextBody1.Text = current;
+            wideTile.TextBody2.Text = today;
+            wideTile.TextBody3.Text = tomorrow;
+            wideTile.Branding = TileBranding.None;
+            wideTile.Image.Alt = "altWide";
+            wideTile.Image.Src = wideTileLoc;
+            wideTile.Square150x150Content = mediumTile;
+            wideTile.StrictValidation = true;
+
+            TileNotification wideNotif = wideTile.CreateNotification();
+            TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+            TileUpdateManager.CreateTileUpdaterForApplication().Update(wideNotif);
+        }
+
+        //getting flickr images for background
+        async private Task<Uri> getBGUri(BackgroundTemplate data, bool useGroup, bool useLoc, int timesRun)
+        {
+            //gets a uri for a background image from flickr
+            if (timesRun > 1)
+            {
+                return null;
+            }
+            GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
+            FlickrData imgList = await f.getImages(getTags(data.conditions), useGroup, useLoc, data.lat, data.lon);
+            if (!imgList.fail && imgList.images.Count > 0)
+            {
+                Random r = new Random();
+                int num = r.Next(imgList.images.Count);
+                return f.getImageUri(imgList.images[num], GetFlickrInfo.ImageSize.medium800);
+            }
+            else
+            {
+                return await getBGUri(data, useGroup, false, timesRun++);
+            }
+        }
+
+        //helpers
+        private string getTags(string cond)
+        {
+            //converts weather conditions into tags for flickr
+            if (cond == null)
+            {
+                return "sky";
+            }
+            else
+            {
+                string weatherUpper = cond.ToUpper();
+
+                if (weatherUpper.Contains("THUNDER"))
+                {
+                    return "thunder, thunderstorm, lightning, storm";
+                }
+                else if (weatherUpper.Contains("RAIN"))
+                {
+                    return "rain, drizzle, rainy";
+                }
+                else if (weatherUpper.Contains("SNOW") || weatherUpper.Contains("FLURRY"))
+                {
+                    return "snow, flurry, snowing";
+                }
+                else if (weatherUpper.Contains("FOG") || weatherUpper.Contains("MIST"))
+                {
+                    return "fog, foggy, mist";
+                }
+                else if (weatherUpper.Contains("CLEAR"))
+                {
+                    return "clear, sun, sunny, blue sky";
+                }
+                else if (weatherUpper.Contains("OVERCAST"))
+                {
+                    return "overcast, cloudy";
+                }
+                else if (weatherUpper.Contains("CLOUDS") || weatherUpper.Contains("CLOUDY"))
+                {
+                    return "cloudy, clouds, fluffy cloud";
+                }
+                else
+                {
+                    return weatherUpper;
+                }
+            }
+        }
         private string getWeatherLogo(string conditions)
         {
             conditions = conditions.ToLowerInvariant();
@@ -288,104 +456,13 @@ namespace BackgroundTask
             }
             else if (conditions.Contains("sun") || conditions.Contains("sunny") || conditions.Contains("clear"))
             {
-                //uh... what happened to it
+                return "Sunny170";
             }
             else if (conditions.Contains("wind"))
             {
                 return "Windy170";
             }
             return "SunCloudTrans170";
-        }
-
-
-        private void pushImageToMainTile(string mediumTileLoc, string wideTileLoc, string tileBack)
-        {
-            //pushes the image to the tiles
-            ITileSquare150x150PeekImageAndText04 mediumTile = TileContentFactory.CreateTileSquare150x150PeekImageAndText04();
-            mediumTile.TextBodyWrap.Text = tileBack;
-            mediumTile.Branding = TileBranding.None;
-            mediumTile.Image.Alt = "altMed";
-            mediumTile.Image.Src = mediumTileLoc;
-            mediumTile.StrictValidation = true;
-
-            ITileWide310x150PeekImage03 wideTile = TileContentFactory.CreateTileWide310x150PeekImage03();
-            wideTile.TextHeadingWrap.Text = tileBack;
-            wideTile.Branding = TileBranding.None;
-            wideTile.Image.Alt = "altWide";
-            wideTile.Image.Src = wideTileLoc;
-            wideTile.Square150x150Content = mediumTile;
-            wideTile.StrictValidation = true;
-
-            TileNotification wideNotif = wideTile.CreateNotification();
-            TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-            TileUpdateManager.CreateTileUpdaterForApplication().Update(wideNotif);
-        }
-
-        //getting flickr images for background
-        async private Task<Uri> getBGUri(BackgroundTemplate data, bool useGroup, bool useLoc, int timesRun)
-        {
-            //gets a uri for a background image from flickr
-            if (timesRun > 1)
-            {
-                return null;
-            }
-            GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
-            FlickrData imgList = await f.getImages(getTags(data.conditions), useGroup, useLoc, data.lat, data.lon);
-            if (!imgList.fail && imgList.images.Count > 0)
-            {
-                Random r = new Random();
-                int num = r.Next(imgList.images.Count);
-                return f.getImageUri(imgList.images[num], GetFlickrInfo.ImageSize.medium800);
-            }
-            else
-            {
-                return await getBGUri(data, useGroup, false, timesRun++);
-            }
-        }
-        private string getTags(string cond)
-        {
-            //converts weather conditions into tags for flickr
-            if (cond == null)
-            {
-                return "sky";
-            }
-            else
-            {
-                string weatherUpper = cond.ToUpper();
-
-                if (weatherUpper.Contains("THUNDER"))
-                {
-                    return "thunder, thunderstorm, lightning, storm";
-                }
-                else if (weatherUpper.Contains("RAIN"))
-                {
-                    return "rain, drizzle, rainy";
-                }
-                else if (weatherUpper.Contains("SNOW") || weatherUpper.Contains("FLURRY"))
-                {
-                    return "snow, flurry, snowing";
-                }
-                else if (weatherUpper.Contains("FOG") || weatherUpper.Contains("MIST"))
-                {
-                    return "fog, foggy, mist";
-                }
-                else if (weatherUpper.Contains("CLEAR"))
-                {
-                    return "clear, sun, sunny, blue sky";
-                }
-                else if (weatherUpper.Contains("OVERCAST"))
-                {
-                    return "overcast, cloudy";
-                }
-                else if (weatherUpper.Contains("CLOUDS") || weatherUpper.Contains("CLOUDY"))
-                {
-                    return "cloudy, clouds, fluffy cloud";
-                }
-                else
-                {
-                    return weatherUpper;
-                }
-            }
         }
     }
 }
