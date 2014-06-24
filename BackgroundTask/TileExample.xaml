@@ -1,0 +1,29 @@
+﻿<UserControl
+    x:Class="BackgroundTask.MyUserControl1"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BackgroundTask"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="150"
+    d:DesignWidth="150">
+
+    <Grid>
+        <Grid Height="150" VerticalAlignment="Center">
+            <TextBlock Text="Updated 10:45 AM" FontSize="7" HorizontalAlignment="Left"></TextBlock>
+            <TextBlock Text="by lorem ipsum" FontSize="7" HorizontalAlignment="Right"/>
+            <StackPanel VerticalAlignment="Center">
+                <Grid VerticalAlignment="Center">
+                    <TextBlock x:Name="temp" Text="110°" FontWeight="ExtraLight" FontSize="55" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Center" Width="60">
+                        <TextBlock Text="PARTLY CLOUDY" FontWeight="ExtraBold" FontSize="13" TextWrapping="WrapWholeWords" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        <TextBlock Text="80/61" FontSize="16" VerticalAlignment="Center" HorizontalAlignment="Right"></TextBlock>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="Thunderstorms today" HorizontalAlignment="Center" FontWeight="Bold"></TextBlock>
+            </StackPanel>
+            <TextBlock Text="Mendham, NJ" VerticalAlignment="Bottom"></TextBlock>
+        </Grid>
+    </Grid>
+</UserControl>
