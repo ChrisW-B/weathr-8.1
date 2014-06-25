@@ -155,7 +155,8 @@ namespace BackgroundTask
                                 tempCompare = "Tomorrow will be " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
                                 high = weatherInfo.todayHighC,
                                 low = weatherInfo.todayLowC,
-                                currentTemp = weatherInfo.tempC + "°",
+                                currentTemp = weatherInfo.tempC.Split('.')[0] + "°",
+                                todayForecast = weatherInfo.todayShort,
                                 medName = mediumTileName,
                                 wideName = wideTileName
                             };
@@ -166,7 +167,7 @@ namespace BackgroundTask
                             {
                                 data.high = weatherInfo.todayHighF;
                                 data.low = weatherInfo.todayLowF;
-                                data.currentTemp = weatherInfo.tempF + "°";
+                                data.currentTemp = weatherInfo.tempF.Split('.')[0] + "°";
                                 data.tempCompare = "Tomorrow will be " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
                                 current = "Currently: " + weatherInfo.currentConditions + ", " + weatherInfo.tempF + "°F";
                                 today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
@@ -277,54 +278,69 @@ namespace BackgroundTask
         }
         private TextBlock createTimeTextBlock()
         {
-            TextBlock t = new TextBlock() { FontSize = 7, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt") };
+            TextBlock t = new TextBlock() { FontSize = 8, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt") };
             return t;
         }
         private TextBlock createFlickrSource(string artistName)
         {
-            TextBlock t = new TextBlock() { FontSize = 7, HorizontalAlignment = HorizontalAlignment.Right, Text = "by" + artistName };
+            TextBlock t = new TextBlock() { FontSize = 8, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName };
             return t;
         }
         private StackPanel createDataStackPanel(BackgroundTemplate data)
         {
             StackPanel s = new StackPanel() { VerticalAlignment = VerticalAlignment.Center };
             s.Children.Add(createCenterGrid(data));
+            s.Children.Add(createTodayTextBlock(data.todayForecast));
             return s;
         }
         private Grid createCenterGrid(BackgroundTemplate data)
         {
-            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center };
-            g.Children.Add(createTempTextBlock(data.currentTemp));
-            g.Children.Add(createForecastStackPanel(data));
+            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin= new Thickness(5,0,5,0) };
+            g.Children.Add(createCentralStackPanel(data));
             return g;
+        }
+
+        private StackPanel createCentralStackPanel(BackgroundTemplate data)
+        {
+            StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal };
+            s.Children.Add(createTempTextBlock(data.currentTemp));
+            s.Children.Add(createForecastStackPanel(data));
+            return s;
         }
         private TextBlock createTempTextBlock(string temperature)
         {
-            TextBlock t = new TextBlock() { Text = temperature, FontWeight = new Windows.UI.Text.FontWeight() { Weight = 1 }, FontSize = 45, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
+            TextBlock t = new TextBlock() { Text = temperature, FontWeight = FontWeights.Thin, FontSize = 40, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width=75 };
             return t;
         }
         private StackPanel createForecastStackPanel(BackgroundTemplate data)
         {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Width = 60 };
+            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Width = 70 };
             s.Children.Add(createConditionsTextBlock(data.conditions));
             s.Children.Add(createHiLoTextBlock(data.high, data.low));
             return s;
         }
         private TextBlock createConditionsTextBlock(string conditions)
         {
-            TextBlock t = new TextBlock() { Text = conditions.ToUpperInvariant(), FontWeight = new FontWeight() { Weight = 999 }, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            TextBlock t = new TextBlock() { Text = conditions.ToUpperInvariant(), FontWeight =FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, };
             return t;
         }
         private TextBlock createHiLoTextBlock(string high, string low)
         {
-            TextBlock t = new TextBlock() { Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+            TextBlock t = new TextBlock() { Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
             return t;
+        }
+        private UIElement createTodayTextBlock(string forecast)
+        {
+            TextBlock t = new TextBlock() { Text = forecast + " today", HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.Bold, Margin=new Thickness(0,15,0,0) };
+            return t;
+
         }
         private TextBlock createLocationTextBlock(string location)
         {
-            TextBlock t = new TextBlock() { Text = location, VerticalAlignment= VerticalAlignment.Bottom};
+            TextBlock t = new TextBlock() { Text = location, FontSize = 17, FontWeight = FontWeights.Bold, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
             return t;
         }
+        
 
         private void pushImageToMainTile(string smallTileLoc, string mediumTileLoc, string wideTileLoc, string compare, string current, string today, string tomorrow)
         {
@@ -348,7 +364,7 @@ namespace BackgroundTask
             wideTile.StrictValidation = true;
 
             TileNotification wideNotif = wideTile.CreateNotification();
-            //TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+            TileUpdateManager.CreateTileUpdaterForApplication().Clear();
             TileUpdateManager.CreateTileUpdaterForApplication().Update(wideNotif);
         }
 

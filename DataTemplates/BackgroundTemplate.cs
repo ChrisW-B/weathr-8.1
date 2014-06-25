@@ -9,6 +9,7 @@ namespace DataTemplates
         public string high { get; set; }
         public string low { get; set; }
         public string tempCompare { get; set; }
+        public string todayForecast { get; set; }
         public double lat { get; set; }
         public double lon { get; set; }
         public Uri imageUri { get; set; }
