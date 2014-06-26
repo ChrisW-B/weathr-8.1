@@ -83,7 +83,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FlickrData.cs" />
-    <Compile Include="FlickrImage.cs" />
     <Compile Include="FlickrInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

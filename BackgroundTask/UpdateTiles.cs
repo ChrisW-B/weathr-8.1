@@ -148,35 +148,42 @@ namespace BackgroundTask
                         {
                             BackgroundTemplate data = new BackgroundTemplate()
                             {
-                                location = weatherInfo.city,
-                                lat = geoTemplate.position.Position.Latitude,
-                                lon = geoTemplate.position.Position.Longitude,
-                                conditions = weatherInfo.currentConditions,
-                                tempCompare = "Tomorrow will be " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
-                                high = weatherInfo.todayHighC,
-                                low = weatherInfo.todayLowC,
-                                currentTemp = weatherInfo.tempC.Split('.')[0] + "°",
-                                todayForecast = weatherInfo.todayShort,
                                 medName = mediumTileName,
-                                wideName = wideTileName
+                                wideName = wideTileName,
+                                weather = new BackgroundWeather()
+                                {
+                                    conditions = weatherInfo.currentConditions,
+                                    tempCompare = "Tomorrow will be " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
+                                    high = weatherInfo.todayHighC,
+                                    low = weatherInfo.todayLowC,
+                                    currentTemp = weatherInfo.tempC.Split('.')[0] + "°",
+                                    todayForecast = weatherInfo.todayShort,
+                                },
+                                location = new BackgroundLoc()
+                                {
+                                    location = weatherInfo.city,
+                                    lat = geoTemplate.position.Position.Latitude,
+                                    lon = geoTemplate.position.Position.Longitude,
+                                }
+
                             };
                             string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
                             string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
                             string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
                             if (!unitsAreSI())
                             {
-                                data.high = weatherInfo.todayHighF;
-                                data.low = weatherInfo.todayLowF;
-                                data.currentTemp = weatherInfo.tempF.Split('.')[0] + "°";
-                                data.tempCompare = "Tomorrow will be " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
+                                data.weather.high = weatherInfo.todayHighF;
+                                data.weather.low = weatherInfo.todayLowF;
+                                data.weather.currentTemp = weatherInfo.tempF.Split('.')[0] + "°";
+                                data.weather.tempCompare = "Tomorrow will be " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
                                 current = "Currently: " + weatherInfo.currentConditions + ", " + weatherInfo.tempF + "°F";
                                 today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
                                 tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
                             }
-                            data.imageUri = await getBGUri(data, true, true, 0);
+                            data.flickrData= await getBGInfo(data, true, true, 0);
                             await createTileImage(data);
 
-                            pushImageToMainTile(SAVE_LOC + smallTileName, SAVE_LOC + mediumTileName, SAVE_LOC + wideTileName, data.tempCompare, current, today, tomorrow);
+                            pushImageToMainTile(SAVE_LOC + smallTileName, SAVE_LOC + mediumTileName, SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
                         }
                     }
                 }
@@ -238,7 +245,7 @@ namespace BackgroundTask
         private UIElement createImage(BackgroundTemplate data, TileSize tileSize)
         {
             bool transparent = isTransparent();
-            Grid g = createBackgroundGrid(data.imageUri, tileSize, transparent);
+            Grid g = createBackgroundGrid(data.flickrData.imageUri, tileSize, transparent);
             g.Children.Add(createOverlay(tileSize, transparent, data));
             return g;
         }
@@ -252,6 +259,7 @@ namespace BackgroundTask
             localStore.Values["flickrTile"] = true;
             return false;
         }
+
         private Grid createBackgroundGrid(Uri imageUri, TileSize tileSize, bool transparent)
         {
             Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
@@ -271,76 +279,75 @@ namespace BackgroundTask
                 g.Background = new SolidColorBrush(Colors.Black) { Opacity = .3 };
             }
             g.Children.Add(createTimeTextBlock());
-            g.Children.Add(createFlickrSource("lorem ipsum"));
+            g.Children.Add(createFlickrSource(data.flickrData.userName));
             g.Children.Add(createDataStackPanel(data));
-            g.Children.Add(createLocationTextBlock(data.location));
+            g.Children.Add(createLocationTextBlock(data.location.location));
             return g;
         }
         private TextBlock createTimeTextBlock()
         {
-            TextBlock t = new TextBlock() { FontSize = 8, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt") };
+            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3,0,0,0) };
             return t;
         }
         private TextBlock createFlickrSource(string artistName)
         {
-            TextBlock t = new TextBlock() { FontSize = 8, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName };
+            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0,0,3,0), MaxWidth = 100 };
             return t;
         }
         private StackPanel createDataStackPanel(BackgroundTemplate data)
         {
             StackPanel s = new StackPanel() { VerticalAlignment = VerticalAlignment.Center };
             s.Children.Add(createCenterGrid(data));
-            s.Children.Add(createTodayTextBlock(data.todayForecast));
+            s.Children.Add(createTodayTextBlock(data.weather.todayForecast));
             return s;
         }
         private Grid createCenterGrid(BackgroundTemplate data)
         {
-            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin= new Thickness(5,0,5,0) };
+            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 5, 0) };
             g.Children.Add(createCentralStackPanel(data));
             return g;
         }
-
         private StackPanel createCentralStackPanel(BackgroundTemplate data)
         {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal };
-            s.Children.Add(createTempTextBlock(data.currentTemp));
+            StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal, MaxWidth=150 };
+            s.Children.Add(createTempTextBlock(data.weather.currentTemp));
             s.Children.Add(createForecastStackPanel(data));
             return s;
         }
         private TextBlock createTempTextBlock(string temperature)
         {
-            TextBlock t = new TextBlock() { Text = temperature, FontWeight = FontWeights.Thin, FontSize = 40, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width=75 };
+            TextBlock t = new TextBlock() { Text = temperature, FontWeight = FontWeights.Thin, FontSize = 40, HorizontalAlignment = HorizontalAlignment.Right};
             return t;
         }
         private StackPanel createForecastStackPanel(BackgroundTemplate data)
         {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Width = 70 };
-            s.Children.Add(createConditionsTextBlock(data.conditions));
-            s.Children.Add(createHiLoTextBlock(data.high, data.low));
+            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, Width = 80 };
+            s.Children.Add(createConditionsTextBlock(data.weather.conditions));
+            s.Children.Add(createHiLoTextBlock(data.weather.high, data.weather.low));
             return s;
         }
         private TextBlock createConditionsTextBlock(string conditions)
         {
-            TextBlock t = new TextBlock() { Text = conditions.ToUpperInvariant(), FontWeight =FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left, };
+            TextBlock t = new TextBlock() { Text = conditions.ToUpperInvariant(), FontWeight = FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             return t;
         }
         private TextBlock createHiLoTextBlock(string high, string low)
         {
-            TextBlock t = new TextBlock() { Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
+            TextBlock t = new TextBlock() { Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width=80 };
             return t;
         }
         private UIElement createTodayTextBlock(string forecast)
         {
-            TextBlock t = new TextBlock() { Text = forecast + " today", HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.Bold, Margin=new Thickness(0,15,0,0) };
+            TextBlock t = new TextBlock() { Text = forecast + " today", FontWeight =  FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, FontSize= 14, TextWrapping = Windows.UI.Xaml.TextWrapping.WrapWholeWords, Margin = new Thickness(0, 15, 0, 0) };
             return t;
 
         }
         private TextBlock createLocationTextBlock(string location)
         {
-            TextBlock t = new TextBlock() { Text = location, FontSize = 17, FontWeight = FontWeights.Bold, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
+            TextBlock t = new TextBlock() { Text = location, FontSize = 17, FontWeight = FontWeights.Medium, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
             return t;
         }
-        
+
 
         private void pushImageToMainTile(string smallTileLoc, string mediumTileLoc, string wideTileLoc, string compare, string current, string today, string tomorrow)
         {
@@ -369,7 +376,7 @@ namespace BackgroundTask
         }
 
         //getting flickr images for background
-        async private Task<Uri> getBGUri(BackgroundTemplate data, bool useGroup, bool useLoc, int timesRun)
+        async private Task<BackgroundFlickr> getBGInfo(BackgroundTemplate data, bool useGroup, bool useLoc, int timesRun)
         {
             //gets a uri for a background image from flickr
             if (timesRun > 1)
@@ -377,16 +384,21 @@ namespace BackgroundTask
                 return null;
             }
             GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
-            FlickrData imgList = await f.getImages(getTags(data.conditions), useGroup, useLoc, data.lat, data.lon);
+            FlickrData imgList = await f.getImages(getTags(data.weather.conditions), useGroup, useLoc, data.location.lat, data.location.lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
                 Random r = new Random();
                 int num = r.Next(imgList.images.Count);
-                return f.getImageUri(imgList.images[num], GetFlickrInfo.ImageSize.medium800);
+                BackgroundFlickr bgFlickr = new BackgroundFlickr();
+                FlickrImage img = imgList.images[num];
+                bgFlickr.imageUri = f.getImageUri(img, GetFlickrInfo.ImageSize.medium800);
+                bgFlickr.userId = img.owner;
+                bgFlickr.userName = (await f.getUser(bgFlickr.userId)).userName;
+                return bgFlickr;
             }
             else
             {
-                return await getBGUri(data, useGroup, false, timesRun++);
+                return await getBGInfo(data, useGroup, false, timesRun++);
             }
         }
 
