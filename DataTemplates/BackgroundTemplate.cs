@@ -10,8 +10,7 @@ namespace DataTemplates
        
         public string wideName { get; set; }
         public string medName { get; set; }
-        public string smallName { get; set; }
-       
+        public string smallName { get; set; }  
     }
 
     public class BackgroundWeather

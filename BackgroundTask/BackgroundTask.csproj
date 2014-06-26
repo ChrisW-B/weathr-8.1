@@ -115,6 +115,9 @@
     </Compile>
     <Compile Include="UpdateTiles.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WideGrid.xaml.cs">
+      <DependentUpon>WideGrid.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NotificationsExtensions">
@@ -126,6 +129,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="TileExample.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WideGrid.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
