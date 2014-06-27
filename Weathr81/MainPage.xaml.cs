@@ -88,68 +88,6 @@ namespace Weathr81
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
         }
 
-        //BG task registration
-        private void registerBackgroundTask()
-        {
-            //Runs a single instance of the backgrouond task to get the most up to date
-            //tile after the app is launched
-            //UpdateTiles.RunFromApp();
-            //Registers app to run for the first time on a new phone
-            if (!localStore.Values.ContainsKey(BG_REG) || !rateIsUnchanged())
-            {
-                localStore.Values[BG_REG] = true;
-                if (store.Values.ContainsKey(ALLOW_BG))
-                {
-                    if ((bool)store.Values[ALLOW_BG])
-                    {
-                        if (store.Values.ContainsKey(UPDATE_FREQ))
-                        {
-                            var rate = Convert.ToUInt32(store.Values[UPDATE_FREQ]);
-                            UpdateTiles.Register(rate);
-                        }
-                        else
-                        {
-                            store.Values[UPDATE_FREQ] = 120;
-                            var rate = Convert.ToUInt32(120);
-                            UpdateTiles.Register(rate);
-                        }
-                    }
-                    else
-                    {
-                        UpdateTiles.Unregister(TASK_NAME);
-                    }
-                }
-                else
-                {
-                    store.Values[ALLOW_BG] = true;
-                    UpdateTiles.Register(Convert.ToUInt32(120));
-                }
-            }
-        }
-        private bool rateIsUnchanged()
-        {
-            //checks whether the update rate is unchanged on other devices,
-            //so the rate can then be synced accross devices
-            if (store.Values.ContainsKey(UPDATE_FREQ))
-            {
-                if (localStore.Values.ContainsKey(UPDATE_FREQ))
-                {
-                    uint roamVal = Convert.ToUInt32(store.Values[UPDATE_FREQ]);
-                    uint locVal = Convert.ToUInt32(localStore.Values[UPDATE_FREQ]);
-                    bool isUnchanged = roamVal == locVal;
-                    if (isUnchanged)
-                    {
-                        return isUnchanged;
-                    }
-                    localStore.Values[UPDATE_FREQ] = store.Values[UPDATE_FREQ];
-                    return isUnchanged;
-                }
-                localStore.Values[UPDATE_FREQ] = store.Values[UPDATE_FREQ];
-                return false;
-            }
-            return false;
-        }
-
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedFrom(e);
@@ -163,8 +101,8 @@ namespace Weathr81
                 this.currentLocation = (e.Parameter as Location);
             }
             statusBar = StatusBar.GetForCurrentView();
+            statusBar.ForegroundColor = Colors.White;
             runApp();
-            registerBackgroundTask();
         }
 
         async private void runApp()
@@ -178,7 +116,7 @@ namespace Weathr81
             GetGeoposition = new GetGeoposition(currentLocation);
             if (!restoreData())
             {
-                if (!(await GetGeoposition.getLocation()).fail) //gets geoLocation too
+                if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
                 {
                     updateUI();
                 }
@@ -189,7 +127,7 @@ namespace Weathr81
             }
             else
             {
-                GeoTemplate geo = await GetGeoposition.getLocation();
+                GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
                 setMaps(geo.position);
                 NowTemplate nowTemplate = (now.DataContext as NowTemplate);
                 if (nowTemplate != null)
@@ -209,7 +147,7 @@ namespace Weathr81
         {
             //updates the ui/weather conditions of app
             WeatherInfo downloadedForecast;
-            GeoTemplate geo = await GetGeoposition.getLocation();
+            GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             if (geo.useCoord)
             {
                 downloadedForecast = await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude);
@@ -548,7 +486,7 @@ namespace Weathr81
         async private Task<GeoTemplate> tryGetLocation()
         {
             //keeps from SystemAccessViolation, hopefully
-            GeoTemplate origTemplate = await GetGeoposition.getLocation();
+            GeoTemplate origTemplate = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             GeoTemplate newTemplate = new GeoTemplate() { fail = origTemplate.fail, errorMsg = origTemplate.errorMsg, useCoord = origTemplate.useCoord, wUrl = origTemplate.wUrl };
             Geopoint point;
             if (origTemplate.position != null)
@@ -683,12 +621,12 @@ namespace Weathr81
         //buttons and stuff
         async private void satMap_Tap(object sender, TappedRoutedEventArgs e)
         {
-            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(), type = MapLaunchClass.mapType.satellite };
+            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.satellite };
             Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
         }
         async private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
         {
-            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(), type = MapLaunchClass.mapType.radar };
+            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.radar };
             Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
@@ -727,7 +665,7 @@ namespace Weathr81
         }
         async private void changePic_Click(object sender, RoutedEventArgs e)
         {
-            GeoTemplate loc = await GetGeoposition.getLocation();
+            GeoTemplate loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             NowTemplate nowTemplate = (now.DataContext as NowTemplate);
             if (nowTemplate != null)
             {

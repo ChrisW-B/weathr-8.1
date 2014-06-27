@@ -13,8 +13,8 @@ namespace WundergroundData
     {
         private Uri uri;
         private const string WUND_PRE = "http://api.wunderground.com/api/";
-        private const string WUND_MID = "/conditions/forecast/";
-        private const string SEARCH = "q/";
+        private const string WUND_MID = "/conditions/forecast";
+        private const string SEARCH = "/q/";
         private const string WUND_POST = ".xml";
 
 

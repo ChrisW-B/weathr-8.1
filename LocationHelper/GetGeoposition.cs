@@ -16,7 +16,7 @@ namespace LocationHelper
         {
             this.currentLocation = loc;
         }
-        async public Task<GeoTemplate> getLocation()
+        async public Task<GeoTemplate> getLocation(TimeSpan waitTime, TimeSpan history)
         {
             if (geoTemplate != null)
             {
@@ -24,7 +24,7 @@ namespace LocationHelper
             }
             else
             {
-                await setPosition();
+                await setPosition(waitTime, history);
                 return geoTemplate;
             }
         }
@@ -34,7 +34,7 @@ namespace LocationHelper
             geoTemplate = null;
         }
 
-        async private Task setPosition()
+        async private Task setPosition(TimeSpan waitTime, TimeSpan history)
         {
             if (currentLocation.IsCurrent)
             {
@@ -44,7 +44,7 @@ namespace LocationHelper
                     try
                     {
                         Geolocator geo = new Geolocator();
-                        Geoposition pos = await geo.GetGeopositionAsync(new TimeSpan(0, 30, 0), new TimeSpan(0, 0, 15));
+                        Geoposition pos = await geo.GetGeopositionAsync(history, waitTime);
                         geoTemplate.position = pos.Coordinate.Point;
                         geoTemplate.useCoord = true;
                         geoTemplate.fail = false;
