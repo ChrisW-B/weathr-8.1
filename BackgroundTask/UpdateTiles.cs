@@ -15,6 +15,7 @@ using Windows.ApplicationModel.Background;
 using Windows.Data.Xml.Dom;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
+using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.UI;
 using Windows.UI.Notifications;
@@ -39,9 +40,11 @@ namespace BackgroundTask
         private const string SAVE_LOC = "ms-appdata:///local/";
         private const string TILE_UNITS_ARE_SI = "tileUnitsAreSI";
         private const string TRANSPARENT_TILE = "tileIsTransparent";
+        private string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         private static ObservableCollection<Location> locationList;
         ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+        
         private enum TileSize
         {
             small,
@@ -111,7 +114,6 @@ namespace BackgroundTask
                 await updateTiles();
             }
             def.Complete();
-
         }
         private bool setLocationList()
         {
@@ -129,8 +131,29 @@ namespace BackgroundTask
         }
         async private Task updateTiles()
         {
-            await updateMainTile();
-            await updateSecondaryTiles();
+            if (allowedToUpdate())
+            {
+                await updateMainTile();
+                await updateSecondaryTiles();
+            }
+        }
+
+        private bool allowedToUpdate()
+        {
+            //determines whether tiles should update or not
+            if (localStore.Values.ContainsKey(UPDATE_ON_CELL))
+            {
+                if ((bool)localStore.Values[UPDATE_ON_CELL])
+                {
+                    return true;
+                }
+                return isOnWifi();
+            }
+            else
+            {
+                localStore.Values[UPDATE_ON_CELL] = true;
+                return true;
+            }
         }
 
         //updating the tiles
@@ -665,6 +688,12 @@ namespace BackgroundTask
             }
             localStore.Values[TRANSPARENT_TILE] = true;
             return true;
+        }
+        private bool isOnWifi()
+        {
+            //checks whether phone is on wifi
+           ConnectionProfile prof = NetworkInformation.GetInternetConnectionProfile();
+           return prof.IsWlanConnectionProfile;
         }
     }
 }

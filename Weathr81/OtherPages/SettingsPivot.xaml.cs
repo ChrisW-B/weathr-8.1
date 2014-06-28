@@ -121,6 +121,7 @@ namespace Weathr81.OtherPages
         private const string ALLOW_BG_TASK = "allowBackground";
         private const string UPDATE_FREQ = "updateFreq";
         private const string TASK_NAME = "Weathr Tile Updater";
+        private string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         bool doneSetting = false;
@@ -165,7 +166,15 @@ namespace Weathr81.OtherPages
                 enableBackground.IsChecked = false;
                 backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
             }
-
+            if (localStore.Values.ContainsKey(UPDATE_ON_CELL))
+            {
+                wifiOnlyToggle.IsOn = !(bool)localStore.Values[UPDATE_ON_CELL];
+            }
+            else
+            {
+                wifiOnlyToggle.IsOn = false;
+                localStore.Values[UPDATE_ON_CELL] = true;
+            }
             if (localStore.Values.ContainsKey(TRANSPARENT_TILE))
             {
                 transparentToggle.IsOn = !(bool)localStore.Values[TRANSPARENT_TILE];
@@ -321,6 +330,18 @@ namespace Weathr81.OtherPages
                 localStore.Values[TRANSPARENT_TILE] = !(sender as ToggleSwitch).IsOn;
             }
             return;
+        }
+
+        private void wifiOnlyToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                ToggleSwitch t = sender as ToggleSwitch;
+                if (t != null)
+                {
+                    localStore.Values[UPDATE_ON_CELL] = !t.IsOn;
+                }
+            }
         }
 
         private void tileUnits_Toggled(object sender, RoutedEventArgs e)

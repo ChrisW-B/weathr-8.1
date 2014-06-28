@@ -40,7 +40,9 @@
                         <ToggleSwitch Name="tileUnits" Header="Units" Toggled="tileUnits_Toggled" OnContent="Metric" OffContent="U.S."/>
 
                         <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Flickr Images" OffContent="Transparent"/>
-                        
+
+                        <ToggleSwitch Name="wifiOnlyToggle" Header="Only update tiles on Wifi" Toggled="wifiOnlyToggle_Toggled"  OnContent="On" OffContent="Off"/>
+
                         <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
                         <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                         <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
