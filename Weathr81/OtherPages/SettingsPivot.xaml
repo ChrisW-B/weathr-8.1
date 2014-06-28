@@ -31,17 +31,28 @@
             <PivotItem Header="general">
                 <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
             </PivotItem>
-            <PivotItem Header="background">
+            <PivotItem Header="tiles">
                 <StackPanel>
                     <CheckBox Name="enableBackground" Checked="enableBackground_Checked" Unchecked="enableBackground_Unchecked" Content="Allow background tile updates"/>
                     <TextBlock Text="Allows the live tile to update without the app being launched" Style="{ThemeResource ControlContextualInfoTextBlockStyle}" Margin="44,-20,0,0"/>
                     <StackPanel Margin="0,20,0,20" x:Name="backgroundPanel">
-                        <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency"/>
+
+                        <ToggleSwitch Name="tileUnits" Header="Units" Toggled="tileUnits_Toggled" OnContent="Metric" OffContent="U.S."/>
+
+                        <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Flickr Images" OffContent="Transparent"/>
+                        
+                        <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
                         <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                         <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
-                        <ToggleSwitch Name="transparentToggle" Header="Use Flickr Images on tile" Toggled="TransparentTile_Toggled" OnContent="Use Images" OffContent="Transparent Tile" IsOn="True"/>
+                        
+                        <TextBlock VerticalAlignment="Bottom" Margin="0,20,0,0" Text="Tile will be updated next time the background task runs" Style="{ThemeResource ControlContextualInfoTextBlockStyle}"></TextBlock>
                     </StackPanel>
+                    
                 </StackPanel>
+                
+            </PivotItem>
+            <PivotItem Header="advanced">
+                <Button HorizontalAlignment="Center" VerticalAlignment="Bottom" Content="Clear All Settings" Width="250" Click="Button_Click"/>
             </PivotItem>
         </Pivot>
 

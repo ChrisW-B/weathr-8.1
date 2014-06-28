@@ -18,6 +18,7 @@ using Windows.UI.Xaml.Navigation;
 using SerializerClass;
 using Windows.Storage;
 using BackgroundTask;
+using Windows.UI.Popups;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -28,6 +29,7 @@ namespace Weathr81.OtherPages
     /// </summary>
     public sealed partial class SettingsPivot : Page
     {
+        #region navigation stuff
         private NavigationHelper navigationHelper;
         private ObservableDictionary defaultViewModel = new ObservableDictionary();
 
@@ -83,6 +85,7 @@ namespace Weathr81.OtherPages
         private void NavigationHelper_SaveState(object sender, SaveStateEventArgs e)
         {
         }
+        #endregion
 
         #region NavigationHelper registration
 
@@ -99,38 +102,53 @@ namespace Weathr81.OtherPages
         /// </summary>
         /// <param name="e">Provides data for navigation methods and event
         /// handlers that cannot cancel the navigation request.</param>
-
-        private const string UNITS_CHANGED = "unitsChanged";
-        private const string UNITS_ARE_SI = "unitsAreSI";
-        private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
-        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
-        bool doneSetting = false;
-
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
             updateSettings();
             doneSetting = true;
         }
-
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            this.navigationHelper.OnNavigatedFrom(e);
+        }
+        #endregion
+        #region variables
+        private const string UNITS_CHANGED = "unitsChanged";
+        private const string UNITS_ARE_SI = "unitsAreSI";
+        private const string TILE_UNITS_ARE_SI = "tileUnitsAreSI";
+        private const string TRANSPARENT_TILE = "tileIsTransparent";
+        private const string ALLOW_BG_TASK = "allowBackground";
+        private const string UPDATE_FREQ = "updateFreq";
+        private const string TASK_NAME = "Weathr Tile Updater";
+        private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
+        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+        bool doneSetting = false;
+        #endregion
+        #region settings setup
         private void updateSettings()
         {
-            if (localStore.Values.ContainsKey("flickrTile"))
-            {
-                transparentToggle.IsOn = (bool)localStore.Values["flickrTile"];
-            }
+            setUpGeneralSection();
+            setUpTileSection();
+        }
+
+        private void setUpGeneralSection()
+        {
             if (store.Values.ContainsKey(UNITS_ARE_SI))
             {
-                units.IsOn = (bool)Serializer.get(UNITS_ARE_SI, typeof(bool), store);
+                units.IsOn = (bool)store.Values[UNITS_ARE_SI];
             }
             else
             {
-                Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
+                store.Values[UNITS_ARE_SI] = true;
                 units.IsOn = true;
             }
-            if (store.Values.ContainsKey("allowBackground"))
+        }
+        private void setUpTileSection()
+        {
+            if (localStore.Values.ContainsKey(ALLOW_BG_TASK))
             {
-                bool allowed = (bool)store.Values["allowBackground"];
+                bool allowed = (bool)localStore.Values[ALLOW_BG_TASK];
                 enableBackground.IsChecked = allowed;
                 if (allowed)
                 {
@@ -143,52 +161,100 @@ namespace Weathr81.OtherPages
             }
             else
             {
-                store.Values["allowBackground"] = true;
-                enableBackground.IsChecked = true;
-                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                localStore.Values[ALLOW_BG_TASK] = false;
+                enableBackground.IsChecked = false;
+                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
             }
-            if (store.Values.ContainsKey("updateFreq"))
+
+            if (localStore.Values.ContainsKey(TRANSPARENT_TILE))
             {
-                updateFreq.Value = Convert.ToInt32(store.Values["updateFreq"]);
+                transparentToggle.IsOn = !(bool)localStore.Values[TRANSPARENT_TILE];
+            }
+            else
+            {
+                transparentToggle.IsOn = true;
+                localStore.Values[TRANSPARENT_TILE] = false;
+            }
+
+            if (localStore.Values.ContainsKey(UPDATE_FREQ))
+            {
+                updateFreq.Value = Convert.ToInt32(localStore.Values[UPDATE_FREQ]);
                 currentRate.Text = printUpdateRate(updateFreq.Value);
             }
             else
             {
                 updateFreq.Value = 120;
-                registerRecurringBG();
                 currentRate.Text = printUpdateRate(updateFreq.Value);
+                localStore.Values[UPDATE_FREQ] = (uint)120;
+            }
+
+            if (store.Values.ContainsKey(TILE_UNITS_ARE_SI))
+            {
+                tileUnits.IsOn = (bool)store.Values[TILE_UNITS_ARE_SI];
+            }
+            else
+            {
+                tileUnits.IsOn = true;
+                store.Values[TILE_UNITS_ARE_SI] = true;
             }
         }
-
-
-
-        protected override void OnNavigatedFrom(NavigationEventArgs e)
-        {
-            this.navigationHelper.OnNavigatedFrom(e);
-        }
-
         #endregion
 
+        #region general pivot
         private void Units_Toggled(object sender, RoutedEventArgs e)
         {
             if (doneSetting)
             {
                 ToggleSwitch toggle = sender as ToggleSwitch;
-                Serializer.save(true, typeof(bool), UNITS_CHANGED, localStore);
                 if (toggle != null)
                 {
+                    localStore.Values[UNITS_CHANGED] = true;
                     if (toggle.IsOn)
                     {
-                        Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
+                        store.Values[UNITS_ARE_SI] = true;
+                        return;
                     }
-                    else
-                    {
-                        Serializer.save(false, typeof(bool), UNITS_ARE_SI, store);
-                    }
+                    store.Values[UNITS_ARE_SI] = false;
                 }
             }
         }
+        #endregion
 
+        #region tile pivot
+
+        private void enableBackground_Checked(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values[ALLOW_BG_TASK] = true;
+                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                registerRecurringBG();
+            }
+            else
+            {
+                return;
+            }
+        }
+        private void enableBackground_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values[ALLOW_BG_TASK] = false;
+                UpdateTiles.Unregister(TASK_NAME);
+                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+            }
+            else
+            {
+                return;
+            }
+        }
+        private void registerRecurringBG(uint mins = 120)
+        {
+            localStore.Values[UPDATE_FREQ] = mins;
+            UpdateTiles.Register(mins);
+        }
+
+        //rate slider
         private string printUpdateRate(double p)
         {
             if (p < 60)
@@ -221,7 +287,6 @@ namespace Weathr81.OtherPages
                 return "Update every " + hours + hrS + " and " + mins + minS;
             }
         }
-        DispatcherTimer timer = new DispatcherTimer();
         private void updateFreq_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             if (doneSetting)
@@ -240,7 +305,7 @@ namespace Weathr81.OtherPages
             }
             return;
         }
-
+        DispatcherTimer timer = new DispatcherTimer();
         void timer_Tick(object sender, object e)
         {
             registerRecurringBG(Convert.ToUInt32(updateFreq.Value));
@@ -249,49 +314,48 @@ namespace Weathr81.OtherPages
             timer = new DispatcherTimer();
         }
 
-
-        private void enableBackground_Checked(object sender, RoutedEventArgs e)
-        {
-            if (doneSetting)
-            {
-                store.Values["allowBackground"] = true;
-                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                registerRecurringBG();
-
-            }
-            else
-            {
-                return;
-            }
-        }
-
-        private void enableBackground_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (doneSetting)
-            {
-                store.Values["allowBackground"] = false;
-                UpdateTiles.Unregister("UV level updater");
-                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            }
-            else
-            {
-                return;
-            }
-        }
-        private void registerRecurringBG(uint mins = 120)
-        {
-            store.Values["updateFreq"] = mins;
-            localStore.Values["updateFreq"] = mins;
-            UpdateTiles.Register(mins);
-        }
-
         private void TransparentTile_Toggled(object sender, RoutedEventArgs e)
         {
             if (doneSetting)
             {
-                localStore.Values["flickrTile"] = (sender as ToggleSwitch).IsOn;
+                localStore.Values[TRANSPARENT_TILE] = !(sender as ToggleSwitch).IsOn;
             }
             return;
         }
+
+        private void tileUnits_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                ToggleSwitch t = sender as ToggleSwitch;
+                if (t != null)
+                {
+                    if (t.IsOn)
+                    {
+                        store.Values[TILE_UNITS_ARE_SI] = true;
+                        return;
+                    }
+                    store.Values[TILE_UNITS_ARE_SI] = false;
+                }
+            }
+            return;
+        }
+        #endregion
+
+        #region advanced pivot
+        async private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            MessageDialog dialog = new MessageDialog("This will remove all of your saved data and settings on for Weathr on all of your devices, and reset everything, including backups. Are you sure you want to delete?", "Are you sure?");
+            dialog.Commands.Add(new UICommand("Reset Everything", delegate(IUICommand cmd)
+            {
+                store.Values.Clear();
+                localStore.Values.Clear();
+                UpdateTiles.Unregister(TASK_NAME);
+                updateSettings();
+            }));
+            dialog.Commands.Add(new UICommand("No"));
+            await dialog.ShowAsync();
+        }
+        #endregion
     }
 }

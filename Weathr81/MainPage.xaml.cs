@@ -108,6 +108,7 @@ namespace Weathr81
         async private void runApp()
         {
             //central point of app, runs other methods
+            
             statusBar.BackgroundColor = Colors.Black;
             statusBar.BackgroundOpacity = .25;
             statusBar.ProgressIndicator.ShowAsync();
@@ -247,11 +248,8 @@ namespace Weathr81
             }
             if (localStore.Values.ContainsKey(UNITS_CHANGED))
             {
-                sameUnits = !(bool)(Serializer.get(UNITS_CHANGED, typeof(bool), localStore));
-                if (!sameUnits)
-                {
-                    Serializer.save(false, typeof(bool), UNITS_CHANGED, localStore);
-                }
+                sameUnits = !(bool)localStore.Values[UNITS_CHANGED];
+                localStore.Values[UNITS_CHANGED] = false;
             }
             return nowDone && forecastDone && alertDone && hourlyDone && withinThirtyMins && sameLoc && sameUnits;
         }
@@ -259,11 +257,11 @@ namespace Weathr81
         {
             if (store.Values.ContainsKey(UNITS_ARE_SI))
             {
-                return (bool)Serializer.get(UNITS_ARE_SI, typeof(bool), store);
+                return (bool)store.Values[UNITS_ARE_SI];
             }
             else
             {
-                Serializer.save(true, typeof(bool), UNITS_ARE_SI, store);
+                store.Values[UNITS_ARE_SI] = true;
                 return true;
             }
         }
