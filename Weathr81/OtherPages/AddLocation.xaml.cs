@@ -121,16 +121,17 @@ namespace Weathr81.OtherPages
         #endregion
         async private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-
+            //clear suggestions and add new onese
             suggestions.Clear();
             Uri searchUri = new Uri("http://autocomplete.wunderground.com/aq?query=" + SearchBox.Text + "&format=XML");
             HttpClient client = new HttpClient();
             Stream str = await client.GetStreamAsync(searchUri);
             populateSuggestions(XDocument.Load(str));
         }
-
         private void populateSuggestions(XDocument doc)
         {
+            //using the result of a wunderground query, populate the search box
+            suggestions.Add(new SearchItemTemplate() { locName = "Current Location", isCurrent = true, wUrl = "null" });
             var locNames = doc.Descendants().Elements("name");
             foreach (XElement elm in doc.Descendants().Elements("name"))
             {
@@ -145,17 +146,12 @@ namespace Weathr81.OtherPages
                 {
                     wuUrl = elm.NextNode.NextNode.NextNode.NextNode.NextNode.ToString();
                 }
-
                 wuUrl = wuUrl.Replace("<l>", "");
                 wuUrl = wuUrl.Replace("</l>", "");
-
-                suggestions.Add(new SearchItemTemplate() { locName = locationName, wUrl = wuUrl });
-
+                suggestions.Add(new SearchItemTemplate() { locName = locationName, wUrl = wuUrl, isCurrent=false });
             }
             results.ItemsSource = suggestions;
         }
-
-
         async private void results_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ListBox lb = sender as ListBox;
@@ -165,25 +161,45 @@ namespace Weathr81.OtherPages
             {
                 locs = new ObservableCollection<Location>();
             }
-            GeoTemplate coordinates = await getCoordinates(item.locName);
-            if (!coordinates.fail)
+            if (locIsNew(locs, item))
             {
-                locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
+                GeoTemplate coordinates = await getCoordinates(item.locName);
+                if (!coordinates.fail)
+                {
+                    locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
+                }
+                Serializer.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
+                Frame.GoBack();
             }
-            Serializer.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
-            Frame.GoBack();
+            return;
         }
 
+        //helpers
+        private bool locIsNew(ObservableCollection<Location> locs, SearchItemTemplate item)
+        {
+            //prevent locations from being added twice
+            foreach (Location loc in locs)
+            {
+                if (item.locName == loc.LocName || (loc.IsCurrent && item.isCurrent))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        //googling location
         async private Task<GeoTemplate> getCoordinates(string locName)
         {
+            //get item coordinates from google
             Uri googleUri = new Uri(GOOGLE_URL + locName + GOOGLE_POST);
             HttpClient c = new HttpClient();
             Stream str = await c.GetStreamAsync(googleUri);
             return readCoordinates(XDocument.Load(str));
         }
-
         private GeoTemplate readCoordinates(XDocument doc)
         {
+            //parse googles response
             try
             {
                 var location = doc.Element("GeocodeResponse").Element("result").Element("geometry").Element("location");
