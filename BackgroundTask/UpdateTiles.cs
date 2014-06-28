@@ -6,6 +6,7 @@ using SerializerClass;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
@@ -105,7 +106,14 @@ namespace BackgroundTask
                 await updateTiles();
             }
             def.Complete();
+        
         }
+        private void OnCanceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
+        {
+            Debug.WriteLine("Background " + sender.Task.Name + " Cancel Requested...");
+
+        }
+
         private bool setLocationList()
         {
             //sets up the location list, returning true if sucessful
@@ -123,7 +131,7 @@ namespace BackgroundTask
         async private Task updateTiles()
         {
             await updateMainTile();
-           // await updateSecondaryTiles();
+            await updateSecondaryTiles();
         }
 
       async  private Task updateSecondaryTiles()
@@ -132,7 +140,7 @@ namespace BackgroundTask
             foreach (SecondaryTile tile in tiles)
             {
                 Location tileLoc = findTile(tile.Arguments);
-                updateSecondaryTile(tile, tileLoc);
+                await updateSecondaryTile(tile, tileLoc);
             }
         }
 
@@ -208,7 +216,7 @@ namespace BackgroundTask
                 }
             }
         }
-       async private void updateSecondaryTile(SecondaryTile tile, Location tileLoc)
+       async private Task updateSecondaryTile(SecondaryTile tile, Location tileLoc)
         {
             string name = tile.TileId;
             string smallTileName = name + "small.png";
