@@ -40,7 +40,8 @@ namespace BackgroundTask
         private const string SAVE_LOC = "ms-appdata:///local/";
         private const string TILE_UNITS_ARE_SI = "tileUnitsAreSI";
         private const string TRANSPARENT_TILE = "tileIsTransparent";
-        private string UPDATE_ON_CELL = "allowUpdateOnNetwork";
+        private const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
+        private const string ALLOW_LOC = "allowAutoLocation";
         private static ObservableCollection<Location> locationList;
         ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
@@ -155,6 +156,14 @@ namespace BackgroundTask
                 return true;
             }
         }
+        private bool allowedToAutoFind()
+        {
+            if (localStore.Values.ContainsKey(ALLOW_LOC))
+            {
+                return (bool)localStore.Values[ALLOW_LOC];
+            }
+            return false;
+        }
 
         //updating the tiles
         async private Task updateMainTile()
@@ -169,7 +178,7 @@ namespace BackgroundTask
                     string mediumTileName = name + "med.png";
                     string wideTileName = name + "wide.png";
 
-                    GetGeoposition pos = new GetGeoposition(loc);
+                    GetGeoposition pos = new GetGeoposition(loc, allowedToAutoFind());
                     GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 2), new TimeSpan(0, 1, 0));
                     if (!geoTemplate.fail)
                     {
@@ -246,7 +255,7 @@ namespace BackgroundTask
             string mediumTileName = name + "med.png";
             string wideTileName = name + "wide.png";
 
-            GetGeoposition pos = new GetGeoposition(tileLoc);
+            GetGeoposition pos = new GetGeoposition(tileLoc, allowedToAutoFind());
             GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 500), new TimeSpan(2, 0, 0));
             if (!geoTemplate.fail)
             {

@@ -5,6 +5,7 @@ using ForecastIOData;
 using LocationHelper;
 using SerializerClass;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using WeatherData;
@@ -17,6 +18,7 @@ using Windows.Foundation;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
+using Windows.UI.Popups;
 using Windows.UI.StartScreen;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
@@ -72,7 +74,8 @@ namespace Weathr81
         private const string ALLOW_BG = "allowBackground";
         private const string UPDATE_FREQ = "updateFreq";
         private const string TASK_NAME = "Weathr Tile Updater";
-        
+        private const string ALLOW_LOC = "allowAutoLocation";
+
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition GetGeoposition;
@@ -108,34 +111,48 @@ namespace Weathr81
         async private void runApp()
         {
             //central point of app, runs other methods
-            
             statusBar.BackgroundColor = Colors.Black;
             statusBar.BackgroundOpacity = .25;
             statusBar.ProgressIndicator.ShowAsync();
-            setFavoriteLocations();
             statusBar.ProgressIndicator.Text = "Getting your location...";
-            GetGeoposition = new GetGeoposition(currentLocation);
-            if (!restoreData())
+            if (await setFavoriteLocations())
             {
-                if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
+                GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
+                if (!restoreData())
                 {
-                    updateUI();
+                    if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
+                    {
+                        updateUI();
+                    }
+                    else
+                    {
+                        displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                    }
                 }
                 else
                 {
-                    displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                    GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                    setMaps(geo.position);
+                    NowTemplate nowTemplate = (now.DataContext as NowTemplate);
+                    if (nowTemplate != null && geo.position!=null)
+                    {
+                        setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    }
                 }
             }
             else
             {
-                GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                setMaps(geo.position);
-                NowTemplate nowTemplate = (now.DataContext as NowTemplate);
-                if (nowTemplate != null)
-                {
-                    setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-                }
+                Frame.Navigate(typeof(AddLocation));
             }
+        }
+
+        private bool allowedToAutoFind()
+        {
+            if (localStore.Values.ContainsKey(ALLOW_LOC))
+            {
+                return (bool)localStore.Values[ALLOW_LOC];
+            }
+            return false;
         }
         private void displayError(string errorMsg)
         {
@@ -149,28 +166,35 @@ namespace Weathr81
             //updates the ui/weather conditions of app
             WeatherInfo downloadedForecast;
             GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-            if (geo.useCoord)
+            if (!geo.fail)
             {
-                downloadedForecast = await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude);
+                if (geo.useCoord)
+                {
+                    downloadedForecast = await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude);
+                }
+                else
+                {
+                    downloadedForecast = await setWeather(geo.wUrl);
+                }
+                if (!downloadedForecast.fail)
+                {
+                    bool isSI = unitsAreSI();
+                    Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
+                    updateWeatherInfo(downloadedForecast, isSI);
+                    updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
+                    setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    setMaps(geo.position);
+                    setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                }
+                else
+                {
+                    setBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    displayError(downloadedForecast.error);
+                }
             }
             else
             {
-                downloadedForecast = await setWeather(geo.wUrl);
-            }
-            if (!downloadedForecast.fail)
-            {
-                bool isSI = unitsAreSI();
-                Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
-                updateWeatherInfo(downloadedForecast, isSI);
-                updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
-                setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
-                setMaps(geo.position);
-                setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-            }
-            else
-            {
-                setBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
-                displayError(downloadedForecast.error);
+                displayError(geo.errorMsg);
             }
         }
         private bool restoreData()
@@ -296,7 +320,7 @@ namespace Weathr81
             }
             Serializer.save(currentLocation, typeof(Location), LAST_LOC, localStore);
         }
-        private void setFavoriteLocations()
+        async private Task<bool> setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
             if (store.Values.ContainsKey(LOC_STORE))
@@ -310,18 +334,13 @@ namespace Weathr81
                 {
                     //something wrong with the list, reset roaming and try again
                     store.Values.Remove(LOC_STORE);
-                    setFavoriteLocations();
+                    await setFavoriteLocations();
                 }
             }
             else
             {
-                locTemplate.locations = new LocationList();
-                locTemplate.locations.locationList = new ObservableCollection<Location>();
-                locTemplate.locations.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", LocUrl="currLoc", IsDefault = true, Lat = 0, Lon = 0 });
-                Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
-
+                locTemplate.locations = await setupLocation();
             }
-            locList.DataContext = locTemplate;
             if (currentLocation == null)
             {
                 foreach (Location loc in locTemplate.locations.locationList)
@@ -332,7 +351,38 @@ namespace Weathr81
                         break;
                     }
                 }
+                if (currentLocation == null)
+                {
+                    if (locTemplate.locations.locationList.Count > 0)
+                    {
+                        locTemplate.locations.locationList[0].IsDefault = true;
+                        currentLocation = locTemplate.locations.locationList[0];
+                        Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+                    }
+                }
             }
+            locList.DataContext = locTemplate;
+            return locTemplate.locations.locationList.Count > 0;
+        }
+        async private Task<LocationList> setupLocation()
+        {
+            LocationList locList = new LocationList();
+            locList.locationList = new ObservableCollection<Location>();
+            MessageDialog dialog = new MessageDialog("Weathr can use your phone's location to find more accurate forecast. Allow Weathr to use your location?", "Allow location?");
+            dialog.Commands.Add(new UICommand("Use location", delegate(IUICommand cmd)
+            {
+                locList.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", LocUrl = "currLoc", IsDefault = true, Lat = 0, Lon = 0 });
+                localStore.Values[ALLOW_LOC] = true;
+                Serializer.save(locList.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+            }));
+            dialog.Commands.Add(new UICommand("No", delegate(IUICommand cmd)
+            {
+                localStore.Values[ALLOW_LOC] = false;
+            }));
+            await dialog.ShowAsync();
+
+
+            return locList;
         }
 
         //set up Wunderground
@@ -438,10 +488,31 @@ namespace Weathr81
         {
             maps.DataContext = new MapsTemplate() { center = pos };
         }
-        async private void radarMap_Loaded(object sender, RoutedEventArgs e)
+        //save mapcontrol for later
+        private MapControl radMap;
+        private MapControl satMap;
+        private void setupMaps()
         {
+            setupRadar();
+            setupSatellite();
+        }
 
-            MapControl radMap = (sender as MapControl);
+        async private void setupSatellite()
+        {
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            MapTileSource tileSource = new MapTileSource(dataSource);
+            satMap.TileSources.Add(tileSource);
+            GeoTemplate point = await tryGetLocation();
+            if (!point.fail)
+            {
+                Polygon triangle = createMapMarker();
+                MapControl.SetLocation(triangle, point.position);
+                satMap.Children.Add(triangle);
+            }
+        }
+
+        async private void setupRadar()
+        {
             HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
             MapTileSource tileSource = new MapTileSource(dataSource);
             radMap.TileSources.Add(tileSource);
@@ -453,19 +524,13 @@ namespace Weathr81
                 radMap.Children.Add(triangle);
             }
         }
-        async private void satMap_Loaded(object sender, RoutedEventArgs e)
+        private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
-            MapControl satMap = (sender as MapControl);
-            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
-            MapTileSource tileSource = new MapTileSource(dataSource);
-            satMap.TileSources.Add(tileSource);
-            GeoTemplate point = await tryGetLocation();
-            if (!point.fail)
-            {
-                Polygon triangle = createMapMarker();
-                MapControl.SetLocation(triangle, point.position);
-                satMap.Children.Add(triangle);
-            }
+            radMap = (sender as MapControl);
+        }
+        private void satMap_Loaded(object sender, RoutedEventArgs e)
+        {
+            satMap = (sender as MapControl);
         }
         private Polygon createMapMarker()
         {
@@ -484,20 +549,24 @@ namespace Weathr81
         async private Task<GeoTemplate> tryGetLocation()
         {
             //keeps from SystemAccessViolation, hopefully
-            GeoTemplate origTemplate = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-            GeoTemplate newTemplate = new GeoTemplate() { fail = origTemplate.fail, errorMsg = origTemplate.errorMsg, useCoord = origTemplate.useCoord, wUrl = origTemplate.wUrl };
-            Geopoint point;
-            if (origTemplate.position != null)
+            if (GetGeoposition != null)
             {
-                point = new Geopoint(new BasicGeoposition() { Latitude = origTemplate.position.Position.Latitude, Longitude = origTemplate.position.Position.Longitude });
-                newTemplate.position = point;
+                GeoTemplate origTemplate = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                GeoTemplate newTemplate = new GeoTemplate() { fail = origTemplate.fail, errorMsg = origTemplate.errorMsg, useCoord = origTemplate.useCoord, wUrl = origTemplate.wUrl };
+                Geopoint point;
+                if (origTemplate.position != null)
+                {
+                    point = new Geopoint(new BasicGeoposition() { Latitude = origTemplate.position.Position.Latitude, Longitude = origTemplate.position.Position.Longitude });
+                    newTemplate.position = point;
+                }
+                else
+                {
+                    newTemplate.fail = true;
+                    newTemplate.errorMsg = "pos not defined";
+                }
+                return newTemplate;
             }
-            else
-            {
-                newTemplate.fail = true;
-                newTemplate.errorMsg = "pos not defined";
-            }
-            return newTemplate;
+            return null;
         }
 
         //set up alerts
@@ -682,6 +751,22 @@ namespace Weathr81
         private void addLoc_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(AddLocation));
+        }
+
+        //set of bools to make sure things aren't set more than once
+        private bool mapsSet = false;
+        private void hub_SectionsInViewChanged(object sender, SectionsInViewChangedEventArgs e)
+        {
+            Hub hub = sender as Hub;
+            if (hub != null)
+            {
+                //IList<HubSection> inView = hub.SectionsInView;
+                HubSection section = hub.SectionsInView[0];
+                if (section.Name == "maps")
+                {
+                    setupMaps();
+                }
+            }
         }
     }
 }

@@ -31,6 +31,24 @@
             <PivotItem Header="general">
                 <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
             </PivotItem>
+            <PivotItem Header="locations">
+                <StackPanel>
+                    <ToggleSwitch Header="Enable Auto Location" Toggled="autoLocateToggle_Toggled"  x:Name="autoLocateToggle"></ToggleSwitch>
+                    <ScrollViewer>
+                        <ItemsControl x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" >
+                                        <Image Name="default"  Source="{Binding ImageSource}"/>
+                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="20" Foreground="White" Margin="0,0,0,15">
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </PivotItem>
             <PivotItem Header="tiles">
                 <StackPanel>
                     <CheckBox Name="enableBackground" Checked="enableBackground_Checked" Unchecked="enableBackground_Unchecked" Content="Allow background tile updates"/>
@@ -46,13 +64,14 @@
                         <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
                         <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                         <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
-                        
+
                         <TextBlock VerticalAlignment="Bottom" Margin="0,20,0,0" Text="Tile will be updated next time the background task runs" Style="{ThemeResource ControlContextualInfoTextBlockStyle}"></TextBlock>
                     </StackPanel>
-                    
+
                 </StackPanel>
-                
+
             </PivotItem>
+
             <PivotItem Header="advanced">
                 <Button HorizontalAlignment="Center" VerticalAlignment="Bottom" Content="Clear All Settings" Width="250" Click="Button_Click"/>
             </PivotItem>

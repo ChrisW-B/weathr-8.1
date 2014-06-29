@@ -11,10 +11,12 @@ namespace LocationHelper
     {
         private Location currentLocation;
         private GeoTemplate geoTemplate;
+        private bool allowAutofind;
 
-        public GetGeoposition(Location loc)
+        public GetGeoposition(Location loc, bool allowAutofind)
         {
             this.currentLocation = loc;
+            this.allowAutofind = allowAutofind;
         }
         async public Task<GeoTemplate> getLocation(TimeSpan waitTime, TimeSpan history)
         {
@@ -28,15 +30,16 @@ namespace LocationHelper
                 return geoTemplate;
             }
         }
-        public void updateLocation(Location loc)
+        public void updateLocation(Location loc, bool allowAutofind)
         {
             this.currentLocation = loc;
+            this.allowAutofind = allowAutofind;
             geoTemplate = null;
         }
 
         async private Task setPosition(TimeSpan waitTime, TimeSpan history)
         {
-            if (currentLocation.IsCurrent)
+            if (currentLocation.IsCurrent && allowAutofind)
             {
                 if (geoTemplate == null || geoTemplate.fail)
                 {
@@ -56,6 +59,13 @@ namespace LocationHelper
                         geoTemplate.useCoord = false;
                     }
                 }
+            }
+            else if (currentLocation.IsCurrent && !allowAutofind)
+            {
+                geoTemplate = new GeoTemplate();
+                geoTemplate.errorMsg = "Can't find your current location, autolocate seems to be off!";
+                geoTemplate.fail = true;
+                geoTemplate.useCoord = false;
             }
             else
             {

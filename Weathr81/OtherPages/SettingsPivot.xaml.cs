@@ -121,7 +121,8 @@ namespace Weathr81.OtherPages
         private const string ALLOW_BG_TASK = "allowBackground";
         private const string UPDATE_FREQ = "updateFreq";
         private const string TASK_NAME = "Weathr Tile Updater";
-        private string UPDATE_ON_CELL = "allowUpdateOnNetwork";
+        private const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
+        private const string ALLOW_LOC = "allowAutoLocation";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         bool doneSetting = false;
@@ -130,7 +131,21 @@ namespace Weathr81.OtherPages
         private void updateSettings()
         {
             setUpGeneralSection();
+            setupLocationsSection();
             setUpTileSection();
+        }
+
+        private void setupLocationsSection()
+        {
+            if (localStore.Values.ContainsKey(ALLOW_LOC))
+            {
+                autoLocateToggle.IsOn = (bool)localStore.Values[ALLOW_LOC];
+            }
+            else
+            {
+                localStore.Values[ALLOW_LOC] = true;
+                autoLocateToggle.IsOn=true;
+            }
         }
 
         private void setUpGeneralSection()
@@ -376,6 +391,17 @@ namespace Weathr81.OtherPages
             }));
             dialog.Commands.Add(new UICommand("No"));
             await dialog.ShowAsync();
+        }
+        #endregion
+
+        #region location pivot
+        private void autoLocateToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values[ALLOW_LOC] = (sender as ToggleSwitch).IsOn;
+            }
+            return;
         }
         #endregion
     }

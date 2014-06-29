@@ -10,7 +10,7 @@
     Background="Black"
     Foreground="White">
 
-    <Hub x:Name="hub" Header="loading" Foreground="White">
+    <Hub x:Name="hub" Header="loading" Foreground="White" SectionsInViewChanged="hub_SectionsInViewChanged">
         <HubSection Header="now" x:Name="now" HeaderTemplate="{StaticResource smallHeader}">
             <DataTemplate>
                 <Grid Margin="0, -30, 0, 0">
