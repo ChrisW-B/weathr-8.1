@@ -38,7 +38,15 @@
                         <ItemsControl x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" >
+                                    <StackPanel Orientation="Horizontal" Holding="StackPanel_Holding" >
+                                        <FlyoutBase.AttachedFlyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Remove" x:Name="removeItem" Click="removeItem_Click" Tag="{Binding LocUrl}" />
+                                                <MenuFlyoutItem Text="Pin" x:Name="pinItem" Click="pinItem_Click" Tag="{Binding LocUrl}"/>
+                                                <MenuFlyoutItem Text="Make Default" x:Name="makeItemDefault" Click="makeItemDefault_Click" Tag="{Binding LocUrl}" />
+                                            </MenuFlyout>
+                                        </FlyoutBase.AttachedFlyout>
+
                                         <Image Name="default"  Source="{Binding ImageSource}"/>
                                         <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="30" Foreground="White" Margin="0,0,0,15">
                                         </TextBlock>

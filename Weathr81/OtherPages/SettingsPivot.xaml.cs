@@ -21,6 +21,7 @@ using BackgroundTask;
 using Windows.UI.Popups;
 using System.Collections.ObjectModel;
 using LocationHelper;
+using Windows.UI.StartScreen;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -147,7 +148,7 @@ namespace Weathr81.OtherPages
             else
             {
                 localStore.Values[ALLOW_LOC] = true;
-                autoLocateToggle.IsOn=true;
+                autoLocateToggle.IsOn = true;
             }
             if (store.Values.ContainsKey(LOC_STORE))
             {
@@ -159,7 +160,6 @@ namespace Weathr81.OtherPages
                 }
             }
         }
-
         private void setUpGeneralSection()
         {
             if (store.Values.ContainsKey(UNITS_ARE_SI))
@@ -415,10 +415,104 @@ namespace Weathr81.OtherPages
             }
             return;
         }
+
+        private void addLoc_Click(object sender, RoutedEventArgs e)
+        {
+            Frame.Navigate(typeof(AddLocation));
+        }
+
+        private void removeItem_Click(object sender, RoutedEventArgs e)
+        {
+            LocationTemplate list = locList.DataContext as LocationTemplate;
+            Location item = findLocation((sender as MenuFlyoutItem).Tag.ToString());
+            if (list != null && item != null)
+            {
+                foreach (Location old in list.locations.locationList)
+                {
+                    if (old == item)
+                    {
+                        list.locations.locationList.Remove(old);
+                        break;
+                    }
+                }
+            }
+            locList.DataContext = null;
+            LocationTemplate locTemp = new LocationTemplate() { locations = new LocationList() { locationList = list.locations.locationList } };
+            locList.DataContext = locTemp;
+            Serializer.save(locTemp.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+        }
+
+        async private void pinItem_Click(object sender, RoutedEventArgs e)
+        {
+            MenuFlyoutItem locationUrl = sender as MenuFlyoutItem;
+            if (locationUrl != null)
+            {
+                Location location = findLocation(locationUrl.Tag.ToString());
+                if (location != null)
+                {
+                    Uri logo = new Uri("ms-appx:///Assets/WeathrSmallLogo.png");
+                    SecondaryTile secondaryTile = new SecondaryTile() { Arguments = location.LocUrl, TileId = location.Lat + "_" + location.Lon, DisplayName = location.LocName, RoamingEnabled = true };
+                    secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
+                    secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
+                    secondaryTile.VisualElements.Square150x150Logo = logo;
+                    secondaryTile.VisualElements.Square310x310Logo = logo;
+                    secondaryTile.VisualElements.Wide310x150Logo = logo;
+                    await secondaryTile.RequestCreateAsync();
+                }
+            }
+        }
+
+        private Location findLocation(string url)
+        {
+            LocationTemplate list = locList.DataContext as LocationTemplate;
+            if (list != null)
+            {
+                foreach (Location loc in list.locations.locationList)
+                {
+                    if (loc.LocUrl == url)
+                    {
+                        return loc;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void makeItemDefault_Click(object sender, RoutedEventArgs e)
+        {
+            LocationTemplate list = locList.DataContext as LocationTemplate;
+            Location item = findLocation((sender as MenuFlyoutItem).Tag.ToString());
+            if (list != null && item != null)
+            {
+                foreach (Location old in list.locations.locationList)
+                {
+                    if (old == item)
+                    {
+                        old.IsDefault = true;
+                    }
+                    else
+                    {
+                        old.IsDefault = false;
+                    }
+                }
+            }
+            locList.DataContext = null;
+            LocationTemplate locTemp = new LocationTemplate() { locations = new LocationList() { locationList = list.locations.locationList } };
+            locList.DataContext = locTemp;
+            Serializer.save(locTemp.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+        }
+
+        private void StackPanel_Holding(object sender, HoldingRoutedEventArgs e)
+        {
+            FrameworkElement senderElement = sender as FrameworkElement;
+            FlyoutBase flyoutBase = FlyoutBase.GetAttachedFlyout(senderElement);
+            flyoutBase.ShowAt(senderElement);
+        }
         #endregion
 
         private void ContentRoot_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            //show and hide the add location button/app menu
             if ((sender as Pivot).SelectedIndex == 1)
             {
                 appBar.Visibility = Windows.UI.Xaml.Visibility.Visible;
@@ -427,11 +521,6 @@ namespace Weathr81.OtherPages
             {
                 appBar.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
             }
-        }
-
-        private void addLoc_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }
