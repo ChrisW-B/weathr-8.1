@@ -19,6 +19,8 @@ using SerializerClass;
 using Windows.Storage;
 using BackgroundTask;
 using Windows.UI.Popups;
+using System.Collections.ObjectModel;
+using LocationHelper;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -123,6 +125,7 @@ namespace Weathr81.OtherPages
         private const string TASK_NAME = "Weathr Tile Updater";
         private const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         private const string ALLOW_LOC = "allowAutoLocation";
+        private const string LOC_STORE = "locList";
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         bool doneSetting = false;
@@ -145,6 +148,15 @@ namespace Weathr81.OtherPages
             {
                 localStore.Values[ALLOW_LOC] = true;
                 autoLocateToggle.IsOn=true;
+            }
+            if (store.Values.ContainsKey(LOC_STORE))
+            {
+                ObservableCollection<Location> list = (Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                if (list != null)
+                {
+                    LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = list } };
+                    locList.DataContext = locTemplate;
+                }
             }
         }
 
@@ -404,5 +416,22 @@ namespace Weathr81.OtherPages
             return;
         }
         #endregion
+
+        private void ContentRoot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((sender as Pivot).SelectedIndex == 1)
+            {
+                appBar.Visibility = Windows.UI.Xaml.Visibility.Visible;
+            }
+            else
+            {
+                appBar.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+            }
+        }
+
+        private void addLoc_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

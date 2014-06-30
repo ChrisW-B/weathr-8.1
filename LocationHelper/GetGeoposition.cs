@@ -63,7 +63,7 @@ namespace LocationHelper
             else if (currentLocation.IsCurrent && !allowAutofind)
             {
                 geoTemplate = new GeoTemplate();
-                geoTemplate.errorMsg = "Can't find your current location, autolocate seems to be off!";
+                geoTemplate.errorMsg = "Can't find your current location, autofind seems to be off!";
                 geoTemplate.fail = true;
                 geoTemplate.useCoord = false;
             }

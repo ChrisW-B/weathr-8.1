@@ -27,7 +27,7 @@
         </StackPanel>
 
         <!--TODO: Content should be placed within the following grid-->
-        <Pivot Grid.Row="1" x:Name="ContentRoot">
+        <Pivot Grid.Row="1" x:Name="ContentRoot" SelectionChanged="ContentRoot_SelectionChanged">
             <PivotItem Header="general">
                 <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
             </PivotItem>
@@ -40,7 +40,7 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" >
                                         <Image Name="default"  Source="{Binding ImageSource}"/>
-                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="20" Foreground="White" Margin="0,0,0,15">
+                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="30" Foreground="White" Margin="0,0,0,15">
                                         </TextBlock>
                                     </StackPanel>
                                 </DataTemplate>
@@ -78,4 +78,11 @@
         </Pivot>
 
     </Grid>
+    <Page.BottomAppBar>
+        <CommandBar x:Name="appBar" Visibility="Collapsed" Opacity="0.85">
+            <CommandBar.PrimaryCommands>
+                <AppBarButton Label="add place" x:Name="addLoc" Click="addLoc_Click" Icon="Add"/>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+    </Page.BottomAppBar>
 </Page>
