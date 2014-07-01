@@ -356,6 +356,7 @@ namespace Weathr81
                     if (locTemplate.locations.locationList.Count > 0)
                     {
                         locTemplate.locations.locationList[0].IsDefault = true;
+                        locTemplate.locations.locationList[0].Image = "/Assets/favs.png";
                         currentLocation = locTemplate.locations.locationList[0];
                         Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
                     }
@@ -371,7 +372,7 @@ namespace Weathr81
             MessageDialog dialog = new MessageDialog("Weathr can use your phone's location to find more accurate forecast. Allow Weathr to use your location?", "Allow location?");
             dialog.Commands.Add(new UICommand("Use location", delegate(IUICommand cmd)
             {
-                locList.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", LocUrl = "currLoc", IsDefault = true, Lat = 0, Lon = 0 });
+                locList.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", LocUrl = "currLoc", IsDefault = true, Lat = 0, Lon = 0, Image = "/Assets/favs.png" });
                 localStore.Values[ALLOW_LOC] = true;
                 Serializer.save(locList.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
             }));

@@ -26,7 +26,6 @@
             <TextBlock Text="SETTINGS" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
         </StackPanel>
 
-        <!--TODO: Content should be placed within the following grid-->
         <Pivot Grid.Row="1" x:Name="ContentRoot" SelectionChanged="ContentRoot_SelectionChanged">
             <PivotItem Header="general">
                 <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
@@ -34,6 +33,7 @@
             <PivotItem Header="locations">
                 <StackPanel>
                     <ToggleSwitch Header="Enable Auto Location" Toggled="autoLocateToggle_Toggled"  x:Name="autoLocateToggle"></ToggleSwitch>
+                    <TextBlock Text="Press and hold locations for more options" Style="{ThemeResource ControlContextualInfoTextBlockStyle}" Margin="0,0,0,20"/>
                     <ScrollViewer>
                         <ItemsControl x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}">
                             <ItemsControl.ItemTemplate>
@@ -47,8 +47,10 @@
                                             </MenuFlyout>
                                         </FlyoutBase.AttachedFlyout>
 
-                                        <Image Name="default"  Source="{Binding ImageSource}"/>
-                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="30" Foreground="White" Margin="0,0,0,15">
+                                        <Image Name="default"  Source="{Binding Image}" Height="30" MinWidth="30" HorizontalAlignment="Center" VerticalAlignment="Top" />
+                                        
+                                       
+                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="25" Margin="0,0,0,15">
                                         </TextBlock>
                                     </StackPanel>
                                 </DataTemplate>

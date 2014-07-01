@@ -43,6 +43,7 @@ namespace Weathr81.OtherPages
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
+            NavigationCacheMode = Windows.UI.Xaml.Navigation.NavigationCacheMode.Required;
         }
 
         /// <summary>
@@ -489,10 +490,12 @@ namespace Weathr81.OtherPages
                     if (old == item)
                     {
                         old.IsDefault = true;
+                        old.Image = "/Assets/favs.png";
                     }
                     else
                     {
                         old.IsDefault = false;
+                        old.Image = null;
                     }
                 }
             }

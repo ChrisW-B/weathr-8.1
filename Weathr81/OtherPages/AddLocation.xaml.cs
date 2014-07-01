@@ -169,9 +169,8 @@ namespace Weathr81.OtherPages
                     locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
                 }
                 Serializer.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
-                Frame.GoBack();
             }
-            return;
+            Frame.GoBack();
         }
 
         //helpers

@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 
 namespace LocationHelper
 {
@@ -18,5 +19,6 @@ namespace LocationHelper
         public bool IsDefault { get; set; }
         public double Lat { get; set; }
         public double Lon { get; set; }
+        public string Image { get; set; }
     }
 }
