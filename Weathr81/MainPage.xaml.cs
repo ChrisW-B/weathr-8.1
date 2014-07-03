@@ -721,13 +721,12 @@ namespace Weathr81
         }
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
-            Uri logo = new Uri("ms-appx:///Assets/WeathrSmallLogo.png");
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
             secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
-            secondaryTile.VisualElements.Square150x150Logo = logo;
-            secondaryTile.VisualElements.Square310x310Logo = logo;
-            secondaryTile.VisualElements.Wide310x150Logo = logo;
+            secondaryTile.VisualElements.Square150x150Logo = new Uri("ms-appx:///Assets/Square71x71Logo.scale-240.png");
+            secondaryTile.VisualElements.Square310x310Logo = new Uri("ms-appx:///Assets/SmallLogo.scale-240.png");
+            secondaryTile.VisualElements.Wide310x150Logo = new Uri("ms-appx:///Assets/WideLogo.scale-240.png");
             await secondaryTile.RequestCreateAsync();
 
         }

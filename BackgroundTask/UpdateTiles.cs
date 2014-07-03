@@ -6,7 +6,6 @@ using SerializerClass;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
@@ -190,6 +189,7 @@ namespace BackgroundTask
                             {
                                 medName = mediumTileName,
                                 wideName = wideTileName,
+                                smallName = smallTileName,
                                 weather = new BackgroundWeather()
                                 {
                                     conditions = weatherInfo.currentConditions,
@@ -267,6 +267,7 @@ namespace BackgroundTask
                     {
                         medName = mediumTileName,
                         wideName = wideTileName,
+                        smallName = smallTileName,
                         weather = new BackgroundWeather()
                         {
                             conditions = weatherInfo.currentConditions,
@@ -323,13 +324,14 @@ namespace BackgroundTask
                 {
                     await renderTile(data, data.medName, TileSize.medium, background);
                     await renderTile(data, data.wideName, TileSize.wide, background);
+                    await renderTile(data, data.smallName, TileSize.small, background);
                 }
                 else
                 {
                     await renderTile(data, data.medName, TileSize.medium);
                     await renderTile(data, data.wideName, TileSize.wide);
+                    await renderTile(data, data.smallName, TileSize.small);
                 }
-                //await renderTile(data, data.smallName, TileSize.small);
                 return true;
             }
             catch
@@ -369,7 +371,11 @@ namespace BackgroundTask
         //creating grid of tile design
         private Grid createImage(BackgroundTemplate data, TileSize tileSize, BitmapImage background = null)
         {
-            if (background != null)
+            if (tileSize == TileSize.small)
+            {
+                return createSmallTile(data.weather.currentTemp, data.weather.conditions);
+            }
+            else if (background != null)
             {
                 if (tileSize == TileSize.medium)
                 {
@@ -392,6 +398,31 @@ namespace BackgroundTask
                 }
             }
             return null;
+        }
+        private Grid createSmallTile(string temp, string conditions)
+        {
+            Grid g;
+          
+                g = createBackgroundGrid(TileSize.small, true);
+                g.Children.Add(createSmallOverlay(temp, conditions));
+
+            return g;
+        }
+        private Grid createSmallOverlay(string temp, string conditions)
+        {
+            Grid g = new Grid() { Height = 71, Width = 71 };
+            g.Children.Add(createSmallTempText(temp));
+            g.Children.Add(createSmallConditions(conditions));
+            return g;
+        }
+
+        private TextBlock createSmallConditions(string conditions)
+        {
+            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 11, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords};
+        }
+        private TextBlock createSmallTempText(string temp)
+        {
+            return new TextBlock() { Text = temp, FontSize = 30, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         }
         private Grid createWideTile(BackgroundTemplate data, BitmapImage background = null)
         {
@@ -463,6 +494,10 @@ namespace BackgroundTask
             if (tileSize == TileSize.wide)
             {
                 g.Width = 310;
+            }
+            else if (tileSize == TileSize.small)
+            {
+                g.Height = g.Width = 71;
             }
             if (!transparent)
             {
@@ -546,11 +581,17 @@ namespace BackgroundTask
         {
             //pushes the image to the tiles
 
+            ITileSquare71x71IconWithBadge smallTile = TileContentFactory.CreateTileSquare71x71IconWithBadge();
+            smallTile.ImageIcon.Src = smallTileLoc;
+            smallTile.ImageIcon.Alt = "altSmall";
+            smallTile.Branding = TileBranding.Name;
+
             ITileSquare150x150PeekImageAndText04 mediumTile = TileContentFactory.CreateTileSquare150x150PeekImageAndText04();
             mediumTile.TextBodyWrap.Text = compare;
             mediumTile.Branding = TileBranding.None;
             mediumTile.Image.Alt = "altMed";
             mediumTile.Image.Src = mediumTileLoc;
+            mediumTile.Square71x71Content = smallTile;
             mediumTile.StrictValidation = true;
 
             ITileWide310x150PeekImageAndText02 wideTile = TileContentFactory.CreateTileWide310x150PeekImageAndText02();
@@ -571,11 +612,17 @@ namespace BackgroundTask
         {
             if (SecondaryTile.Exists(tile.TileId))
             {
+                ITileSquare71x71IconWithBadge smallTile = TileContentFactory.CreateTileSquare71x71IconWithBadge();
+                smallTile.ImageIcon.Src = smallTileLoc;
+                smallTile.ImageIcon.Alt = "altSmall";
+                smallTile.Branding = TileBranding.Name;
+
                 ITileSquare150x150PeekImageAndText04 mediumTile = TileContentFactory.CreateTileSquare150x150PeekImageAndText04();
                 mediumTile.TextBodyWrap.Text = tempCompare;
                 mediumTile.Branding = TileBranding.None;
                 mediumTile.Image.Alt = "altMed";
                 mediumTile.Image.Src = mediumTileLoc;
+                mediumTile.Square71x71Content = smallTile;
                 mediumTile.StrictValidation = true;
 
                 ITileWide310x150PeekImageAndText02 wideTile = TileContentFactory.CreateTileWide310x150PeekImageAndText02();
@@ -611,7 +658,7 @@ namespace BackgroundTask
                 int num = r.Next(imgList.images.Count);
                 BackgroundFlickr bgFlickr = new BackgroundFlickr();
                 FlickrImage img = imgList.images[num];
-                bgFlickr.imageUri = f.getImageUri(img, GetFlickrInfo.ImageSize.medium800);
+                bgFlickr.imageUri = f.getImageUri(img, GetFlickrInfo.ImageSize.medium640);
                 bgFlickr.userId = img.owner;
                 bgFlickr.userName = (await f.getUser(bgFlickr.userId)).userName;
                 return bgFlickr;
