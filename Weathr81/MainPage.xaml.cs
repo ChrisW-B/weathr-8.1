@@ -105,22 +105,23 @@ namespace Weathr81
             }
             statusBar = StatusBar.GetForCurrentView();
             statusBar.ForegroundColor = Colors.White;
-            statusBar.ShowAsync();
             runApp();
         }
 
         async private void runApp()
         {
             //central point of app, runs other methods
+            await statusBar.ShowAsync();
             statusBar.BackgroundColor = Colors.Black;
             statusBar.BackgroundOpacity = .25;
             statusBar.ProgressIndicator.Text = "Getting your location...";
-            await statusBar.ProgressIndicator.ShowAsync();
+            
             if (await setFavoriteLocations())
             {
                 GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
                 if (!restoreData())
                 {
+                    await statusBar.ProgressIndicator.ShowAsync();
                     if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
                     {
                         updateUI();
@@ -129,6 +130,7 @@ namespace Weathr81
                     {
                         displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
                     }
+                    await statusBar.ProgressIndicator.HideAsync();
                 }
                 else
                 {
@@ -145,7 +147,6 @@ namespace Weathr81
             {
                 Frame.Navigate(typeof(AddLocation));
             }
-           await statusBar.HideAsync();
         }
 
         private bool allowedToAutoFind()
@@ -166,6 +167,7 @@ namespace Weathr81
         async private void updateUI()
         {
             //updates the ui/weather conditions of app
+            await statusBar.ProgressIndicator.ShowAsync();
             WeatherInfo downloadedForecast;
             GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             if (!geo.fail)
@@ -198,6 +200,7 @@ namespace Weathr81
             {
                 displayError(geo.errorMsg);
             }
+            await statusBar.ProgressIndicator.HideAsync();
         }
         private bool restoreData()
         {
