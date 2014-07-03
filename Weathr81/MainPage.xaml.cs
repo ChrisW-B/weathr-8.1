@@ -105,6 +105,7 @@ namespace Weathr81
             }
             statusBar = StatusBar.GetForCurrentView();
             statusBar.ForegroundColor = Colors.White;
+            statusBar.ShowAsync();
             runApp();
         }
 
@@ -113,8 +114,8 @@ namespace Weathr81
             //central point of app, runs other methods
             statusBar.BackgroundColor = Colors.Black;
             statusBar.BackgroundOpacity = .25;
-            statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your location...";
+            await statusBar.ProgressIndicator.ShowAsync();
             if (await setFavoriteLocations())
             {
                 GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
@@ -134,7 +135,7 @@ namespace Weathr81
                     GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
                     setMaps(geo.position);
                     NowTemplate nowTemplate = (now.DataContext as NowTemplate);
-                    if (nowTemplate != null && geo.position!=null)
+                    if (nowTemplate != null && geo.position != null)
                     {
                         setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
                     }
@@ -144,6 +145,7 @@ namespace Weathr81
             {
                 Frame.Navigate(typeof(AddLocation));
             }
+           await statusBar.HideAsync();
         }
 
         private bool allowedToAutoFind()
@@ -389,11 +391,9 @@ namespace Weathr81
         //set up Wunderground
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
-            statusBar.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(WUND_API, lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
-            statusBar.HideAsync();
             return downloadedForecast;
         }
         async private Task<WeatherInfo> setWeather(string wUrl)
@@ -433,7 +433,6 @@ namespace Weathr81
         //set up Forecast.IO
         async private void updateForecastIO(double lat, double lon, bool isSI)
         {
-            statusBar.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your forecast...";
             GetForecastIOData getForecastIOData = new GetForecastIOData(lat, lon, isSI);
             ForecastIOClass forecastIOClass = await getForecastIOData.getForecast();
@@ -448,7 +447,6 @@ namespace Weathr81
                     tryDisplayNextHour(forecastIOClass.mins.summary);
                 }
             }
-            statusBar.HideAsync();
         }
         private void tryDisplayNextHour(string minSum)
         {
@@ -573,12 +571,10 @@ namespace Weathr81
         //set up alerts
         async private void setAlerts(double lat, double lon)
         {
-            statusBar.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting alerts...";
             GetAlerts a = new GetAlerts(lat, lon);
             AlertData d = await a.getAlerts();
             alerts.DataContext = createAlertsList(d.alerts);
-            statusBar.HideAsync();
         }
         private object createAlertsList(ObservableCollection<Alert> alerts)
         {
@@ -604,15 +600,29 @@ namespace Weathr81
         //setting a background
         async private void setBG(string conditions, double lat, double lon)
         {
-            statusBar.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your background...";
-            Uri bg = await GetHubBGUri(conditions, true, true, lat, lon, 0);
+            FlickrImage bg = await getBGInfo(conditions, true, true, lat, lon, 0);
             if (bg != null)
             {
-                setHubBG(bg);
+                addArtistInfo(bg.artist, bg.artistUri);
+                setHubBG(bg.uri);
             }
         }
-        async private Task<Uri> GetHubBGUri(string cond, bool useGroup, bool useLoc, double lat, double lon, int timesRun)
+
+        private void addArtistInfo(string artistName, Uri artistUri)
+        {
+            LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+            if (locTemp != null)
+            {
+                locTemp.PhotoDetails = artistName;
+                locTemp.ArtistUri = artistUri;
+                locList.DataContext = null;
+                locList.DataContext = locTemp;
+            }
+        }
+
+
+        async private Task<FlickrImage> getBGInfo(string cond, bool useGroup, bool useLoc, double lat, double lon, int timesRun)
         {
             //gets a uri for a background image from flickr
             if (timesRun > 1)
@@ -625,11 +635,17 @@ namespace Weathr81
             {
                 Random r = new Random();
                 int num = r.Next(imgList.images.Count);
-                return f.getImageUri(imgList.images[num], GetFlickrInfo.ImageSize.large);
+                FlickrImage bgFlickr = new FlickrImage();
+                FlickrImageData img = imgList.images[num];
+                bgFlickr.uri = f.getImageUri(img, GetFlickrInfo.ImageSize.large);
+                FlickrUser user = await f.getUser(img.owner);
+                bgFlickr.artist = user.userName;
+                bgFlickr.artistUri = user.profUri;
+                return bgFlickr;
             }
             else
             {
-                return await GetHubBGUri(cond, useGroup, false, lat, lon, timesRun++);
+                return await getBGInfo(cond, useGroup, useLoc, lat, lon, timesRun++);
             }
         }
         private void setHubBG(Uri bg)
@@ -638,7 +654,6 @@ namespace Weathr81
             BitmapImage img = new BitmapImage(bg);
             Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .7 };
             hub.Background = imgBrush;
-            statusBar.HideAsync();
         }
         private string getTags(string cond)
         {
@@ -732,6 +747,7 @@ namespace Weathr81
         }
         async private void changePic_Click(object sender, RoutedEventArgs e)
         {
+            await statusBar.ProgressIndicator.ShowAsync();
             GeoTemplate loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             NowTemplate nowTemplate = (now.DataContext as NowTemplate);
             if (nowTemplate != null)
@@ -742,7 +758,7 @@ namespace Weathr81
             {
                 setBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
             }
-
+            await statusBar.ProgressIndicator.HideAsync();
         }
         private void about_Click(object sender, RoutedEventArgs e)
         {

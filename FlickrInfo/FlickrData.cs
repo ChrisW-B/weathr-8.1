@@ -7,9 +7,9 @@ namespace FlickrInfo
     {
         public bool fail { get; set; }
         public string errorMsg { get; set; }
-        public List<FlickrImage> images { get; set; }
+        public List<FlickrImageData> images { get; set; }
     }
-   public class FlickrImage
+   public class FlickrImageData
    {
        public string farm { get; set; }
        public string server { get; set; }
@@ -25,4 +25,12 @@ namespace FlickrInfo
        public bool fail {  get;set; }
        public string errorMsg { get; set; }
    }
+   public class FlickrImage
+   {
+       public Uri uri { get; set; }
+       public Uri artistUri { get; set; }
+       public string title { get; set; }
+       public string artist { get; set; }
+   }
+
 }

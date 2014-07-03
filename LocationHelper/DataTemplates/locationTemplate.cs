@@ -6,6 +6,8 @@ namespace LocationHelper
     public class LocationTemplate
     {
         public LocationList locations { get; set; }
+        public string PhotoDetails { get; set; }
+        public Uri ArtistUri { get; set; }
     }
     public class LocationList
     {

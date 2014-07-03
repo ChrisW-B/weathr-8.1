@@ -657,7 +657,7 @@ namespace BackgroundTask
                 Random r = new Random();
                 int num = r.Next(imgList.images.Count);
                 BackgroundFlickr bgFlickr = new BackgroundFlickr();
-                FlickrImage img = imgList.images[num];
+                FlickrImageData img = imgList.images[num];
                 bgFlickr.imageUri = f.getImageUri(img, GetFlickrInfo.ImageSize.medium640);
                 bgFlickr.userId = img.owner;
                 bgFlickr.userName = (await f.getUser(bgFlickr.userId)).userName;

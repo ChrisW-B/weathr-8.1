@@ -78,7 +78,7 @@ namespace FlickrInfo
             return getPhotoList(await getXml(uri));
         }
 
-        public Uri getImageUri(FlickrImage img, ImageSize sz)
+        public Uri getImageUri(FlickrImageData img, ImageSize sz)
         {
             //public task to get the url of an image from the image
             string url = "https://farm" + img.farm + ".staticflickr.com/" + img.server + "/" + img.id + "_" + img.secret;
@@ -194,13 +194,13 @@ namespace FlickrInfo
                         d.fail = false;
                         d.errorMsg = "all clear!";
                     }
-                    d.images = new List<FlickrImage>();
+                    d.images = new List<FlickrImageData>();
                     XElement photos = doc.Element("rsp").Element("photos");
                     if (photos != null)
                     {
                         foreach (XElement photo in photos.Elements("photo"))
                         {
-                            d.images.Add(new FlickrImage { farm = photo.Attribute("farm").Value, server = photo.Attribute("server").Value, secret = photo.Attribute("secret").Value, id = photo.Attribute("id").Value, owner = photo.Attribute("owner").Value });
+                            d.images.Add(new FlickrImageData { farm = photo.Attribute("farm").Value, server = photo.Attribute("server").Value, secret = photo.Attribute("secret").Value, id = photo.Attribute("id").Value, owner = photo.Attribute("owner").Value });
                         }
                         return d;
                     }
