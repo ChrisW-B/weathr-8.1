@@ -408,17 +408,17 @@ namespace BackgroundTask
 
             return g;
         }
-        private Grid createSmallOverlay(string temp, string conditions)
+        private StackPanel createSmallOverlay(string temp, string conditions)
         {
-            Grid g = new Grid() { Height = 71, Width = 71 };
-            g.Children.Add(createSmallTempText(temp));
-            g.Children.Add(createSmallConditions(conditions));
-            return g;
+            StackPanel s = new StackPanel() {};
+            s.Children.Add(createSmallTempText(temp));
+            s.Children.Add(createSmallConditions(conditions));
+            return s;
         }
 
         private TextBlock createSmallConditions(string conditions)
         {
-            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 11, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords};
+            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords};
         }
         private TextBlock createSmallTempText(string temp)
         {
