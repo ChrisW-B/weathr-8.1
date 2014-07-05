@@ -162,13 +162,11 @@ namespace Weathr81
                 }
             }
         }
-
         private bool boughtTime()
         {
             //determines whether the time extension has been purchased
             return false;
         }
-
         private bool isFullVersion()
         {
             //determines whether the app is the full version
@@ -179,6 +177,7 @@ namespace Weathr81
         {
             //central point of app, runs other methods
             tryBackgroundTask();
+            disablePinIfPinned();
             if (await trialNotOver())
             {
                 await statusBar.ShowAsync();
@@ -218,6 +217,30 @@ namespace Weathr81
             }
         }
 
+        async private void disablePinIfPinned()
+        {
+            if (await tileExists())
+            {
+                AppBarButton pinButton = appBar.PrimaryCommands[2] as AppBarButton;
+                if (pinButton != null)
+                {
+                    pinButton.IsEnabled = false;
+                }
+            }
+        }
+       async private Task<bool> tileExists()
+        {
+            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+            foreach (SecondaryTile tile in tiles)
+            {
+                if (tile.Arguments == currentLocation.LocUrl)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+  
         private void tryBackgroundTask()
         {
             if (localStore.Values.ContainsKey(ALLOW_BG_TASK))
