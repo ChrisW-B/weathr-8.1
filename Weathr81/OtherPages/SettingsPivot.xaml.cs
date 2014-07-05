@@ -128,6 +128,8 @@ namespace Weathr81.OtherPages
         private const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         private const string ALLOW_LOC = "allowAutoLocation";
         private const string LOC_STORE = "locList";
+        private const string FIRST_START = "firstStartDateTime";
+
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         bool doneSetting = false;
@@ -265,7 +267,14 @@ namespace Weathr81.OtherPages
             {
                 localStore.Values[ALLOW_BG_TASK] = true;
                 backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                registerRecurringBG();
+                if (localStore.Values.ContainsKey(UPDATE_FREQ))
+                {
+                    registerRecurringBG((uint)localStore.Values[UPDATE_FREQ]);
+                }
+                else
+                {
+                    registerRecurringBG();
+                }
             }
             else
             {
@@ -288,7 +297,7 @@ namespace Weathr81.OtherPages
         private void registerRecurringBG(uint mins = 120)
         {
             localStore.Values[UPDATE_FREQ] = mins;
-            UpdateTiles.Register(mins);
+            UpdateTiles.Register(TASK_NAME, mins);
         }
 
         //rate slider
@@ -397,9 +406,11 @@ namespace Weathr81.OtherPages
             MessageDialog dialog = new MessageDialog("This will remove all of your saved data and settings on for Weathr on all of your devices, and reset everything, including backups. Are you sure you want to delete?", "Are you sure?");
             dialog.Commands.Add(new UICommand("Reset Everything", delegate(IUICommand cmd)
             {
+                DateTime firstRun = (DateTime)Serializer.get(FIRST_START, typeof(DateTime), store);
                 store.Values.Clear();
                 localStore.Values.Clear();
                 UpdateTiles.Unregister(TASK_NAME);
+                Serializer.save(firstRun, typeof(DateTime), FIRST_START, store);
                 updateSettings();
             }));
             dialog.Commands.Add(new UICommand("No"));

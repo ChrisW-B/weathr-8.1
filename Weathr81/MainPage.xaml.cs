@@ -70,11 +70,14 @@ namespace Weathr81
         private const string LAST_SAVE = "lastSaveTime";
         private const string UNITS_CHANGED = "unitsChanged";
         private const string UNITS_ARE_SI = "unitsAreSI";
-        private const string BG_REG = "bgRegistered";
-        private const string ALLOW_BG = "allowBackground";
+        private const string ALLOW_BG_TASK = "allowBackground";
         private const string UPDATE_FREQ = "updateFreq";
         private const string TASK_NAME = "Weathr Tile Updater";
         private const string ALLOW_LOC = "allowAutoLocation";
+        private const string FIRST_START = "firstStartDateTime";
+
+        private const string IAP_NO_LIMIT = "unlimitedTime";
+        private const string IAP_FORE_IO = "forecastIOAccess";
 
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
@@ -108,44 +111,128 @@ namespace Weathr81
             runApp();
         }
 
-        async private void runApp()
+        async private Task<bool> trialNotOver()
         {
-            //central point of app, runs other methods
-            await statusBar.ShowAsync();
-            statusBar.BackgroundColor = Colors.Black;
-            statusBar.BackgroundOpacity = .25;
-            statusBar.ProgressIndicator.Text = "Getting your location...";
-            
-            if (await setFavoriteLocations())
+            //checks whether or not app can be run
+            if (isFullVersion() || boughtTime())
             {
-                GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
-                if (!restoreData())
-                {
-                    await statusBar.ProgressIndicator.ShowAsync();
-                    if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
-                    {
-                        updateUI();
-                    }
-                    else
-                    {
-                        displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
-                    }
-                    await statusBar.ProgressIndicator.HideAsync();
-                }
-                else
-                {
-                    GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                    setMaps(geo.position);
-                    NowTemplate nowTemplate = (now.DataContext as NowTemplate);
-                    if (nowTemplate != null && geo.position != null)
-                    {
-                        setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-                    }
-                }
+                return true;
             }
             else
             {
-                Frame.Navigate(typeof(AddLocation));
+                DateTime firstRun;
+                if (store.Values.ContainsKey(FIRST_START))
+                {
+                    firstRun = (DateTime)Serializer.get(FIRST_START, typeof(DateTime), store);
+                }
+                else
+                {
+                    Serializer.save(DateTime.Now, typeof(DateTime), FIRST_START, store);
+                    firstRun = DateTime.Now;
+                }
+                int daysRemaining = 7 - (int)(DateTime.UtcNow - firstRun).TotalDays;
+                daysRemaining = -1;
+                if (daysRemaining >= 0)
+                {
+                    MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have " + daysRemaining + " left. Would you like to upgrade to unlimited for $.99?", "Welcome to Weathr!");
+                    dialog.Commands.Add(new UICommand("Upgrade", delegate(IUICommand cmd)
+                    {
+                        //navigate to the store
+                    }));
+                    dialog.Commands.Add(new UICommand("Not now", delegate(IUICommand cmd)
+                    {
+                        return;
+                    }));
+                    await dialog.ShowAsync();
+                    return true;
+                }
+                else
+                {
+                    MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have 0 left. Would you like to upgrade to unlimited for $.99?", "Your trial has expired!");
+                    dialog.Commands.Add(new UICommand("Upgrade", delegate(IUICommand cmd)
+                    {
+                        //navigate to the store
+                    }));
+                    dialog.Commands.Add(new UICommand("Close App", delegate(IUICommand cmd)
+                    {
+                        Application.Current.Exit();
+                    }));
+                    await dialog.ShowAsync();
+                    return false;
+                }
+            }
+        }
+
+        private bool boughtTime()
+        {
+            //determines whether the time extension has been purchased
+            return false;
+        }
+
+        private bool isFullVersion()
+        {
+            //determines whether the app is the full version
+            return true;
+        }
+
+        async private void runApp()
+        {
+            //central point of app, runs other methods
+            tryBackgroundTask();
+            if (await trialNotOver())
+            {
+                await statusBar.ShowAsync();
+                statusBar.BackgroundColor = Colors.Black;
+                statusBar.BackgroundOpacity = 0;
+                statusBar.ProgressIndicator.Text = "Getting your location...";
+                await statusBar.ProgressIndicator.ShowAsync();
+                if (await setFavoriteLocations())
+                {
+                    GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
+                    if (!restoreData())
+                    {
+                        if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
+                        {
+                            updateUI();
+                        }
+                        else
+                        {
+                            displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                        }
+                    }
+                    else
+                    {
+                        GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                        setMaps(geo.position);
+                        NowTemplate nowTemplate = (now.DataContext as NowTemplate);
+                        if (nowTemplate != null && geo.position != null)
+                        {
+                            setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                        }
+                    }
+                }
+                else
+                {
+                    Frame.Navigate(typeof(AddLocation));
+                }
+            }
+        }
+
+        private void tryBackgroundTask()
+        {
+            if (localStore.Values.ContainsKey(ALLOW_BG_TASK))
+            {
+                if ((bool)localStore.Values[ALLOW_BG_TASK])
+                {
+                    if (!UpdateTiles.IsTaskRegistered(TASK_NAME))
+                    {
+                        if(localStore.Values.ContainsKey(UPDATE_FREQ)){
+                            UpdateTiles.Register(TASK_NAME, (uint)localStore.Values[UPDATE_FREQ]);
+                            return;
+                        }
+                        UpdateTiles.Register(TASK_NAME, 120);
+                    }
+                }
             }
         }
 
@@ -186,8 +273,6 @@ namespace Weathr81
                     Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
                     updateWeatherInfo(downloadedForecast, isSI);
                     updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
-                    setAlerts(geo.position.Position.Latitude, geo.position.Position.Longitude);
-                    setMaps(geo.position);
                     setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
                 }
                 else
@@ -200,7 +285,6 @@ namespace Weathr81
             {
                 displayError(geo.errorMsg);
             }
-            await statusBar.ProgressIndicator.HideAsync();
         }
         private bool restoreData()
         {
@@ -394,16 +478,20 @@ namespace Weathr81
         //set up Wunderground
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
+            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(WUND_API, lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
+            await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
         }
         async private Task<WeatherInfo> setWeather(string wUrl)
         {
+            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(WUND_API, wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
+            await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
         }
         private void updateWeatherInfo(WeatherInfo downloadedForecast, bool isSI)
@@ -436,6 +524,7 @@ namespace Weathr81
         //set up Forecast.IO
         async private void updateForecastIO(double lat, double lon, bool isSI)
         {
+            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your forecast...";
             GetForecastIOData getForecastIOData = new GetForecastIOData(lat, lon, isSI);
             ForecastIOClass forecastIOClass = await getForecastIOData.getForecast();
@@ -450,6 +539,7 @@ namespace Weathr81
                     tryDisplayNextHour(forecastIOClass.mins.summary);
                 }
             }
+            await statusBar.ProgressIndicator.HideAsync();
         }
         private void tryDisplayNextHour(string minSum)
         {
@@ -574,10 +664,12 @@ namespace Weathr81
         //set up alerts
         async private void setAlerts(double lat, double lon)
         {
+            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting alerts...";
             GetAlerts a = new GetAlerts(lat, lon);
             AlertData d = await a.getAlerts();
             alerts.DataContext = createAlertsList(d.alerts);
+            await statusBar.ProgressIndicator.HideAsync();
         }
         private object createAlertsList(ObservableCollection<Alert> alerts)
         {
@@ -603,6 +695,7 @@ namespace Weathr81
         //setting a background
         async private void setBG(string conditions, double lat, double lon)
         {
+            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your background...";
             FlickrImage bg = await getBGInfo(conditions, true, true, lat, lon, 0);
             if (bg != null)
@@ -610,6 +703,7 @@ namespace Weathr81
                 addArtistInfo(bg.artist, bg.artistUri);
                 setHubBG(bg.uri);
             }
+            await statusBar.ProgressIndicator.HideAsync();
         }
 
         private void addArtistInfo(string artistName, Uri artistUri)
@@ -729,9 +823,12 @@ namespace Weathr81
             }
             return;
         }
-        private void refresh_Click(object sender, RoutedEventArgs e)
+        async private void refresh_Click(object sender, RoutedEventArgs e)
         {
-            updateUI();
+            if (await trialNotOver())
+            {
+                updateUI();
+            }
         }
         private void settings_Click(object sender, RoutedEventArgs e)
         {
@@ -774,17 +871,66 @@ namespace Weathr81
 
         //set of bools to make sure things aren't set more than once
         private bool mapsSet = false;
-        private void hub_SectionsInViewChanged(object sender, SectionsInViewChangedEventArgs e)
+        private AppBarButton addLocButton;
+        async private void hub_SectionsInViewChanged(object sender, SectionsInViewChangedEventArgs e)
         {
+            if(addLocButton==null){
+                addLocButton = new AppBarButton();
+                addLocButton.Click += addLoc_Click;
+                addLocButton.Icon = new SymbolIcon(Symbol.Add);
+                addLocButton.Label = "Add place";
+            }
             Hub hub = sender as Hub;
             if (hub != null)
             {
-                //IList<HubSection> inView = hub.SectionsInView;
                 HubSection section = hub.SectionsInView[0];
-                if (section.Name == "maps")
+                switch (section.Name)
                 {
-                    setupMaps();
+                    case "now":
+                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
+                        if (appBar.PrimaryCommands.Contains(addLocButton))
+                        {
+                            appBar.PrimaryCommands.Remove(addLocButton);
+                        }
+                        break;
+                    case "hourly":
+                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
+                        if (appBar.PrimaryCommands.Contains(addLocButton))
+                        {
+                            appBar.PrimaryCommands.Remove(addLocButton);
+                        }
+                        break;
+                    case "maps":
+                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
+                        if (appBar.PrimaryCommands.Contains(addLocButton))
+                        {
+                            appBar.PrimaryCommands.Remove(addLocButton);
+                        }
+                        await statusBar.ProgressIndicator.ShowAsync();
+                        statusBar.ProgressIndicator.Text = "Setting up maps...";
+                        GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                        setMaps(geoMaps.position);
+                        setupMaps();
+                        await statusBar.ProgressIndicator.HideAsync();
+                        break;
+                    case "alerts":
+                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
+                        if (appBar.PrimaryCommands.Contains(addLocButton))
+                        {
+                            appBar.PrimaryCommands.Remove(addLocButton);
+                        }
+                        await statusBar.ProgressIndicator.ShowAsync();
+                        statusBar.ProgressIndicator.Text = "Getting alerts...";
+                        GeoTemplate geoAlerts = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                        setAlerts(geoAlerts.position.Position.Latitude, geoAlerts.position.Position.Longitude);
+                        await statusBar.ProgressIndicator.HideAsync();
+                        break;
+                    case "locList":
+                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
+                        appBar.PrimaryCommands.Add(addLocButton);
+                        break;
                 }
+
             }
         }
     }

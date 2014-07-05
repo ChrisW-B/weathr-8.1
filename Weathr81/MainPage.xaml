@@ -61,7 +61,7 @@
                             <Paragraph>
                                 <Run Text="Short term data provided by"></Run>
                                 <Hyperlink NavigateUri="http://forecast.io/">
-                                    <Run Text="Forecast.IO"/>
+                                    <Run Foreground="White" Text="Forecast.IO"/>
                                 </Hyperlink>
                             </Paragraph>
                         </RichTextBlock>
@@ -165,7 +165,7 @@
                             <Paragraph>
                                 <Run Text="Background by "></Run>
                                 <Hyperlink NavigateUri="{Binding ArtistUri}">
-                                    <Run Text="{Binding PhotoDetails}"></Run>
+                                    <Run Foreground="White" Text="{Binding PhotoDetails}"></Run>
                                 </Hyperlink>
                             </Paragraph>
                         </RichTextBlock>
@@ -175,9 +175,8 @@
         </HubSection>
     </Hub>
     <Page.BottomAppBar>
-        <CommandBar Opacity="0.85">
+        <CommandBar x:Name="appBar" Opacity="0.85">
             <CommandBar.PrimaryCommands>
-                <AppBarButton Label="add place" x:Name="addLoc" Click="addLoc_Click" Icon="Add"/>
                 <AppBarButton Label="refresh" x:Name="refresh" Click="refresh_Click">
                     <AppBarButton.Icon>
                         <BitmapIcon UriSource="Assets/refresh.png"/>

@@ -32,7 +32,6 @@ namespace BackgroundTask
     public sealed class UpdateTiles : XamlRenderingBackgroundTask
     {
         #region variables
-        private const string TASK_NAME = "Weathr Tile Updater";
         private const string WUND_API = "fb1dd3f4321d048d";
         private const string FLICKR_API = "2781c025a4064160fc77a52739b552ff";
         private const string LOC_STORE = "locList";
@@ -44,7 +43,7 @@ namespace BackgroundTask
         private static ObservableCollection<Location> locationList;
         ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
-        
+
         private enum TileSize
         {
             small,
@@ -54,15 +53,15 @@ namespace BackgroundTask
         #endregion
 
         #region registration
-        public async static void Register(uint mins)
+        public async static void Register(string name, uint mins)
         {
-            if (IsTaskRegistered(TASK_NAME))
+            if (IsTaskRegistered(name))
             {
-                Unregister(TASK_NAME);
+                Unregister(name);
             }
             BackgroundAccessStatus result = await BackgroundExecutionManager.RequestAccessAsync();
             BackgroundTaskBuilder builder = new BackgroundTaskBuilder();
-            builder.Name = TASK_NAME;
+            builder.Name = name;
             builder.TaskEntryPoint = typeof(UpdateTiles).FullName;
             builder.SetTrigger(new TimeTrigger(mins, false));
             SystemCondition condition = new SystemCondition(SystemConditionType.InternetAvailable);
@@ -72,13 +71,13 @@ namespace BackgroundTask
         public async static void RunFromApp()
         {
             //allows the background task to auto run once
-            if (IsTaskRegistered(TASK_NAME + "Mini"))
+            if (IsTaskRegistered( "Mini"))
             {
-                Unregister(TASK_NAME + "Mini");
+                Unregister("Mini");
             }
             BackgroundAccessStatus result = await BackgroundExecutionManager.RequestAccessAsync();
             BackgroundTaskBuilder builder = new BackgroundTaskBuilder();
-            builder.Name = TASK_NAME + "Mini";
+            builder.Name ="Mini";
             builder.TaskEntryPoint = typeof(UpdateTiles).FullName;
             builder.SetTrigger(new TimeTrigger(15, true));
             SystemCondition condition = new SystemCondition(SystemConditionType.InternetAvailable);
@@ -402,15 +401,15 @@ namespace BackgroundTask
         private Grid createSmallTile(string temp, string conditions)
         {
             Grid g;
-          
-                g = createBackgroundGrid(TileSize.small, true);
-                g.Children.Add(createSmallOverlay(temp, conditions));
+
+            g = createBackgroundGrid(TileSize.small, true);
+            g.Children.Add(createSmallOverlay(temp, conditions));
 
             return g;
         }
         private StackPanel createSmallOverlay(string temp, string conditions)
         {
-            StackPanel s = new StackPanel() {};
+            StackPanel s = new StackPanel() { };
             s.Children.Add(createSmallTempText(temp));
             s.Children.Add(createSmallConditions(conditions));
             return s;
@@ -418,7 +417,7 @@ namespace BackgroundTask
 
         private TextBlock createSmallConditions(string conditions)
         {
-            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords};
+            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
         }
         private TextBlock createSmallTempText(string temp)
         {
@@ -748,8 +747,8 @@ namespace BackgroundTask
         private bool isOnWifi()
         {
             //checks whether phone is on wifi
-           ConnectionProfile prof = NetworkInformation.GetInternetConnectionProfile();
-           return prof.IsWlanConnectionProfile;
+            ConnectionProfile prof = NetworkInformation.GetInternetConnectionProfile();
+            return prof.IsWlanConnectionProfile;
         }
     }
 }
