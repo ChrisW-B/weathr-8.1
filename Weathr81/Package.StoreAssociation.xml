@@ -184,13 +184,14 @@
     <Language Code="vi-vn" InMinimumRequirementSet="true" />
   </SupportedLocales>
   <ProductReservedInfo>
-    <MainPackageIdentityName>56541CBStudios.Weathr</MainPackageIdentityName>
+    <MainPackageIdentityName>56541CBStudios.WeathrBeta</MainPackageIdentityName>
     <ReservedNames>
-      <ReservedName>Weathr</ReservedName>
+      <ReservedName>Weathr Beta</ReservedName>
     </ReservedNames>
   </ProductReservedInfo>
   <AccountPackageIdentityNames>
     <MainPackageIdentityName>56541CBStudios.Sunny</MainPackageIdentityName>
+    <MainPackageIdentityName>56541CBStudios.Weathr</MainPackageIdentityName>
   </AccountPackageIdentityNames>
-  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=3a747903-dbf6-47e2-a591-43de06f285fb" />
+  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=235c6773-f051-49f5-bb50-c6ff3340216b" />
 </StoreAssociation>

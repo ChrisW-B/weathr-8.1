@@ -23,13 +23,40 @@
 
         <!-- Title Panel -->
         <StackPanel Grid.Row="0" Margin="19,0,0,0">
-            <TextBlock Text="MY APPLICATION" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
-            <TextBlock Text="page title" Margin="0,-6.5,0,26.5" Style="{ThemeResource HeaderTextBlockStyle}" CharacterSpacing="{ThemeResource PivotHeaderItemCharacterSpacing}"/>
+            <TextBlock Text="WEATHR BETA" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
+            <TextBlock Text="about" Margin="0,-6.5,0,26.5" Style="{ThemeResource HeaderTextBlockStyle}" CharacterSpacing="{ThemeResource PivotHeaderItemCharacterSpacing}"/>
         </StackPanel>
 
         <!--TODO: Content should be placed within the following grid-->
         <Grid Grid.Row="1" x:Name="ContentRoot" Margin="19,9.5,19,0">
-
+            <RichTextBlock>
+                <Paragraph>
+                    <Run FontSize="20"  Text="Welcome to Weathr Beta, and thanks for helping me test!"></Run>
+                </Paragraph>
+                <Paragraph></Paragraph>
+                <Paragraph>
+                    <Run FontSize="20" Text="Here's a few things you can do to help:"></Run>
+                </Paragraph>
+                <Paragraph></Paragraph>
+                <Paragraph>
+                    <Run FontSize="20" Text="Contact me:"></Run>
+                </Paragraph>
+                <Paragraph></Paragraph>
+                <Paragraph>
+                <Hyperlink NavigateUri="http://twitter.com/cb_27">
+                        <Run FontSize="20" Text="Tweet me problems"></Run>
+                    </Hyperlink>
+                </Paragraph>
+                <Paragraph>
+                    <Hyperlink NavigateUri="http://cbstudios.uservoice.com">
+                        <Run FontSize="20" Text="Post on the UserVoice"></Run>
+                    </Hyperlink>
+                </Paragraph>
+                <Paragraph></Paragraph>
+                <Paragraph>
+                    <Run FontSize="20" Text="I will get back to you as soon as possible. Thanks again!"></Run>
+                </Paragraph>
+            </RichTextBlock>
         </Grid>
     </Grid>
 </Page>

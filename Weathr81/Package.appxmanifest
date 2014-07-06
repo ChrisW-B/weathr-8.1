@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
-  <Identity Name="56541CBStudios.Weathr" Publisher="CN=611495F7-A5B9-44E0-8989-5C76FCB7AB4E" Version="1.1.0.0" />
-  <mp:PhoneIdentity PhoneProductId="ae3aebd1-db81-4e39-92f8-9111c4f8f96f" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="56541CBStudios.WeathrBeta" Publisher="CN=611495F7-A5B9-44E0-8989-5C76FCB7AB4E" Version="0.0.1.0" />
+  <mp:PhoneIdentity PhoneProductId="c7ab5dbe-c826-4088-aada-ed9b5c912389" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>Weathr</DisplayName>
+    <DisplayName>Weathr Beta</DisplayName>
     <PublisherDisplayName>CB Studios</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -16,8 +16,8 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="Weathr81.App">
-      <m3:VisualElements DisplayName="Weathr" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\SmallLogo.png" Description="Weathr81" ForegroundText="light" BackgroundColor="transparent">
-        <m3:LockScreen Notification="badgeAndTileText" BadgeLogo="Assets\Icons\SunCloudTrans58.png" />
+      <m3:VisualElements DisplayName="Weathr Beta" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\SmallLogo.png" Description="Weathr81 Beta" ForegroundText="light" BackgroundColor="transparent">
+        <m3:LockScreen Notification="badgeAndTileText" BadgeLogo="Assets\BadgeLogo.png" />
         <m3:DefaultTile Wide310x150Logo="Assets\WideLogo.png" Square71x71Logo="Assets\Square71x71Logo.png">
           <m3:ShowNameOnTiles>
             <m3:ShowOn Tile="square150x150Logo" />
