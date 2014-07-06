@@ -4,6 +4,7 @@ using FlickrInfo;
 using ForecastIOData;
 using LocationHelper;
 using SerializerClass;
+using StoreLabels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,6 +16,7 @@ using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
+using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
@@ -57,28 +59,6 @@ namespace Weathr81
         #endregion
 
         #region variables
-        //String wundApiKey = "102b8ec7fbd47a05";
-        //testkey:
-        private const string WUND_API = "fb1dd3f4321d048d";
-        private const string FLICKR_API = "2781c025a4064160fc77a52739b552ff";
-        private const string LOC_STORE = "locList";
-        private const string NOW_SAVE = "oldNow";
-        private const string HOURLY_SAVE = "hourSave";
-        private const string FORECAST_SAVE = "forecastSave";
-        private const string ALERT_SAVE = "alertSave";
-        private const string LAST_LOC = "lastLoc";
-        private const string LAST_SAVE = "lastSaveTime";
-        private const string UNITS_CHANGED = "unitsChanged";
-        private const string UNITS_ARE_SI = "unitsAreSI";
-        private const string ALLOW_BG_TASK = "allowBackground";
-        private const string UPDATE_FREQ = "updateFreq";
-        private const string TASK_NAME = "Weathr Tile Updater";
-        private const string ALLOW_LOC = "allowAutoLocation";
-        private const string FIRST_START = "firstStartDateTime";
-
-        private const string IAP_NO_LIMIT = "unlimitedTime";
-        private const string IAP_FORE_IO = "forecastIOAccess";
-
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         private GetGeoposition GetGeoposition;
@@ -121,13 +101,13 @@ namespace Weathr81
             else
             {
                 DateTime firstRun;
-                if (store.Values.ContainsKey(FIRST_START))
+                if (store.Values.ContainsKey(Values.FIRST_START))
                 {
-                    firstRun = (DateTime)Serializer.get(FIRST_START, typeof(DateTime), store);
+                    firstRun = (DateTime)Serializer.get(Values.FIRST_START, typeof(DateTime), store);
                 }
                 else
                 {
-                    Serializer.save(DateTime.Now, typeof(DateTime), FIRST_START, store);
+                    Serializer.save(DateTime.Now, typeof(DateTime), Values.FIRST_START, store);
                     firstRun = DateTime.Now;
                 }
                 int daysRemaining = 7 - (int)(DateTime.UtcNow - firstRun).TotalDays;
@@ -201,12 +181,17 @@ namespace Weathr81
                     }
                     else
                     {
-                        GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                        setMaps(geo.position);
-                        NowTemplate nowTemplate = (now.DataContext as NowTemplate);
-                        if (nowTemplate != null && geo.position != null)
+                        await statusBar.ProgressIndicator.HideAsync();
+                        if (allowedToSetBG())
                         {
-                            setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                            await statusBar.ProgressIndicator.ShowAsync();
+                            GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                            NowTemplate nowTemplate = (now.DataContext as NowTemplate);
+                            await statusBar.ProgressIndicator.HideAsync();
+                            if (nowTemplate != null && geo.position != null)
+                            {
+                                setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                            }
                         }
                     }
                 }
@@ -215,6 +200,40 @@ namespace Weathr81
                     Frame.Navigate(typeof(AddLocation));
                 }
             }
+        }
+
+        private bool allowedToSetBG()
+        {
+            if (store.Values.ContainsKey(Values.ALLOW_MAIN_BG))
+            {
+                if ((bool)store.Values[Values.ALLOW_MAIN_BG])
+                {
+                    if (store.Values.ContainsKey(Values.MAIN_BG_WIFI_ONLY))
+                    {
+                        if (isOnWifi())
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return !(bool)store.Values[Values.MAIN_BG_WIFI_ONLY];
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+            else
+            {
+                store.Values[Values.ALLOW_MAIN_BG] = true;
+                return allowedToSetBG();
+            }
+        }
+        private bool isOnWifi()
+        {
+            //checks whether phone is on wifi
+            ConnectionProfile prof = NetworkInformation.GetInternetConnectionProfile();
+            return prof.IsWlanConnectionProfile;
         }
 
         async private void disablePinIfPinned()
@@ -228,7 +247,7 @@ namespace Weathr81
                 }
             }
         }
-       async private Task<bool> tileExists()
+        async private Task<bool> tileExists()
         {
             IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
             foreach (SecondaryTile tile in tiles)
@@ -240,20 +259,21 @@ namespace Weathr81
             }
             return false;
         }
-  
+
         private void tryBackgroundTask()
         {
-            if (localStore.Values.ContainsKey(ALLOW_BG_TASK))
+            if (localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
             {
-                if ((bool)localStore.Values[ALLOW_BG_TASK])
+                if ((bool)localStore.Values[Values.ALLOW_BG_TASK])
                 {
-                    if (!UpdateTiles.IsTaskRegistered(TASK_NAME))
+                    if (!UpdateTiles.IsTaskRegistered(Values.TASK_NAME))
                     {
-                        if(localStore.Values.ContainsKey(UPDATE_FREQ)){
-                            UpdateTiles.Register(TASK_NAME, (uint)localStore.Values[UPDATE_FREQ]);
+                        if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
+                        {
+                            UpdateTiles.Register(Values.TASK_NAME, (uint)localStore.Values[Values.UPDATE_FREQ]);
                             return;
                         }
-                        UpdateTiles.Register(TASK_NAME, 120);
+                        UpdateTiles.Register(Values.TASK_NAME, 120);
                     }
                 }
             }
@@ -261,9 +281,9 @@ namespace Weathr81
 
         private bool allowedToAutoFind()
         {
-            if (localStore.Values.ContainsKey(ALLOW_LOC))
+            if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
             {
-                return (bool)localStore.Values[ALLOW_LOC];
+                return (bool)localStore.Values[Values.ALLOW_LOC];
             }
             return false;
         }
@@ -293,10 +313,13 @@ namespace Weathr81
                 if (!downloadedForecast.fail)
                 {
                     bool isSI = unitsAreSI();
-                    Serializer.save(DateTime.Now, typeof(DateTime), LAST_SAVE, localStore);
+                    Serializer.save(DateTime.Now, typeof(DateTime), Values.LAST_SAVE, localStore);
                     updateWeatherInfo(downloadedForecast, isSI);
                     updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
-                    setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    if (allowedToSetBG())
+                    {
+                        setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    }
                 }
                 else
                 {
@@ -320,36 +343,36 @@ namespace Weathr81
             bool withinThirtyMins = false;
             bool sameLoc = false;
             bool sameUnits = true;
-            if (localStore.Values.ContainsKey(NOW_SAVE))
+            if (localStore.Values.ContainsKey(Values.NOW_SAVE))
             {
-                NowTemplate nowTemplate = Serializer.get(NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
+                NowTemplate nowTemplate = Serializer.get(Values.NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
                 if (nowTemplate != null)
                 {
                     now.DataContext = nowTemplate;
                     nowDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(FORECAST_SAVE))
+            if (localStore.Values.ContainsKey(Values.FORECAST_SAVE))
             {
-                ForecastTemplate forecastTemplate = Serializer.get(FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
+                ForecastTemplate forecastTemplate = Serializer.get(Values.FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
                 if (forecastTemplate != null)
                 {
                     forecast.DataContext = forecastTemplate;
                     forecastDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(ALERT_SAVE))
+            if (localStore.Values.ContainsKey(Values.ALERT_SAVE))
             {
-                AlertsTemplate alertsTemplate = Serializer.get(ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
+                AlertsTemplate alertsTemplate = Serializer.get(Values.ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
                 if (alertsTemplate != null)
                 {
                     alerts.DataContext = alertsTemplate;
                     alertDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(HOURLY_SAVE))
+            if (localStore.Values.ContainsKey(Values.HOURLY_SAVE))
             {
-                ObservableCollection<ForecastIOItem> forecastList = Serializer.get(HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
+                ObservableCollection<ForecastIOItem> forecastList = Serializer.get(Values.HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
                 if (forecastList != null)
                 {
                     ForecastIOTemplate forecastTemplate = new ForecastIOTemplate() { forecastIO = new ForecastIOList() { hoursList = forecastList } };
@@ -357,9 +380,9 @@ namespace Weathr81
                     hourlyDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(LAST_LOC))
+            if (localStore.Values.ContainsKey(Values.LAST_LOC))
             {
-                Location lastLoc = Serializer.get(LAST_LOC, typeof(Location), localStore) as Location;
+                Location lastLoc = Serializer.get(Values.LAST_LOC, typeof(Location), localStore) as Location;
                 if (lastLoc != null)
                 {
                     sameLoc = ((lastLoc.IsCurrent && currentLocation.IsCurrent) || (lastLoc.LocUrl == currentLocation.LocUrl));
@@ -369,11 +392,11 @@ namespace Weathr81
                     }
                 }
             }
-            if (localStore.Values.ContainsKey(LAST_SAVE))
+            if (localStore.Values.ContainsKey(Values.LAST_SAVE))
             {
                 try
                 {
-                    DateTime lastRun = (DateTime)Serializer.get(LAST_SAVE, typeof(DateTime), localStore);
+                    DateTime lastRun = (DateTime)Serializer.get(Values.LAST_SAVE, typeof(DateTime), localStore);
                     TimeSpan elapsed = DateTime.Now - lastRun;
                     withinThirtyMins = elapsed.TotalMinutes < 30;
                 }
@@ -382,22 +405,22 @@ namespace Weathr81
                     withinThirtyMins = false;
                 }
             }
-            if (localStore.Values.ContainsKey(UNITS_CHANGED))
+            if (localStore.Values.ContainsKey(Values.UNITS_CHANGED))
             {
-                sameUnits = !(bool)localStore.Values[UNITS_CHANGED];
-                localStore.Values[UNITS_CHANGED] = false;
+                sameUnits = !(bool)localStore.Values[Values.UNITS_CHANGED];
+                localStore.Values[Values.UNITS_CHANGED] = false;
             }
             return nowDone && forecastDone && alertDone && hourlyDone && withinThirtyMins && sameLoc && sameUnits;
         }
         private bool unitsAreSI()
         {
-            if (store.Values.ContainsKey(UNITS_ARE_SI))
+            if (store.Values.ContainsKey(Values.UNITS_ARE_SI))
             {
-                return (bool)store.Values[UNITS_ARE_SI];
+                return (bool)store.Values[Values.UNITS_ARE_SI];
             }
             else
             {
-                store.Values[UNITS_ARE_SI] = true;
+                store.Values[Values.UNITS_ARE_SI] = true;
                 return true;
             }
         }
@@ -411,7 +434,7 @@ namespace Weathr81
             DataSaveClass save = new DataSaveClass();
             if (alertsData != null)
             {
-                Serializer.save(alertsData, typeof(AlertsTemplate), ALERT_SAVE, localStore);
+                Serializer.save(alertsData, typeof(AlertsTemplate), Values.ALERT_SAVE, localStore);
             }
             if (forecastIOData != null)
             {
@@ -420,24 +443,24 @@ namespace Weathr81
                 {
                     shortForecast.Add(forecastIOData.forecastIO.hoursList[i]);
                 }
-                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), HOURLY_SAVE, localStore);
+                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), Values.HOURLY_SAVE, localStore);
             }
             if (nowData != null)
             {
-                Serializer.save(nowData, typeof(NowTemplate), NOW_SAVE, localStore);
+                Serializer.save(nowData, typeof(NowTemplate), Values.NOW_SAVE, localStore);
             }
             if (forecastData != null)
             {
-                Serializer.save(forecastData, typeof(ForecastTemplate), FORECAST_SAVE, localStore);
+                Serializer.save(forecastData, typeof(ForecastTemplate), Values.FORECAST_SAVE, localStore);
             }
-            Serializer.save(currentLocation, typeof(Location), LAST_LOC, localStore);
+            Serializer.save(currentLocation, typeof(Location), Values.LAST_LOC, localStore);
         }
         async private Task<bool> setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
-            if (store.Values.ContainsKey(LOC_STORE))
+            if (store.Values.ContainsKey(Values.LOC_STORE))
             {
-                ObservableCollection<Location> list = (Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
                 if (list != null)
                 {
                     locTemplate.locations.locationList = list;
@@ -445,7 +468,7 @@ namespace Weathr81
                 else
                 {
                     //something wrong with the list, reset roaming and try again
-                    store.Values.Remove(LOC_STORE);
+                    store.Values.Remove(Values.LOC_STORE);
                     await setFavoriteLocations();
                 }
             }
@@ -470,7 +493,7 @@ namespace Weathr81
                         locTemplate.locations.locationList[0].IsDefault = true;
                         locTemplate.locations.locationList[0].Image = "/Assets/favs.png";
                         currentLocation = locTemplate.locations.locationList[0];
-                        Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+                        Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
                     }
                 }
             }
@@ -485,12 +508,12 @@ namespace Weathr81
             dialog.Commands.Add(new UICommand("Use location", delegate(IUICommand cmd)
             {
                 locList.locationList.Add(new Location() { IsCurrent = true, LocName = "Current Location", LocUrl = "currLoc", IsDefault = true, Lat = 0, Lon = 0, Image = "/Assets/favs.png" });
-                localStore.Values[ALLOW_LOC] = true;
-                Serializer.save(locList.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+                localStore.Values[Values.ALLOW_LOC] = true;
+                Serializer.save(locList.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
             }));
             dialog.Commands.Add(new UICommand("No", delegate(IUICommand cmd)
             {
-                localStore.Values[ALLOW_LOC] = false;
+                localStore.Values[Values.ALLOW_LOC] = false;
             }));
             await dialog.ShowAsync();
 
@@ -503,7 +526,7 @@ namespace Weathr81
         {
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
-            GetWundergroundData weatherData = new GetWundergroundData(WUND_API, lat, lon);
+            GetWundergroundData weatherData = new GetWundergroundData(Values.WUND_API, lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
@@ -512,7 +535,7 @@ namespace Weathr81
         {
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
-            GetWundergroundData weatherData = new GetWundergroundData(WUND_API, wUrl);
+            GetWundergroundData weatherData = new GetWundergroundData(Values.WUND_API, wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
@@ -749,7 +772,7 @@ namespace Weathr81
             {
                 return null;
             }
-            GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
+            GetFlickrInfo f = new GetFlickrInfo(Values.FLICKR_API);
             FlickrData imgList = await f.getImages(getTags(cond), useGroup, useLoc, lat, lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
@@ -897,7 +920,8 @@ namespace Weathr81
         private AppBarButton addLocButton;
         async private void hub_SectionsInViewChanged(object sender, SectionsInViewChangedEventArgs e)
         {
-            if(addLocButton==null){
+            if (addLocButton == null)
+            {
                 addLocButton = new AppBarButton();
                 addLocButton.Click += addLoc_Click;
                 addLocButton.Icon = new SymbolIcon(Symbol.Add);
@@ -929,12 +953,16 @@ namespace Weathr81
                         {
                             appBar.PrimaryCommands.Remove(addLocButton);
                         }
-                        await statusBar.ProgressIndicator.ShowAsync();
-                        statusBar.ProgressIndicator.Text = "Setting up maps...";
-                        GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                        setMaps(geoMaps.position);
-                        setupMaps();
-                        await statusBar.ProgressIndicator.HideAsync();
+                        if (!mapsSet)
+                        {
+                            await statusBar.ProgressIndicator.ShowAsync();
+                            statusBar.ProgressIndicator.Text = "Setting up maps...";
+                            GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                            setMaps(geoMaps.position);
+                            setupMaps();
+                            await statusBar.ProgressIndicator.HideAsync();
+                            mapsSet = true;
+                        }
                         break;
                     case "alerts":
                         appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;

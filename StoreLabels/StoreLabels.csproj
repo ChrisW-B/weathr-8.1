@@ -6,11 +6,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{AF603513-81A6-44D1-9C3A-6EB5FDD48309}</ProjectGuid>
-    <OutputType>winmdobj</OutputType>
+    <ProjectGuid>{E77FFD98-EE0D-4901-8CD0-7D6FF6F1C899}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BackgroundTask</RootNamespace>
-    <AssemblyName>BackgroundTask</AssemblyName>
+    <RootNamespace>StoreLabels</RootNamespace>
+    <AssemblyName>StoreLabels</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
@@ -80,66 +80,10 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <ProjectReference Include="..\DataTemplates\DataTemplates.csproj">
-      <Project>{79231e23-c5bc-4ce6-8f4c-f7a3bab80cc9}</Project>
-      <Name>DataTemplates</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\FlickrInfo\FlickrInfo.csproj">
-      <Project>{ded75474-5a33-44b5-a526-c1cd6be15ae1}</Project>
-      <Name>FlickrInfo</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ForecastIOData\ForecastIOData.csproj">
-      <Project>{706b5052-ece9-4cb8-a484-0377ff0cd3bd}</Project>
-      <Name>ForecastIOData</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\LocationHelper\LocationHelper.csproj">
-      <Project>{05d2c99b-e1ce-4290-aefa-c60d39b59d29}</Project>
-      <Name>LocationHelper</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Serializer\SerializerClass.csproj">
-      <Project>{56229cf6-90a9-4b6f-b379-016bd40d7969}</Project>
-      <Name>SerializerClass</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\StoreLabels\StoreLabels.csproj">
-      <Project>{e77ffd98-ee0d-4901-8cd0-7d6ff6f1c899}</Project>
-      <Name>StoreLabels</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\WeatherDotGovAlerts\WeatherDotGovAlerts.csproj">
-      <Project>{99d27bbb-8539-42ac-a082-a9e21d566a57}</Project>
-      <Name>WeatherDotGovAlerts</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\WundergroundData\WundergroundData.csproj">
-      <Project>{abbc48be-9ea0-4609-a271-5193743c32fb}</Project>
-      <Name>WundergroundData</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SmallTile.xaml.cs">
-      <DependentUpon>SmallTile.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="TileExample.xaml.cs">
-      <DependentUpon>TileExample.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UpdateTiles.cs" />
+    <Compile Include="Values.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="NotificationsExtensions">
-      <HintPath>..\packages\NotificationsExtensions.UniversalApps.1.0.3\lib\wpa81\NotificationsExtensions.winmd</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="SmallTile.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="TileExample.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>

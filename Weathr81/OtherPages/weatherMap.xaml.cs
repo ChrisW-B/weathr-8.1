@@ -1,25 +1,15 @@
-﻿using Weathr81.Common;
+﻿using LocationHelper;
+using StoreLabels;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using Weathr81.Common;
+using Weathr81.HelperClasses;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Graphics.Display;
-using Windows.UI.ViewManagement;
-using Windows.UI.Xaml;
+using Windows.UI;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Controls.Maps;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
-using Weathr81.HelperClasses;
-using Windows.UI.Xaml.Controls.Maps;
-using LocationHelper;
 using Windows.UI.Xaml.Shapes;
-using Windows.UI;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -103,9 +93,6 @@ namespace Weathr81.OtherPages
         /// handlers that cannot cancel the navigation request.</param>
         /// 
 
-        private const string RAD_URL = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?";
-        private const string SAT_URL = "http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?";
-
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
@@ -123,12 +110,12 @@ namespace Weathr81.OtherPages
             HttpMapTileDataSource dataSource;
             if (mapLaunchClass.type == MapLaunchClass.mapType.radar)
             {
-                dataSource = new HttpMapTileDataSource(RAD_URL + (DateTime.Now));
+                dataSource = new HttpMapTileDataSource(Values.RAD_URL + (DateTime.Now));
 
             }
             else
             {
-                dataSource = new HttpMapTileDataSource(SAT_URL + (DateTime.Now));
+                dataSource = new HttpMapTileDataSource(Values.SAT_URL + (DateTime.Now));
             }
             MapTileSource tileSource = new MapTileSource(dataSource);
             Map.TileSources.Add(tileSource);

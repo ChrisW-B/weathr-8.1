@@ -105,6 +105,10 @@
       <Project>{56229cf6-90a9-4b6f-b379-016bd40d7969}</Project>
       <Name>SerializerClass</Name>
     </ProjectReference>
+    <ProjectReference Include="..\StoreLabels\StoreLabels.csproj">
+      <Project>{e77ffd98-ee0d-4901-8cd0-7d6ff6f1c899}</Project>
+      <Name>StoreLabels</Name>
+    </ProjectReference>
     <ProjectReference Include="..\WeatherDotGovAlerts\WeatherDotGovAlerts.csproj">
       <Project>{99d27bbb-8539-42ac-a082-a9e21d566a57}</Project>
       <Name>WeatherDotGovAlerts</Name>

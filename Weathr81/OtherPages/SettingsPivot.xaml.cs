@@ -1,27 +1,18 @@
-﻿using Weathr81.Common;
+﻿using BackgroundTask;
+using LocationHelper;
+using SerializerClass;
+using StoreLabels;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-using Windows.Graphics.Display;
-using Windows.UI.ViewManagement;
+using System.Collections.ObjectModel;
+using Weathr81.Common;
+using Windows.Storage;
+using Windows.UI.Popups;
+using Windows.UI.StartScreen;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
-using SerializerClass;
-using Windows.Storage;
-using BackgroundTask;
-using Windows.UI.Popups;
-using System.Collections.ObjectModel;
-using LocationHelper;
-using Windows.UI.StartScreen;
 
 // The Basic Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
@@ -118,18 +109,6 @@ namespace Weathr81.OtherPages
         }
         #endregion
         #region variables
-        private const string UNITS_CHANGED = "unitsChanged";
-        private const string UNITS_ARE_SI = "unitsAreSI";
-        private const string TILE_UNITS_ARE_SI = "tileUnitsAreSI";
-        private const string TRANSPARENT_TILE = "tileIsTransparent";
-        private const string ALLOW_BG_TASK = "allowBackground";
-        private const string UPDATE_FREQ = "updateFreq";
-        private const string TASK_NAME = "Weathr Tile Updater";
-        private const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
-        private const string ALLOW_LOC = "allowAutoLocation";
-        private const string LOC_STORE = "locList";
-        private const string FIRST_START = "firstStartDateTime";
-
         private ApplicationDataContainer store = Windows.Storage.ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         bool doneSetting = false;
@@ -144,18 +123,18 @@ namespace Weathr81.OtherPages
 
         private void setupLocationsSection()
         {
-            if (localStore.Values.ContainsKey(ALLOW_LOC))
+            if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
             {
-                autoLocateToggle.IsOn = (bool)localStore.Values[ALLOW_LOC];
+                autoLocateToggle.IsOn = (bool)localStore.Values[Values.ALLOW_LOC];
             }
             else
             {
-                localStore.Values[ALLOW_LOC] = true;
+                localStore.Values[Values.ALLOW_LOC] = true;
                 autoLocateToggle.IsOn = true;
             }
-            if (store.Values.ContainsKey(LOC_STORE))
+            if (store.Values.ContainsKey(Values.LOC_STORE))
             {
-                ObservableCollection<Location> list = (Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
                 if (list != null)
                 {
                     LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = list } };
@@ -165,22 +144,54 @@ namespace Weathr81.OtherPages
         }
         private void setUpGeneralSection()
         {
-            if (store.Values.ContainsKey(UNITS_ARE_SI))
+            if (store.Values.ContainsKey(Values.UNITS_ARE_SI))
             {
-                units.IsOn = (bool)store.Values[UNITS_ARE_SI];
+                units.IsOn = (bool)store.Values[Values.UNITS_ARE_SI];
             }
             else
             {
-                store.Values[UNITS_ARE_SI] = true;
+                store.Values[Values.UNITS_ARE_SI] = true;
                 units.IsOn = true;
             }
+
+            if (store.Values.ContainsKey(Values.ALLOW_MAIN_BG))
+            {
+                getImages.IsOn = (bool)store.Values[Values.ALLOW_MAIN_BG];
+                if (getImages.IsOn)
+                {
+                    getImagesOn.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                }
+                else
+                {
+                    getImagesOn.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                store.Values[Values.ALLOW_MAIN_BG] = true;
+                getImages.IsOn = true;
+                getImagesOn.Visibility = Windows.UI.Xaml.Visibility.Visible;
+            }
+
+            if (store.Values.ContainsKey(Values.MAIN_BG_WIFI_ONLY))
+            {
+                bgOnWifi.IsOn = (bool)store.Values[Values.MAIN_BG_WIFI_ONLY];
+                
+            }
+            else
+            {
+                store.Values[Values.MAIN_BG_WIFI_ONLY] = false;
+                bgOnWifi.IsOn = true;
+            }
+
+
         }
         private void setUpTileSection()
         {
-            if (localStore.Values.ContainsKey(ALLOW_BG_TASK))
+            if (localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
             {
-                bool allowed = (bool)localStore.Values[ALLOW_BG_TASK];
-                enableBackground.IsChecked = allowed;
+                bool allowed = (bool)localStore.Values[Values.ALLOW_BG_TASK];
+                enableBackground.IsOn = allowed;
                 if (allowed)
                 {
                     backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
@@ -192,49 +203,49 @@ namespace Weathr81.OtherPages
             }
             else
             {
-                localStore.Values[ALLOW_BG_TASK] = false;
-                enableBackground.IsChecked = false;
+                localStore.Values[Values.ALLOW_BG_TASK] = false;
+                enableBackground.IsOn = false;
                 backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
             }
-            if (localStore.Values.ContainsKey(UPDATE_ON_CELL))
+            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
             {
-                wifiOnlyToggle.IsOn = !(bool)localStore.Values[UPDATE_ON_CELL];
+                wifiOnlyToggle.IsOn = !(bool)localStore.Values[Values.UPDATE_ON_CELL];
             }
             else
             {
                 wifiOnlyToggle.IsOn = false;
-                localStore.Values[UPDATE_ON_CELL] = true;
+                localStore.Values[Values.UPDATE_ON_CELL] = true;
             }
-            if (localStore.Values.ContainsKey(TRANSPARENT_TILE))
+            if (localStore.Values.ContainsKey(Values.TRANSPARENT_TILE))
             {
-                transparentToggle.IsOn = !(bool)localStore.Values[TRANSPARENT_TILE];
+                transparentToggle.IsOn = !(bool)localStore.Values[Values.TRANSPARENT_TILE];
             }
             else
             {
                 transparentToggle.IsOn = true;
-                localStore.Values[TRANSPARENT_TILE] = false;
+                localStore.Values[Values.TRANSPARENT_TILE] = false;
             }
 
-            if (localStore.Values.ContainsKey(UPDATE_FREQ))
+            if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
             {
-                updateFreq.Value = Convert.ToInt32(localStore.Values[UPDATE_FREQ]);
+                updateFreq.Value = Convert.ToInt32(localStore.Values[Values.UPDATE_FREQ]);
                 currentRate.Text = printUpdateRate(updateFreq.Value);
             }
             else
             {
                 updateFreq.Value = 120;
                 currentRate.Text = printUpdateRate(updateFreq.Value);
-                localStore.Values[UPDATE_FREQ] = (uint)120;
+                localStore.Values[Values.UPDATE_FREQ] = (uint)120;
             }
 
-            if (store.Values.ContainsKey(TILE_UNITS_ARE_SI))
+            if (store.Values.ContainsKey(Values.TILE_UNITS_ARE_SI))
             {
-                tileUnits.IsOn = (bool)store.Values[TILE_UNITS_ARE_SI];
+                tileUnits.IsOn = (bool)store.Values[Values.TILE_UNITS_ARE_SI];
             }
             else
             {
                 tileUnits.IsOn = true;
-                store.Values[TILE_UNITS_ARE_SI] = true;
+                store.Values[Values.TILE_UNITS_ARE_SI] = true;
             }
         }
         #endregion
@@ -247,57 +258,92 @@ namespace Weathr81.OtherPages
                 ToggleSwitch toggle = sender as ToggleSwitch;
                 if (toggle != null)
                 {
-                    localStore.Values[UNITS_CHANGED] = true;
+                    localStore.Values[Values.UNITS_CHANGED] = true;
                     if (toggle.IsOn)
                     {
-                        store.Values[UNITS_ARE_SI] = true;
+                        store.Values[Values.UNITS_ARE_SI] = true;
                         return;
                     }
-                    store.Values[UNITS_ARE_SI] = false;
+                    store.Values[Values.UNITS_ARE_SI] = false;
                 }
             }
+        }
+
+        private void getImages_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                ToggleSwitch toggle = sender as ToggleSwitch;
+                if (toggle != null)
+                {
+                    if (toggle.IsOn)
+                    {
+                        store.Values[Values.ALLOW_MAIN_BG] = true;
+                        getImagesOn.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                        return;
+                    }
+                    store.Values[Values.ALLOW_MAIN_BG] = false;
+                    getImagesOn.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                }
+            }
+            return;
+        }
+
+        private void bgOnWifi_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                ToggleSwitch toggle = sender as ToggleSwitch;
+                if (toggle != null)
+                {
+                    if (toggle.IsOn)
+                    {
+                        store.Values[Values.MAIN_BG_WIFI_ONLY] = true;
+                        return;
+                    }
+                    store.Values[Values.MAIN_BG_WIFI_ONLY] = false;
+                }
+            }
+            return;
         }
         #endregion
 
         #region tile pivot
-
-        private void enableBackground_Checked(object sender, RoutedEventArgs e)
+        private void enableBackground_Toggled(object sender, RoutedEventArgs e)
         {
             if (doneSetting)
             {
-                localStore.Values[ALLOW_BG_TASK] = true;
-                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                if (localStore.Values.ContainsKey(UPDATE_FREQ))
+                ToggleSwitch enabledBg = sender as ToggleSwitch;
+                if (enabledBg != null)
                 {
-                    registerRecurringBG((uint)localStore.Values[UPDATE_FREQ]);
+                    if (enabledBg.IsOn)
+                    {
+                        localStore.Values[Values.ALLOW_BG_TASK] = true;
+                        backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
+                        if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
+                        {
+                            registerRecurringBG((uint)localStore.Values[Values.UPDATE_FREQ]);
+                        }
+                        else
+                        {
+                            registerRecurringBG();
+                        }
+                    }
+                    else
+                    {
+                        localStore.Values[Values.ALLOW_BG_TASK] = false;
+                        UpdateTiles.Unregister(Values.TASK_NAME);
+                        backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
+                    }
                 }
-                else
-                {
-                    registerRecurringBG();
-                }
             }
-            else
-            {
-                return;
-            }
+            return;
         }
-        private void enableBackground_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (doneSetting)
-            {
-                localStore.Values[ALLOW_BG_TASK] = false;
-                UpdateTiles.Unregister(TASK_NAME);
-                backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            }
-            else
-            {
-                return;
-            }
-        }
+       
         private void registerRecurringBG(uint mins = 120)
         {
-            localStore.Values[UPDATE_FREQ] = mins;
-            UpdateTiles.Register(TASK_NAME, mins);
+            localStore.Values[Values.UPDATE_FREQ] = mins;
+            UpdateTiles.Register(Values.TASK_NAME, mins);
         }
 
         //rate slider
@@ -364,7 +410,7 @@ namespace Weathr81.OtherPages
         {
             if (doneSetting)
             {
-                localStore.Values[TRANSPARENT_TILE] = !(sender as ToggleSwitch).IsOn;
+                localStore.Values[Values.TRANSPARENT_TILE] = !(sender as ToggleSwitch).IsOn;
             }
             return;
         }
@@ -376,7 +422,7 @@ namespace Weathr81.OtherPages
                 ToggleSwitch t = sender as ToggleSwitch;
                 if (t != null)
                 {
-                    localStore.Values[UPDATE_ON_CELL] = !t.IsOn;
+                    localStore.Values[Values.UPDATE_ON_CELL] = !t.IsOn;
                 }
             }
         }
@@ -390,10 +436,10 @@ namespace Weathr81.OtherPages
                 {
                     if (t.IsOn)
                     {
-                        store.Values[TILE_UNITS_ARE_SI] = true;
+                        store.Values[Values.TILE_UNITS_ARE_SI] = true;
                         return;
                     }
-                    store.Values[TILE_UNITS_ARE_SI] = false;
+                    store.Values[Values.TILE_UNITS_ARE_SI] = false;
                 }
             }
             return;
@@ -406,11 +452,11 @@ namespace Weathr81.OtherPages
             MessageDialog dialog = new MessageDialog("This will remove all of your saved data and settings on for Weathr on all of your devices, and reset everything, including backups. Are you sure you want to delete?", "Are you sure?");
             dialog.Commands.Add(new UICommand("Reset Everything", delegate(IUICommand cmd)
             {
-                DateTime firstRun = (DateTime)Serializer.get(FIRST_START, typeof(DateTime), store);
+                DateTime firstRun = (DateTime)Serializer.get(Values.FIRST_START, typeof(DateTime), store);
                 store.Values.Clear();
                 localStore.Values.Clear();
-                UpdateTiles.Unregister(TASK_NAME);
-                Serializer.save(firstRun, typeof(DateTime), FIRST_START, store);
+                UpdateTiles.Unregister(Values.TASK_NAME);
+                Serializer.save(firstRun, typeof(DateTime), Values.FIRST_START, store);
                 updateSettings();
             }));
             dialog.Commands.Add(new UICommand("No"));
@@ -423,7 +469,7 @@ namespace Weathr81.OtherPages
         {
             if (doneSetting)
             {
-                localStore.Values[ALLOW_LOC] = (sender as ToggleSwitch).IsOn;
+                localStore.Values[Values.ALLOW_LOC] = (sender as ToggleSwitch).IsOn;
             }
             return;
         }
@@ -451,7 +497,7 @@ namespace Weathr81.OtherPages
             locList.DataContext = null;
             LocationTemplate locTemp = new LocationTemplate() { locations = new LocationList() { locationList = list.locations.locationList } };
             locList.DataContext = locTemp;
-            Serializer.save(locTemp.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+            Serializer.save(locTemp.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
         }
 
         async private void pinItem_Click(object sender, RoutedEventArgs e)
@@ -512,7 +558,7 @@ namespace Weathr81.OtherPages
             locList.DataContext = null;
             LocationTemplate locTemp = new LocationTemplate() { locations = new LocationList() { locationList = list.locations.locationList } };
             locList.DataContext = locTemp;
-            Serializer.save(locTemp.locations.locationList, typeof(ObservableCollection<Location>), LOC_STORE, store);
+            Serializer.save(locTemp.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
         }
 
         private void StackPanel_Holding(object sender, HoldingRoutedEventArgs e)

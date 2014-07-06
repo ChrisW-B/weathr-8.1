@@ -28,8 +28,14 @@
 
         <Pivot Grid.Row="1" x:Name="ContentRoot" SelectionChanged="ContentRoot_SelectionChanged">
             <PivotItem Header="general">
+                <StackPanel>
                 <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
-            </PivotItem>
+                    <ToggleSwitch x:Name="getImages" Header="Auto-download Flickr Background" Toggled="getImages_Toggled"></ToggleSwitch>
+                    <StackPanel x:Name="getImagesOn">
+                        <ToggleSwitch x:Name="bgOnWifi" Header="Only get backgrounds on Wifi" Toggled="bgOnWifi_Toggled"></ToggleSwitch>
+                    </StackPanel>
+            </StackPanel>
+                </PivotItem>
             <PivotItem Header="locations">
                 <StackPanel>
                     <ToggleSwitch Header="Enable Auto Location" Toggled="autoLocateToggle_Toggled"  x:Name="autoLocateToggle"></ToggleSwitch>
@@ -61,8 +67,8 @@
             </PivotItem>
             <PivotItem Header="tiles">
                 <StackPanel>
-                    <CheckBox Name="enableBackground" Checked="enableBackground_Checked" Unchecked="enableBackground_Unchecked" Content="Allow background tile updates"/>
-                    <TextBlock Text="Allows the live tile to update without the app being launched" Style="{ThemeResource ControlContextualInfoTextBlockStyle}" Margin="44,-20,0,0"/>
+                    <ToggleSwitch Name="enableBackground" Header="Allow background tile updates" Toggled="enableBackground_Toggled"/>
+                   
                     <StackPanel Margin="0,20,0,20" x:Name="backgroundPanel">
 
                         <ToggleSwitch Name="tileUnits" Header="Units" Toggled="tileUnits_Toggled" OnContent="Metric" OffContent="U.S."/>

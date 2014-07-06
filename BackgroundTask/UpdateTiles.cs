@@ -3,6 +3,7 @@ using FlickrInfo;
 using LocationHelper;
 using NotificationsExtensions.TileContent;
 using SerializerClass;
+using StoreLabels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,7 +12,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using WeatherData;
 using Windows.ApplicationModel.Background;
-using Windows.Data.Xml.Dom;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
@@ -32,14 +32,7 @@ namespace BackgroundTask
     public sealed class UpdateTiles : XamlRenderingBackgroundTask
     {
         #region variables
-        private const string WUND_API = "fb1dd3f4321d048d";
-        private const string FLICKR_API = "2781c025a4064160fc77a52739b552ff";
-        private const string LOC_STORE = "locList";
-        private const string SAVE_LOC = "ms-appdata:///local/";
-        private const string TILE_UNITS_ARE_SI = "tileUnitsAreSI";
-        private const string TRANSPARENT_TILE = "tileIsTransparent";
-        private const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
-        private const string ALLOW_LOC = "allowAutoLocation";
+
         private static ObservableCollection<Location> locationList;
         ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
@@ -71,13 +64,13 @@ namespace BackgroundTask
         public async static void RunFromApp()
         {
             //allows the background task to auto run once
-            if (IsTaskRegistered( "Mini"))
+            if (IsTaskRegistered("Mini"))
             {
                 Unregister("Mini");
             }
             BackgroundAccessStatus result = await BackgroundExecutionManager.RequestAccessAsync();
             BackgroundTaskBuilder builder = new BackgroundTaskBuilder();
-            builder.Name ="Mini";
+            builder.Name = "Mini";
             builder.TaskEntryPoint = typeof(UpdateTiles).FullName;
             builder.SetTrigger(new TimeTrigger(15, true));
             SystemCondition condition = new SystemCondition(SystemConditionType.InternetAvailable);
@@ -117,9 +110,9 @@ namespace BackgroundTask
         private bool setLocationList()
         {
             //sets up the location list, returning true if sucessful
-            if (store.Values.ContainsKey(LOC_STORE))
+            if (store.Values.ContainsKey(Values.LOC_STORE))
             {
-                ObservableCollection<Location> list = (Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
                 if (list != null)
                 {
                     locationList = list;
@@ -140,9 +133,9 @@ namespace BackgroundTask
         private bool allowedToUpdate()
         {
             //determines whether tiles should update or not
-            if (localStore.Values.ContainsKey(UPDATE_ON_CELL))
+            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
             {
-                if ((bool)localStore.Values[UPDATE_ON_CELL])
+                if ((bool)localStore.Values[Values.UPDATE_ON_CELL])
                 {
                     return true;
                 }
@@ -150,15 +143,15 @@ namespace BackgroundTask
             }
             else
             {
-                localStore.Values[UPDATE_ON_CELL] = true;
+                localStore.Values[Values.UPDATE_ON_CELL] = true;
                 return true;
             }
         }
         private bool allowedToAutoFind()
         {
-            if (localStore.Values.ContainsKey(ALLOW_LOC))
+            if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
             {
-                return (bool)localStore.Values[ALLOW_LOC];
+                return (bool)localStore.Values[Values.ALLOW_LOC];
             }
             return false;
         }
@@ -180,7 +173,7 @@ namespace BackgroundTask
                     GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 2), new TimeSpan(0, 1, 0));
                     if (!geoTemplate.fail)
                     {
-                        GetWundergroundData getWundData = loc.IsCurrent ? new GetWundergroundData(WUND_API, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(WUND_API, loc.LocUrl);
+                        GetWundergroundData getWundData = loc.IsCurrent ? new GetWundergroundData(Values.WUND_API, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.WUND_API, loc.LocUrl);
                         WeatherInfo weatherInfo = await getWundData.getConditions();
                         if (!weatherInfo.fail)
                         {
@@ -231,7 +224,7 @@ namespace BackgroundTask
                                 await createTileImage(data);
                             }
 
-                            pushImageToMainTile(SAVE_LOC + smallTileName, SAVE_LOC + mediumTileName, SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
+                            pushImageToMainTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
                         }
                     }
                 }
@@ -258,7 +251,7 @@ namespace BackgroundTask
             GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 500), new TimeSpan(2, 0, 0));
             if (!geoTemplate.fail)
             {
-                GetWundergroundData getWundData = tileLoc.IsCurrent ? new GetWundergroundData(WUND_API, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(WUND_API, tileLoc.LocUrl);
+                GetWundergroundData getWundData = tileLoc.IsCurrent ? new GetWundergroundData(Values.WUND_API, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.WUND_API, tileLoc.LocUrl);
                 WeatherInfo weatherInfo = await getWundData.getConditions();
                 if (!weatherInfo.fail)
                 {
@@ -308,7 +301,7 @@ namespace BackgroundTask
                     {
                         await createTileImage(data);
                     }
-                    pushImageToSecondaryTile(tile, SAVE_LOC + smallTileName, SAVE_LOC + mediumTileName, SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
+                    pushImageToSecondaryTile(tile, Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
                 }
             }
         }
@@ -649,7 +642,7 @@ namespace BackgroundTask
             {
                 return null;
             }
-            GetFlickrInfo f = new GetFlickrInfo(FLICKR_API);
+            GetFlickrInfo f = new GetFlickrInfo(Values.FLICKR_API);
             FlickrData imgList = await f.getImages(getTags(data.weather.conditions), useGroup, useLoc, data.location.lat, data.location.lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
@@ -715,11 +708,11 @@ namespace BackgroundTask
         private bool unitsAreSI()
         {
             //determines whether tile units should be SI
-            if (store.Values.ContainsKey(TILE_UNITS_ARE_SI))
+            if (store.Values.ContainsKey(Values.TILE_UNITS_ARE_SI))
             {
-                return (bool)store.Values[TILE_UNITS_ARE_SI];
+                return (bool)store.Values[Values.TILE_UNITS_ARE_SI];
             }
-            store.Values[TILE_UNITS_ARE_SI] = true;
+            store.Values[Values.TILE_UNITS_ARE_SI] = true;
             return true;
         }
         private Location findTile(string args)
@@ -737,11 +730,11 @@ namespace BackgroundTask
         private bool isTransparent()
         {
             //determines whether the tile should be transparent
-            if (localStore.Values.ContainsKey(TRANSPARENT_TILE))
+            if (localStore.Values.ContainsKey(Values.TRANSPARENT_TILE))
             {
-                return (bool)(localStore.Values[TRANSPARENT_TILE]);
+                return (bool)(localStore.Values[Values.TRANSPARENT_TILE]);
             }
-            localStore.Values[TRANSPARENT_TILE] = true;
+            localStore.Values[Values.TRANSPARENT_TILE] = true;
             return true;
         }
         private bool isOnWifi()

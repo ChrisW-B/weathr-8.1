@@ -1,6 +1,7 @@
 ﻿using LocationHelper;
 using OtherPages;
 using SerializerClass;
+using StoreLabels;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -115,9 +116,6 @@ namespace Weathr81.OtherPages
 
         #region variables
         ObservableCollection<SearchItemTemplate> suggestions = new ObservableCollection<SearchItemTemplate>();
-        private const string LOC_STORE = "locList";
-        private const string GOOGLE_URL = "http://maps.googleapis.com/maps/api/geocode/xml?address=";
-        private const string GOOGLE_POST = "&sensor=true";
         #endregion
         async private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -148,7 +146,7 @@ namespace Weathr81.OtherPages
                 }
                 wuUrl = wuUrl.Replace("<l>", "");
                 wuUrl = wuUrl.Replace("</l>", "");
-                suggestions.Add(new SearchItemTemplate() { locName = locationName, wUrl = wuUrl, isCurrent=false });
+                suggestions.Add(new SearchItemTemplate() { locName = locationName, wUrl = wuUrl, isCurrent = false });
             }
             results.ItemsSource = suggestions;
         }
@@ -156,7 +154,7 @@ namespace Weathr81.OtherPages
         {
             ListBox lb = sender as ListBox;
             SearchItemTemplate item = (lb.SelectedItem as SearchItemTemplate);
-            ObservableCollection<Location> locs = Serializer.get(LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+            ObservableCollection<Location> locs = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
             if (locs == null)
             {
                 locs = new ObservableCollection<Location>();
@@ -168,7 +166,7 @@ namespace Weathr81.OtherPages
                 {
                     locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
                 }
-                Serializer.save(locs, typeof(ObservableCollection<Location>), LOC_STORE, store);
+                Serializer.save(locs, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
             }
             Frame.GoBack();
         }
@@ -191,7 +189,7 @@ namespace Weathr81.OtherPages
         async private Task<GeoTemplate> getCoordinates(string locName)
         {
             //get item coordinates from google
-            Uri googleUri = new Uri(GOOGLE_URL + locName + GOOGLE_POST);
+            Uri googleUri = new Uri(Values.GOOGLE_URL + locName + Values.GOOGLE_POST);
             HttpClient c = new HttpClient();
             Stream str = await c.GetStreamAsync(googleUri);
             return readCoordinates(XDocument.Load(str));
