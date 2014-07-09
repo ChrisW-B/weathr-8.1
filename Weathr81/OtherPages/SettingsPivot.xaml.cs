@@ -101,7 +101,7 @@ namespace Weathr81.OtherPages
         {
             this.navigationHelper.OnNavigatedTo(e);
             updateSettings();
-            doneSetting = true;
+            
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -116,9 +116,11 @@ namespace Weathr81.OtherPages
         #region settings setup
         private void updateSettings()
         {
+            doneSetting = false;
             setUpGeneralSection();
             setupLocationsSection();
             setUpTileSection();
+            doneSetting = true;
         }
 
         private void setupLocationsSection()

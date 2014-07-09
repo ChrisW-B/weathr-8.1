@@ -157,7 +157,6 @@ namespace Weathr81
         {
             //central point of app, runs other methods
             tryBackgroundTask();
-            disablePinIfPinned();
             if (await trialNotOver())
             {
                 await statusBar.ShowAsync();
@@ -200,6 +199,7 @@ namespace Weathr81
                     Frame.Navigate(typeof(AddLocation));
                 }
             }
+            disablePinIfPinned();
         }
 
         private bool allowedToSetBG()
@@ -982,7 +982,6 @@ namespace Weathr81
                         appBar.PrimaryCommands.Add(addLocButton);
                         break;
                 }
-
             }
         }
     }

@@ -161,7 +161,7 @@ namespace Weathr81
         {
             String[] latLong = (args.TileId).Split('_');
 
-            Location loc = new Location() { IsCurrent = (args.Arguments == null), Lat = Convert.ToDouble(latLong[0], new CultureInfo("en-US")), Lon = Convert.ToDouble(latLong[1], new CultureInfo("en-US")) };
+            Location loc = new Location() { IsCurrent = (args.Arguments == null)||(args.Arguments=="currLoc"), Lat = Convert.ToDouble(latLong[0], new CultureInfo("en-US")), Lon = Convert.ToDouble(latLong[1], new CultureInfo("en-US")) };
             if (args.Arguments != null)
             {
                 loc.LocUrl = args.Arguments;
