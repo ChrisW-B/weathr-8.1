@@ -170,10 +170,10 @@ namespace BackgroundTask
                     string wideTileName = name + "wide.png";
 
                     GetGeoposition pos = new GetGeoposition(loc, allowedToAutoFind());
-                    GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 2), new TimeSpan(0, 1, 0));
+                    GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 3), new TimeSpan(0, 1, 0));
                     if (!geoTemplate.fail)
                     {
-                        GetWundergroundData getWundData = loc.IsCurrent ? new GetWundergroundData(Values.WUND_API, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.WUND_API, loc.LocUrl);
+                        GetWundergroundData getWundData = loc.IsCurrent ? new GetWundergroundData(Values.getWundApi(), geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.getWundApi(), loc.LocUrl);
                         WeatherInfo weatherInfo = await getWundData.getConditions();
                         if (!weatherInfo.fail)
                         {
@@ -251,7 +251,7 @@ namespace BackgroundTask
             GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 500), new TimeSpan(2, 0, 0));
             if (!geoTemplate.fail)
             {
-                GetWundergroundData getWundData = tileLoc.IsCurrent ? new GetWundergroundData(Values.WUND_API, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.WUND_API, tileLoc.LocUrl);
+                GetWundergroundData getWundData = tileLoc.IsCurrent ? new GetWundergroundData(Values.getWundApi(), geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.getWundApi(), tileLoc.LocUrl);
                 WeatherInfo weatherInfo = await getWundData.getConditions();
                 if (!weatherInfo.fail)
                 {
@@ -338,7 +338,7 @@ namespace BackgroundTask
             UIElement g;
             if (background != null)
             {
-                g = createImage(data, tileSize, background);
+                g = createImage(data, tileSize, ref background);
             }
             else
             {
@@ -361,7 +361,7 @@ namespace BackgroundTask
 
         #region tile ui design
         //creating grid of tile design
-        private Grid createImage(BackgroundTemplate data, TileSize tileSize, BitmapImage background = null)
+        private Grid createImage(BackgroundTemplate data, TileSize tileSize, ref BitmapImage background)
         {
             if (tileSize == TileSize.small)
             {
@@ -371,11 +371,11 @@ namespace BackgroundTask
             {
                 if (tileSize == TileSize.medium)
                 {
-                    return createMediumTile(data, background);
+                    return createMediumTile(data, ref background);
                 }
                 else if (tileSize == TileSize.wide)
                 {
-                    return createWideTile(data, background);
+                    return createWideTile(data, ref background);
                 }
             }
             else
@@ -388,6 +388,23 @@ namespace BackgroundTask
                 {
                     return createWideTile(data);
                 }
+            }
+            return null;
+        }
+
+        private Grid createImage(BackgroundTemplate data, TileSize tileSize)
+        {
+            if (tileSize == TileSize.small)
+            {
+                return createSmallTile(data.weather.currentTemp, data.weather.conditions);
+            }
+            else if (tileSize == TileSize.medium)
+            {
+                return createMediumTile(data);
+            }
+            else if (tileSize == TileSize.wide)
+            {
+                return createWideTile(data);
             }
             return null;
         }
@@ -416,12 +433,12 @@ namespace BackgroundTask
         {
             return new TextBlock() { Text = temp, FontSize = 30, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         }
-        private Grid createWideTile(BackgroundTemplate data, BitmapImage background = null)
+        private Grid createWideTile(BackgroundTemplate data, ref BitmapImage background)
         {
             Grid g;
             if (background != null)
             {
-                g = (createBackgroundGrid(TileSize.wide, false, background));
+                g = (createBackgroundGrid(TileSize.wide, false, ref background));
                 g.Children.Add(createWideDarkOverlay(data.flickrData.userName));
                 g.Children.Add(createWideStackPanel(data, true));
 
@@ -434,19 +451,26 @@ namespace BackgroundTask
             }
             return g;
         }
-        private Grid createMediumTile(BackgroundTemplate data, BitmapImage background = null)
+        private Grid createWideTile(BackgroundTemplate data)
         {
             Grid g;
-            if (background != null)
-            {
-                g = createBackgroundGrid(TileSize.medium, false, background);
-                g.Children.Add(createOverlay(data, false));
-            }
-            else
-            {
-                g = createBackgroundGrid(TileSize.medium, true);
-                g.Children.Add(createOverlay(data, true));
-            }
+
+            g = (createBackgroundGrid(TileSize.wide, true));
+            g.Children.Add(createWideStackPanel(data, true));
+            return g;
+        }
+        private Grid createMediumTile(BackgroundTemplate data, ref BitmapImage background)
+        {
+            Grid g;
+            g = createBackgroundGrid(TileSize.medium, false, ref background);
+            g.Children.Add(createOverlay(data, false));
+            return g;
+        }
+        private Grid createMediumTile(BackgroundTemplate data)
+        {
+            Grid g;
+            g = createBackgroundGrid(TileSize.medium, true);
+            g.Children.Add(createOverlay(data, true));
             return g;
         }
         private Grid createWideDarkOverlay(string artistName)
@@ -479,7 +503,7 @@ namespace BackgroundTask
             g.Children.Add(createOverlay(data, transparent));
             return g;
         }
-        private Grid createBackgroundGrid(TileSize tileSize, bool transparent, BitmapImage background = null)
+        private Grid createBackgroundGrid(TileSize tileSize, bool transparent, ref BitmapImage background)
         {
             Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
             g.Height = g.Width = 150;
@@ -494,6 +518,21 @@ namespace BackgroundTask
             if (!transparent)
             {
                 g.Background = new ImageBrush() { ImageSource = background, Stretch = Stretch.UniformToFill };
+            }
+            return g;
+        }
+
+        private Grid createBackgroundGrid(TileSize tileSize, bool transparent)
+        {
+            Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
+            g.Height = g.Width = 150;
+            if (tileSize == TileSize.wide)
+            {
+                g.Width = 310;
+            }
+            else if (tileSize == TileSize.small)
+            {
+                g.Height = g.Width = 71;
             }
             return g;
         }

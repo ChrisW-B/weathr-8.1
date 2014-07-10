@@ -193,5 +193,13 @@
     <MainPackageIdentityName>56541CBStudios.Sunny</MainPackageIdentityName>
     <MainPackageIdentityName>56541CBStudios.Weathr</MainPackageIdentityName>
   </AccountPackageIdentityNames>
-  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=235c6773-f051-49f5-bb50-c6ff3340216b" />
+  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=235c6773-f051-49f5-bb50-c6ff3340216b">
+    <BundleInfo>
+      <PackageInfo>
+        <OsMinVersion>6.3.0.0</OsMinVersion>
+        <PackageArchitecture>neutral</PackageArchitecture>
+        <PackageMaxArchitectureVersion>0.0.3.0</PackageMaxArchitectureVersion>
+      </PackageInfo>
+    </BundleInfo>
+  </PackageInfoList>
 </StoreAssociation>

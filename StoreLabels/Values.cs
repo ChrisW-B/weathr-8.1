@@ -1,4 +1,5 @@
 ﻿
+using System;
 namespace StoreLabels
 {
     public class Values
@@ -16,6 +17,7 @@ namespace StoreLabels
         public const string IAP_FORE_IO = "forecastIOAccess";
         public const string IAP_NO_LIMIT = "unlimitedTime";
         public const string LAST_LOC = "lastLoc";
+        public const string LAST_LOC_NAME = "lastLocFullName";
         public const string LAST_SAVE = "lastSaveTime";
         public const string LOC_STORE = "locList";
         public const string MAIN_BG_WIFI_ONLY = "onlyAllowBGonWiFi";
@@ -30,6 +32,22 @@ namespace StoreLabels
         public const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         public const string UNITS_ARE_SI = "unitsAreSI";
         public const string UNITS_CHANGED = "unitsChanged";
-        public const string WUND_API = "fb1dd3f4321d048d";
+       
+       // public const string getWundApi() = "fb1dd3f4321d048d";
+
+        public static string getWundApi()
+        {
+            Random rand = new Random();
+            double val = rand.Next(100);
+            switch ((int)val % 6)
+            {
+                case 0:
+                    return "2d73e75dbfe7f75c";
+                case 1:
+                    return "8b22016717b94072";
+                default:
+                    return "fb1dd3f4321d048d";
+            }
+        }
     }
 }

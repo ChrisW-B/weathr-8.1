@@ -314,7 +314,7 @@ namespace Weathr81
                 {
                     bool isSI = unitsAreSI();
                     Serializer.save(DateTime.Now, typeof(DateTime), Values.LAST_SAVE, localStore);
-                    updateWeatherInfo(downloadedForecast, isSI);
+                    updateWeatherInfo(ref downloadedForecast, isSI);
                     updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
                     if (allowedToSetBG())
                     {
@@ -331,6 +331,11 @@ namespace Weathr81
             {
                 displayError(geo.errorMsg);
             }
+            if ((string)hub.Header == "")
+            {
+                //make sure there is always a title
+                hub.Header = currentLocation.LocName;
+            }
         }
         private bool restoreData()
         {
@@ -339,10 +344,15 @@ namespace Weathr81
             bool nowDone = false;
             bool forecastDone = false;
             bool hourlyDone = false;
-            bool alertDone = false;
             bool withinThirtyMins = false;
             bool sameLoc = false;
             bool sameUnits = true;
+            bool locName = false;
+            if (localStore.Values.ContainsKey(Values.LAST_LOC_NAME))
+            {
+                hub.Header = localStore.Values[Values.LAST_LOC_NAME];
+                locName = true;
+            }
             if (localStore.Values.ContainsKey(Values.NOW_SAVE))
             {
                 NowTemplate nowTemplate = Serializer.get(Values.NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
@@ -367,7 +377,6 @@ namespace Weathr81
                 if (alertsTemplate != null)
                 {
                     alerts.DataContext = alertsTemplate;
-                    alertDone = true;
                 }
             }
             if (localStore.Values.ContainsKey(Values.HOURLY_SAVE))
@@ -386,10 +395,6 @@ namespace Weathr81
                 if (lastLoc != null)
                 {
                     sameLoc = ((lastLoc.IsCurrent && currentLocation.IsCurrent) || (lastLoc.LocUrl == currentLocation.LocUrl));
-                    if (sameLoc)
-                    {
-                        hub.Header = lastLoc.LocName;
-                    }
                 }
             }
             if (localStore.Values.ContainsKey(Values.LAST_SAVE))
@@ -410,7 +415,7 @@ namespace Weathr81
                 sameUnits = !(bool)localStore.Values[Values.UNITS_CHANGED];
                 localStore.Values[Values.UNITS_CHANGED] = false;
             }
-            return nowDone && forecastDone && alertDone && hourlyDone && withinThirtyMins && sameLoc && sameUnits;
+            return nowDone && forecastDone && hourlyDone && withinThirtyMins && sameLoc && sameUnits && locName;
         }
         private bool unitsAreSI()
         {
@@ -454,6 +459,7 @@ namespace Weathr81
                 Serializer.save(forecastData, typeof(ForecastTemplate), Values.FORECAST_SAVE, localStore);
             }
             Serializer.save(currentLocation, typeof(Location), Values.LAST_LOC, localStore);
+            localStore.Values[Values.LAST_LOC_NAME] = hub.Header;
         }
         async private Task<bool> setFavoriteLocations()
         {
@@ -526,7 +532,7 @@ namespace Weathr81
         {
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
-            GetWundergroundData weatherData = new GetWundergroundData(Values.WUND_API, lat, lon);
+            GetWundergroundData weatherData = new GetWundergroundData(Values.getWundApi(), lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
@@ -535,12 +541,12 @@ namespace Weathr81
         {
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
-            GetWundergroundData weatherData = new GetWundergroundData(Values.WUND_API, wUrl);
+            GetWundergroundData weatherData = new GetWundergroundData(Values.getWundApi(), wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
         }
-        private void updateWeatherInfo(WeatherInfo downloadedForecast, bool isSI)
+        private void updateWeatherInfo(ref WeatherInfo downloadedForecast, bool isSI)
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
             NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir };

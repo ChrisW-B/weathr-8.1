@@ -30,9 +30,9 @@
             <PivotItem Header="general">
                 <StackPanel>
                 <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
-                    <ToggleSwitch x:Name="getImages" Header="Auto-download Flickr Background" Toggled="getImages_Toggled"></ToggleSwitch>
+                    <ToggleSwitch x:Name="getImages" Header="Download Background" Toggled="getImages_Toggled"></ToggleSwitch>
                     <StackPanel x:Name="getImagesOn">
-                        <ToggleSwitch x:Name="bgOnWifi" Header="Only get backgrounds on Wifi" Toggled="bgOnWifi_Toggled"></ToggleSwitch>
+                        <ToggleSwitch x:Name="bgOnWifi" Header="Wifi Only Background" Toggled="bgOnWifi_Toggled"></ToggleSwitch>
                     </StackPanel>
             </StackPanel>
                 </PivotItem>
