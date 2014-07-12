@@ -10,18 +10,17 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using TileRendererClass;
 using WeatherData;
 using Windows.ApplicationModel.Background;
+using Windows.Foundation;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
-using Windows.UI;
 using Windows.UI.Notifications;
 using Windows.UI.StartScreen;
-using Windows.UI.Text;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using WundergroundData;
@@ -36,13 +35,6 @@ namespace BackgroundTask
         private static ObservableCollection<Location> locationList;
         ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
-
-        private enum TileSize
-        {
-            small,
-            medium,
-            wide
-        }
         #endregion
 
         #region registration
@@ -61,22 +53,22 @@ namespace BackgroundTask
             builder.AddCondition(condition);
             builder.Register();
         }
-        public async static void RunFromApp()
-        {
-            //allows the background task to auto run once
-            if (IsTaskRegistered("Mini"))
-            {
-                Unregister("Mini");
-            }
-            BackgroundAccessStatus result = await BackgroundExecutionManager.RequestAccessAsync();
-            BackgroundTaskBuilder builder = new BackgroundTaskBuilder();
-            builder.Name = "Mini";
-            builder.TaskEntryPoint = typeof(UpdateTiles).FullName;
-            builder.SetTrigger(new TimeTrigger(15, true));
-            SystemCondition condition = new SystemCondition(SystemConditionType.InternetAvailable);
-            builder.AddCondition(condition);
-            builder.Register();
-        }
+        //public async static void RunFromApp()
+        //{
+        //    //allows the background task to auto run once
+        //    if (IsTaskRegistered("Mini"))
+        //    {
+        //        Unregister("Mini");
+        //    }
+        //    BackgroundAccessStatus result = await BackgroundExecutionManager.RequestAccessAsync();
+        //    BackgroundTaskBuilder builder = new BackgroundTaskBuilder();
+        //    builder.Name = "Mini";
+        //    builder.TaskEntryPoint = typeof(UpdateTiles).FullName;
+        //    builder.SetTrigger(new TimeTrigger(15, true));
+        //    SystemCondition condition = new SystemCondition(SystemConditionType.InternetAvailable);
+        //    builder.AddCondition(condition);
+        //    builder.Register();
+        //}
         public static void Unregister(string name)
         {
             var entry = BackgroundTaskRegistration.AllTasks.FirstOrDefault(kvp => kvp.Value.Name == name);
@@ -212,18 +204,25 @@ namespace BackgroundTask
                                 today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
                                 tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
                             }
+                            TileGroup tiles = new TileGroup();
+                            CreateTile renderer = new CreateTile();
                             if (!isTransparent())
                             {
                                 data.flickrData = await getBGInfo(data, true, true, 0);
                                 //save flickr image so it doesn't have to be requested twice
                                 BitmapImage flickrBG = new BitmapImage(data.flickrData.imageUri);
-                                await createTileImage(data, flickrBG);
+                                tiles = renderer.createTileImages(data, flickrBG);
                             }
                             else
                             {
-                                await createTileImage(data);
+                                tiles = renderer.createTileImages(data);
                             }
-
+                            if (tiles != null)
+                            {
+                                await renderTile(tiles.smTile, data.smallName);
+                                await renderTile(tiles.sqTile, data.medName);
+                                await renderTile(tiles.wideTile, data.wideName);
+                            }
                             pushImageToMainTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
                         }
                     }
@@ -290,61 +289,37 @@ namespace BackgroundTask
                         today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
                         tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
                     }
+                    TileGroup tiles = new TileGroup();
+                    CreateTile renderer = new CreateTile();
                     if (!isTransparent())
                     {
                         data.flickrData = await getBGInfo(data, true, true, 0);
                         //save flickr image so it doesn't have to be requested twice
                         BitmapImage flickrBG = new BitmapImage(data.flickrData.imageUri);
-                        await createTileImage(data, flickrBG);
+                        tiles = renderer.createTileImages(data, flickrBG);
                     }
                     else
                     {
-                        await createTileImage(data);
+                        tiles = renderer.createTileImages(data);
+                    }
+                    if (tiles != null)
+                    {
+                        await renderTile(tiles.smTile, data.smallName);
+                        await renderTile(tiles.sqTile, data.medName);
+                        await renderTile(tiles.wideTile, data.wideName);
                     }
                     pushImageToSecondaryTile(tile, Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
                 }
             }
         }
 
-        //tile rendering
-        async private Task<bool> createTileImage(BackgroundTemplate data, BitmapImage background = null)
+        
+
+        //rending tiles to images
+        async private Task renderTile(UIElement tile, string tileName)
         {
-            //given lat, lon, and conditions, creates a tile image
-            try
-            {
-                if (background != null)
-                {
-                    await renderTile(data, data.medName, TileSize.medium, background);
-                    await renderTile(data, data.wideName, TileSize.wide, background);
-                    await renderTile(data, data.smallName, TileSize.small, background);
-                }
-                else
-                {
-                    await renderTile(data, data.medName, TileSize.medium);
-                    await renderTile(data, data.wideName, TileSize.wide);
-                    await renderTile(data, data.smallName, TileSize.small);
-                }
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-        async private Task renderTile(BackgroundTemplate data, string tileName, TileSize tileSize, BitmapImage background = null)
-        {
-            //given data, size, and a name, save a tile
             RenderTargetBitmap bm = new RenderTargetBitmap();
-            UIElement g;
-            if (background != null)
-            {
-                g = createImage(data, tileSize, ref background);
-            }
-            else
-            {
-                g = createImage(data, tileSize);
-            }
-            await bm.RenderAsync(g);
+            await bm.RenderAsync(tile);
             Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
 
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
@@ -358,254 +333,6 @@ namespace BackgroundTask
                 await encoder.FlushAsync();
             }
         }
-
-        #region tile ui design
-        //creating grid of tile design
-        private Grid createImage(BackgroundTemplate data, TileSize tileSize, ref BitmapImage background)
-        {
-            if (tileSize == TileSize.small)
-            {
-                return createSmallTile(data.weather.currentTemp, data.weather.conditions);
-            }
-            else if (background != null)
-            {
-                if (tileSize == TileSize.medium)
-                {
-                    return createMediumTile(data, ref background);
-                }
-                else if (tileSize == TileSize.wide)
-                {
-                    return createWideTile(data, ref background);
-                }
-            }
-            else
-            {
-                if (tileSize == TileSize.medium)
-                {
-                    return createMediumTile(data);
-                }
-                else if (tileSize == TileSize.wide)
-                {
-                    return createWideTile(data);
-                }
-            }
-            return null;
-        }
-
-        private Grid createImage(BackgroundTemplate data, TileSize tileSize)
-        {
-            if (tileSize == TileSize.small)
-            {
-                return createSmallTile(data.weather.currentTemp, data.weather.conditions);
-            }
-            else if (tileSize == TileSize.medium)
-            {
-                return createMediumTile(data);
-            }
-            else if (tileSize == TileSize.wide)
-            {
-                return createWideTile(data);
-            }
-            return null;
-        }
-        private Grid createSmallTile(string temp, string conditions)
-        {
-            Grid g;
-
-            g = createBackgroundGrid(TileSize.small, true);
-            g.Children.Add(createSmallOverlay(temp, conditions));
-
-            return g;
-        }
-        private StackPanel createSmallOverlay(string temp, string conditions)
-        {
-            StackPanel s = new StackPanel() { };
-            s.Children.Add(createSmallTempText(temp));
-            s.Children.Add(createSmallConditions(conditions));
-            return s;
-        }
-
-        private TextBlock createSmallConditions(string conditions)
-        {
-            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
-        }
-        private TextBlock createSmallTempText(string temp)
-        {
-            return new TextBlock() { Text = temp, FontSize = 30, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
-        }
-        private Grid createWideTile(BackgroundTemplate data, ref BitmapImage background)
-        {
-            Grid g;
-            if (background != null)
-            {
-                g = (createBackgroundGrid(TileSize.wide, false, ref background));
-                g.Children.Add(createWideDarkOverlay(data.flickrData.userName));
-                g.Children.Add(createWideStackPanel(data, true));
-
-            }
-            else
-            {
-                g = (createBackgroundGrid(TileSize.wide, true));
-                g.Children.Add(createWideStackPanel(data, true));
-
-            }
-            return g;
-        }
-        private Grid createWideTile(BackgroundTemplate data)
-        {
-            Grid g;
-
-            g = (createBackgroundGrid(TileSize.wide, true));
-            g.Children.Add(createWideStackPanel(data, true));
-            return g;
-        }
-        private Grid createMediumTile(BackgroundTemplate data, ref BitmapImage background)
-        {
-            Grid g;
-            g = createBackgroundGrid(TileSize.medium, false, ref background);
-            g.Children.Add(createOverlay(data, false));
-            return g;
-        }
-        private Grid createMediumTile(BackgroundTemplate data)
-        {
-            Grid g;
-            g = createBackgroundGrid(TileSize.medium, true);
-            g.Children.Add(createOverlay(data, true));
-            return g;
-        }
-        private Grid createWideDarkOverlay(string artistName)
-        {
-            Grid g = new Grid() { Width = 310, Height = 150, Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
-            g.Children.Add(new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
-            return g;
-        }
-        private StackPanel createWideStackPanel(BackgroundTemplate data, bool transparent)
-        {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal };
-            s.Children.Add(createFirstHalf(data, transparent));
-            s.Children.Add(createTomorrowBox(data.weather.tempCompare));
-            return s;
-
-        }
-        private Grid createTomorrowBox(string compare)
-        {
-            Grid g = new Grid() { Width = 150, Height = 150, Margin = new Thickness(10, 0, 0, 0) };
-            g.Children.Add(createTomorrowShortText(compare));
-            return g;
-        }
-        private TextBlock createTomorrowShortText(string compare)
-        {
-            return new TextBlock() { Text = compare.ToUpper(), FontWeight = FontWeights.ExtraBold, FontSize = 15, TextWrapping = TextWrapping.WrapWholeWords, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right, Margin = new Thickness(0, 0, 5, 0) };
-        }
-        private Grid createFirstHalf(BackgroundTemplate data, bool transparent)
-        {
-            Grid g = new Grid() { Height = 150, Width = 150 };
-            g.Children.Add(createOverlay(data, transparent));
-            return g;
-        }
-        private Grid createBackgroundGrid(TileSize tileSize, bool transparent, ref BitmapImage background)
-        {
-            Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
-            g.Height = g.Width = 150;
-            if (tileSize == TileSize.wide)
-            {
-                g.Width = 310;
-            }
-            else if (tileSize == TileSize.small)
-            {
-                g.Height = g.Width = 71;
-            }
-            if (!transparent)
-            {
-                g.Background = new ImageBrush() { ImageSource = background, Stretch = Stretch.UniformToFill };
-            }
-            return g;
-        }
-
-        private Grid createBackgroundGrid(TileSize tileSize, bool transparent)
-        {
-            Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
-            g.Height = g.Width = 150;
-            if (tileSize == TileSize.wide)
-            {
-                g.Width = 310;
-            }
-            else if (tileSize == TileSize.small)
-            {
-                g.Height = g.Width = 71;
-            }
-            return g;
-        }
-        private Grid createOverlay(BackgroundTemplate data, bool transparent)
-        {
-            Grid g = new Grid() { Height = 150, VerticalAlignment = VerticalAlignment.Center };
-            g.Children.Add(createTimeTextBlock());
-            if (!transparent)
-            {
-                g.Background = new SolidColorBrush(Colors.Black) { Opacity = .3 };
-                g.Children.Add(createFlickrSource(data.flickrData.userName));
-            }
-            g.Children.Add(createDataStackPanel(data));
-            g.Children.Add(createLocationTextBlock(data.location.location));
-            return g;
-        }
-        private TextBlock createTimeTextBlock()
-        {
-            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3, 0, 0, 0) };
-            return t;
-        }
-        private TextBlock createFlickrSource(string artistName)
-        {
-            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 100 };
-            return t;
-        }
-        private StackPanel createDataStackPanel(BackgroundTemplate data)
-        {
-            StackPanel s = new StackPanel() { VerticalAlignment = VerticalAlignment.Center };
-            s.Children.Add(createCenterGrid(data));
-            return s;
-        }
-        private Grid createCenterGrid(BackgroundTemplate data)
-        {
-            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 5, 0) };
-            g.Children.Add(createCentralStackPanel(data));
-            return g;
-        }
-        private StackPanel createCentralStackPanel(BackgroundTemplate data)
-        {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 150 };
-            s.Children.Add(createTempTextBlock(data.weather.currentTemp));
-            s.Children.Add(createForecastStackPanel(data));
-            return s;
-        }
-        private TextBlock createTempTextBlock(string temperature)
-        {
-            TextBlock t = new TextBlock() { Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, HorizontalAlignment = HorizontalAlignment.Right };
-            return t;
-        }
-        private StackPanel createForecastStackPanel(BackgroundTemplate data)
-        {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center, Width = 80, Margin = new Thickness(5, 0, 0, 0) };
-            s.Children.Add(createConditionsTextBlock(data.weather.conditions));
-            s.Children.Add(createHiLoTextBlock(data.weather.high, data.weather.low));
-            return s;
-        }
-        private TextBlock createConditionsTextBlock(string conditions)
-        {
-            TextBlock t = new TextBlock() { Text = conditions.ToUpperInvariant(), FontWeight = FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
-            return t;
-        }
-        private TextBlock createHiLoTextBlock(string high, string low)
-        {
-            TextBlock t = new TextBlock() { Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width = 80 };
-            return t;
-        }
-        private TextBlock createLocationTextBlock(string location)
-        {
-            TextBlock t = new TextBlock() { Text = location.ToUpper(), FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
-            return t;
-        }
-        #endregion
 
         //push images to tiles
         private void pushImageToMainTile(string smallTileLoc, string mediumTileLoc, string wideTileLoc, string compare, string current, string today, string tomorrow)
@@ -682,7 +409,7 @@ namespace BackgroundTask
                 return null;
             }
             GetFlickrInfo f = new GetFlickrInfo(Values.FLICKR_API);
-            FlickrData imgList = await f.getImages(getTags(data.weather.conditions), useGroup, useLoc, data.location.lat, data.location.lon);
+            FlickrData imgList = await f.getImages(GetFlickrInfo.getTags(data.weather.conditions), useGroup, useLoc, data.location.lat, data.location.lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
                 Random r = new Random();
@@ -697,51 +424,6 @@ namespace BackgroundTask
             else
             {
                 return await getBGInfo(data, useGroup, false, timesRun++);
-            }
-        }
-        private string getTags(string cond)
-        {
-            //converts weather conditions into tags for flickr
-            if (cond == null)
-            {
-                return "sky";
-            }
-            else
-            {
-                string weatherUpper = cond.ToUpper();
-
-                if (weatherUpper.Contains("THUNDER"))
-                {
-                    return "thunder, thunderstorm, lightning, storm";
-                }
-                else if (weatherUpper.Contains("RAIN"))
-                {
-                    return "rain, drizzle, rainy";
-                }
-                else if (weatherUpper.Contains("SNOW") || weatherUpper.Contains("FLURRY"))
-                {
-                    return "snow, flurry, snowing";
-                }
-                else if (weatherUpper.Contains("FOG") || weatherUpper.Contains("MIST"))
-                {
-                    return "fog, foggy, mist";
-                }
-                else if (weatherUpper.Contains("CLEAR"))
-                {
-                    return "clear, sun, sunny, blue sky";
-                }
-                else if (weatherUpper.Contains("OVERCAST"))
-                {
-                    return "overcast, cloudy";
-                }
-                else if (weatherUpper.Contains("CLOUDS") || weatherUpper.Contains("CLOUDY"))
-                {
-                    return "cloudy, clouds, fluffy cloud";
-                }
-                else
-                {
-                    return weatherUpper;
-                }
             }
         }
         private bool unitsAreSI()
@@ -784,3 +466,158 @@ namespace BackgroundTask
         }
     }
 }
+
+////updating tiles from main app
+//public IAsyncOperation<TileGroup> updateMainWithParams(string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow, ImageBrush background, string artistName)
+//{
+//    return p_UpdateMainWithParams(currentConditions, tomorrowShort, tempCompare, todayHigh, todayLow, temp, todayShort, city, tomorrowHigh, tomorrowLow, background, artistName).AsAsyncOperation();
+//}
+//public IAsyncOperation<TileGroup> updateMainWithParams(string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow)
+//{
+//    return p_UpdateMainWithParams(currentConditions, tomorrowShort, tempCompare, todayHigh, todayLow, temp, todayShort, city, tomorrowHigh, tomorrowLow).AsAsyncOperation();
+//}
+//public IAsyncOperation<TileGroup> updateSecondaryWithParams(SecondaryTile tile, string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow, ImageBrush background, string artistName)
+//{
+//    return p_UpdateSecondaryWithParams(tile, currentConditions, tomorrowShort, tempCompare, todayHigh, todayLow, temp, todayShort, city, tomorrowHigh, tomorrowLow, background, artistName).AsAsyncOperation();
+//}
+//public IAsyncOperation<TileGroup> updateSecondaryWithParams(SecondaryTile tile, string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow)
+//{
+//    return p_UpdateSecondaryWithParams(tile, currentConditions, tomorrowShort, tempCompare, todayHigh, todayLow, temp, todayShort, city, tomorrowHigh, tomorrowLow).AsAsyncOperation();
+//}
+
+//async private Task<TileGroup> p_UpdateMainWithParams(string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow, ImageBrush background, string artistName)
+//{
+//    string name = "default";
+//    string smallTileName = name + "small.png";
+//    string mediumTileName = name + "med.png";
+//    string wideTileName = name + "wide.png";
+//    BackgroundTemplate data = new BackgroundTemplate()
+//    {
+//        medName = mediumTileName,
+//        wideName = wideTileName,
+//        smallName = smallTileName,
+//        weather = new BackgroundWeather()
+//        {
+//            conditions = currentConditions,
+//            tempCompare = tomorrowShort + " tomorrow, and " + tempCompare.ToLowerInvariant() + " today",
+//            high = todayHigh,
+//            low = todayLow,
+//            currentTemp = temp.Split('.')[0] + "°",
+//            todayForecast = todayShort,
+//        },
+//        location = new BackgroundLoc()
+//        {
+//            location = city,
+//        },
+//        flickrData = new BackgroundFlickr()
+//        {
+//            userName = artistName
+//        }
+//    };
+//    string current = "Currently " + currentConditions + ", " + temp + "°C";
+//    string today = "Today: " + todayShort + " " + todayHigh + "/" + todayLow;
+//    string tomorrow = "Tomorrow: " + tomorrowShort + " " + tomorrowHigh + "/" + tomorrowLow;
+//    BitmapImage flickrBG = (BitmapImage)(background.ImageSource);
+//    CreateTile renderer = new CreateTile();
+//    return await Task.Run(() => renderer.createTileImages(data, flickrBG));
+//}
+//async private Task<TileGroup> p_UpdateMainWithParams(string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow)
+//{
+//    string name = "default";
+//    string smallTileName = name + "small.png";
+//    string mediumTileName = name + "med.png";
+//    string wideTileName = name + "wide.png";
+//    BackgroundTemplate data = new BackgroundTemplate()
+//    {
+//        medName = mediumTileName,
+//        wideName = wideTileName,
+//        smallName = smallTileName,
+//        weather = new BackgroundWeather()
+//        {
+//            conditions = currentConditions,
+//            tempCompare = tomorrowShort + " tomorrow, and " + tempCompare.ToLowerInvariant() + " today",
+//            high = todayHigh,
+//            low = todayLow,
+//            currentTemp = temp.Split('.')[0] + "°",
+//            todayForecast = todayShort,
+//        },
+//        location = new BackgroundLoc()
+//        {
+//            location = city,
+//        }
+//    };
+//    string current = "Currently " + currentConditions + ", " + temp + "°C";
+//    string today = "Today: " + todayShort + " " + todayHigh + "/" + todayLow;
+//    string tomorrow = "Tomorrow: " + tomorrowShort + " " + tomorrowHigh + "/" + tomorrowLow;
+//    CreateTile renderer = new CreateTile();
+//    return await Task.Run(() => renderer.createTileImages(data));
+//}
+//async private Task<TileGroup> p_UpdateSecondaryWithParams(SecondaryTile tile, string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow, ImageBrush background, string artistName)
+//{
+//    string name = tile.TileId;
+//    string smallTileName = name + "small.png";
+//    string mediumTileName = name + "med.png";
+//    string wideTileName = name + "wide.png";
+//    BackgroundTemplate data = new BackgroundTemplate()
+//    {
+//        medName = mediumTileName,
+//        wideName = wideTileName,
+//        smallName = smallTileName,
+//        weather = new BackgroundWeather()
+//        {
+//            conditions = currentConditions,
+//            tempCompare = tomorrowShort + " tomorrow, and " + tempCompare.ToLowerInvariant() + " today",
+//            high = todayHigh,
+//            low = todayLow,
+//            currentTemp = temp.Split('.')[0] + "°",
+//            todayForecast = todayShort,
+//        },
+//        location = new BackgroundLoc()
+//        {
+//            location = city,
+//        },
+//        flickrData = new BackgroundFlickr()
+//        {
+//            userName = artistName
+//        }
+//    };
+//    string current = "Currently " + currentConditions + ", " + temp + "°C";
+//    string today = "Today: " + todayShort + " " + todayHigh + "/" + todayLow;
+//    string tomorrow = "Tomorrow: " + tomorrowShort + " " + tomorrowHigh + "/" + tomorrowLow;
+//    BitmapImage flickrBG = (BitmapImage)(background.ImageSource);
+//    CreateTile renderer = new CreateTile();
+//    return await Task.Run(() => renderer.createTileImages(data, flickrBG));
+
+//}
+//async private Task<TileGroup> p_UpdateSecondaryWithParams(SecondaryTile tile, string currentConditions, string tomorrowShort, string tempCompare, string todayHigh, string todayLow, string temp, string todayShort, string city, string tomorrowHigh, string tomorrowLow)
+//{
+//    string name = tile.TileId;
+//    string smallTileName = name + "small.png";
+//    string mediumTileName = name + "med.png";
+//    string wideTileName = name + "wide.png";
+//    BackgroundTemplate data = new BackgroundTemplate()
+//    {
+//        medName = mediumTileName,
+//        wideName = wideTileName,
+//        smallName = smallTileName,
+//        weather = new BackgroundWeather()
+//        {
+//            conditions = currentConditions,
+//            tempCompare = tomorrowShort + " tomorrow, and " + tempCompare.ToLowerInvariant() + " today",
+//            high = todayHigh,
+//            low = todayLow,
+//            currentTemp = temp.Split('.')[0] + "°",
+//            todayForecast = todayShort,
+//        },
+//        location = new BackgroundLoc()
+//        {
+//            location = city,
+//        }
+//    };
+//    string current = "Currently " + currentConditions + ", " + temp + "°C";
+//    string today = "Today: " + todayShort + " " + todayHigh + "/" + todayLow;
+//    string tomorrow = "Tomorrow: " + tomorrowShort + " " + tomorrowHigh + "/" + tomorrowLow;
+//    CreateTile renderer = new CreateTile();
+//    return await Task.Run(() => renderer.createTileImages(data));
+
+//}

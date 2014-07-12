@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundTask", "Backgroun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StoreLabels", "StoreLabels\StoreLabels.csproj", "{E77FFD98-EE0D-4901-8CD0-7D6FF6F1C899}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileRendererClass", "TileRenderer\TileRendererClass.csproj", "{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -159,6 +161,18 @@ Global
 		{E77FFD98-EE0D-4901-8CD0-7D6FF6F1C899}.Release|ARM.Build.0 = Release|ARM
 		{E77FFD98-EE0D-4901-8CD0-7D6FF6F1C899}.Release|x86.ActiveCfg = Release|x86
 		{E77FFD98-EE0D-4901-8CD0-7D6FF6F1C899}.Release|x86.Build.0 = Release|x86
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Debug|ARM.ActiveCfg = Debug|ARM
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Debug|ARM.Build.0 = Debug|ARM
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Debug|x86.ActiveCfg = Debug|x86
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Debug|x86.Build.0 = Debug|x86
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Release|ARM.ActiveCfg = Release|ARM
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Release|ARM.Build.0 = Release|ARM
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Release|x86.ActiveCfg = Release|x86
+		{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -201,7 +201,6 @@ namespace Weathr81
             }
             disablePinIfPinned();
         }
-
         private bool allowedToSetBG()
         {
             if (store.Values.ContainsKey(Values.ALLOW_MAIN_BG))
@@ -259,7 +258,18 @@ namespace Weathr81
             }
             return false;
         }
-
+        async private Task<SecondaryTile> getCurrentTile()
+        {
+            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+            foreach (SecondaryTile tile in tiles)
+            {
+                if (tile.Arguments == currentLocation.LocUrl)
+                {
+                    return tile;
+                }
+            }
+            return null;
+        }
         private void tryBackgroundTask()
         {
             if (localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
@@ -278,7 +288,6 @@ namespace Weathr81
                 }
             }
         }
-
         private bool allowedToAutoFind()
         {
             if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
@@ -318,7 +327,12 @@ namespace Weathr81
                     updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
                     if (allowedToSetBG())
                     {
-                        setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                        await setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                        //updateCurrentTile(downloadedForecast, true);
+                    }
+                    else
+                    {
+                       // updateCurrentTile(downloadedForecast, false);
                     }
                 }
                 else
@@ -337,6 +351,47 @@ namespace Weathr81
                 hub.Header = currentLocation.LocName;
             }
         }
+
+        //async private void updateCurrentTile(WeatherInfo downloadedForecast, bool hasBG)
+        //{
+        //    string artistName = "unknown";
+        //    TileGroup tiles = new TileGroup();
+        //    if (await tileExists())
+        //    {
+        //        UpdateTiles updateTile = new UpdateTiles();
+        //        SecondaryTile tile = await getCurrentTile();
+        //        if (hasBG)
+        //        {
+        //            LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+        //            if (locTemp != null)
+        //            {
+        //                artistName = locTemp.PhotoDetails;
+        //            }
+        //            tiles = await updateTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, (ImageBrush)hub.Background, artistName);
+        //        }
+        //        else
+        //        {
+        //            tiles = await updateTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
+        //        }
+        //    }
+        //    if (currentLocation.IsDefault)
+        //    {
+        //        UpdateTiles updateTile = new UpdateTiles();
+        //        if (hasBG)
+        //        {
+        //            LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+        //            if (locTemp != null)
+        //            {
+        //                artistName = locTemp.PhotoDetails;
+        //            }
+        //            tiles = await updateTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, (ImageBrush)hub.Background, artistName);
+        //        }
+        //        else
+        //        {
+        //            tiles = await updateTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
+        //        }
+        //    }
+        //}
         private bool restoreData()
         {
             //attempts to restore everything, returns true if it can
@@ -640,7 +695,6 @@ namespace Weathr81
             setupRadar();
             setupSatellite();
         }
-
         async private void setupSatellite()
         {
             HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
@@ -654,7 +708,6 @@ namespace Weathr81
                 satMap.Children.Add(triangle);
             }
         }
-
         async private void setupRadar()
         {
             HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
@@ -745,7 +798,7 @@ namespace Weathr81
         }
 
         //setting a background
-        async private void setBG(string conditions, double lat, double lon)
+        async private Task setBG(string conditions, double lat, double lon)
         {
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your background...";
@@ -757,7 +810,6 @@ namespace Weathr81
             }
             await statusBar.ProgressIndicator.HideAsync();
         }
-
         private void addArtistInfo(string artistName, Uri artistUri)
         {
             LocationTemplate locTemp = locList.DataContext as LocationTemplate;
@@ -769,8 +821,6 @@ namespace Weathr81
                 locList.DataContext = locTemp;
             }
         }
-
-
         async private Task<FlickrImage> getBGInfo(string cond, bool useGroup, bool useLoc, double lat, double lon, int timesRun)
         {
             //gets a uri for a background image from flickr
@@ -779,7 +829,7 @@ namespace Weathr81
                 return null;
             }
             GetFlickrInfo f = new GetFlickrInfo(Values.FLICKR_API);
-            FlickrData imgList = await f.getImages(getTags(cond), useGroup, useLoc, lat, lon);
+            FlickrData imgList = await f.getImages(GetFlickrInfo.getTags(cond), useGroup, useLoc, lat, lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
                 Random r = new Random();
@@ -803,51 +853,6 @@ namespace Weathr81
             BitmapImage img = new BitmapImage(bg);
             Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .7 };
             hub.Background = imgBrush;
-        }
-        private string getTags(string cond)
-        {
-            //converts weather conditions into tags for flickr
-            if (cond == null)
-            {
-                return "sky";
-            }
-            else
-            {
-                string weatherUpper = cond.ToUpper();
-
-                if (weatherUpper.Contains("THUNDER"))
-                {
-                    return "thunder, thunderstorm, lightning, storm";
-                }
-                else if (weatherUpper.Contains("RAIN"))
-                {
-                    return "rain, drizzle, rainy";
-                }
-                else if (weatherUpper.Contains("SNOW") || weatherUpper.Contains("FLURRY"))
-                {
-                    return "snow, flurry, snowing";
-                }
-                else if (weatherUpper.Contains("FOG") || weatherUpper.Contains("MIST"))
-                {
-                    return "fog, foggy, mist";
-                }
-                else if (weatherUpper.Contains("CLEAR"))
-                {
-                    return "clear, sun, sunny, blue sky";
-                }
-                else if (weatherUpper.Contains("OVERCAST"))
-                {
-                    return "overcast, cloudy";
-                }
-                else if (weatherUpper.Contains("CLOUDS") || weatherUpper.Contains("CLOUDY"))
-                {
-                    return "cloudy, clouds, fluffy cloud";
-                }
-                else
-                {
-                    return weatherUpper;
-                }
-            }
         }
 
         //buttons and stuff
@@ -888,6 +893,20 @@ namespace Weathr81
         }
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
+            //activate background task if it hasn't been turned off
+            if (!localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
+            {
+                if (!UpdateTiles.IsTaskRegistered(Values.TASK_NAME))
+                {
+                    if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
+                    {
+                        UpdateTiles.Register(Values.TASK_NAME, (uint)localStore.Values[Values.UPDATE_FREQ]);
+                        return;
+                    }
+                    UpdateTiles.Register(Values.TASK_NAME, 120);
+                }
+            }
+
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
             secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;

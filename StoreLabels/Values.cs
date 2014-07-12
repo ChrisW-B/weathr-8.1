@@ -43,8 +43,6 @@ namespace StoreLabels
             {
                 case 0:
                     return "2d73e75dbfe7f75c";
-                case 1:
-                    return "8b22016717b94072";
                 default:
                     return "fb1dd3f4321d048d";
             }

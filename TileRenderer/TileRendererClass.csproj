@@ -6,11 +6,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{79231E23-C5BC-4CE6-8F4C-F7A3BAB80CC9}</ProjectGuid>
+    <ProjectGuid>{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DataTemplates</RootNamespace>
-    <AssemblyName>DataTemplates</AssemblyName>
+    <RootNamespace>TileRendererClass</RootNamespace>
+    <AssemblyName>TileRenderer</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
@@ -80,19 +80,34 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <ProjectReference Include="..\DataTemplates\DataTemplates.csproj">
+      <Project>{79231e23-c5bc-4ce6-8f4c-f7a3bab80cc9}</Project>
+      <Name>DataTemplates</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FlickrInfo\FlickrInfo.csproj">
+      <Project>{ded75474-5a33-44b5-a526-c1cd6be15ae1}</Project>
+      <Name>FlickrInfo</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LocationHelper\LocationHelper.csproj">
+      <Project>{05d2c99b-e1ce-4290-aefa-c60d39b59d29}</Project>
+      <Name>LocationHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Serializer\SerializerClass.csproj">
+      <Project>{56229cf6-90a9-4b6f-b379-016bd40d7969}</Project>
+      <Name>SerializerClass</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\StoreLabels\StoreLabels.csproj">
+      <Project>{e77ffd98-ee0d-4901-8cd0-7d6ff6f1c899}</Project>
+      <Name>StoreLabels</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WundergroundData\WundergroundData.csproj">
+      <Project>{abbc48be-9ea0-4609-a271-5193743c32fb}</Project>
+      <Name>WundergroundData</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlertsTemplate.cs" />
-    <Compile Include="BackgroundTemplate.cs" />
-    <Compile Include="DataSaveClass.cs" />
-    <Compile Include="ForecastIOTemplate.cs" />
-    <Compile Include="ForecastTemplate.cs" />
-    <Compile Include="MapsTemplate.cs" />
-    <Compile Include="NowTemplate.cs" />
+    <Compile Include="TileRenderer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SearchItemTemplate.cs" />
-    <Compile Include="TileGroup.cs" />
-    <Compile Include="TileSize.cs" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>

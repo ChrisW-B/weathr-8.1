@@ -208,5 +208,50 @@ namespace FlickrInfo
             }
             return new FlickrData() { fail = true, errorMsg = "document had invalid data" };
         }
+        public static string getTags(string cond)
+        {
+            //converts weather conditions into tags for flickr
+            if (cond == null)
+            {
+                return "sky";
+            }
+            else
+            {
+                string weatherUpper = cond.ToUpper();
+
+                if (weatherUpper.Contains("THUNDER"))
+                {
+                    return "thunder, thunderstorm, lightning, storm";
+                }
+                else if (weatherUpper.Contains("RAIN"))
+                {
+                    return "rain, drizzle, rainy";
+                }
+                else if (weatherUpper.Contains("SNOW") || weatherUpper.Contains("FLURRY"))
+                {
+                    return "snow, flurry, snowing";
+                }
+                else if (weatherUpper.Contains("FOG") || weatherUpper.Contains("MIST"))
+                {
+                    return "fog, foggy, mist";
+                }
+                else if (weatherUpper.Contains("CLEAR"))
+                {
+                    return "clear, sun, sunny, blue sky";
+                }
+                else if (weatherUpper.Contains("OVERCAST"))
+                {
+                    return "overcast, cloudy";
+                }
+                else if (weatherUpper.Contains("CLOUDS") || weatherUpper.Contains("CLOUDY"))
+                {
+                    return "cloudy, clouds, fluffy cloud";
+                }
+                else
+                {
+                    return weatherUpper;
+                }
+            }
+        }
     }
 }
