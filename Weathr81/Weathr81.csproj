@@ -111,6 +111,10 @@
       <Project>{e77ffd98-ee0d-4901-8cd0-7d6ff6f1c899}</Project>
       <Name>StoreLabels</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TileRenderer\TileCreatorProject.csproj">
+      <Project>{18ebf39a-4c34-48fa-a76b-2f08336d9ecb}</Project>
+      <Name>TileCreatorProject</Name>
+    </ProjectReference>
     <ProjectReference Include="..\WeatherDotGovAlerts\WeatherDotGovAlerts.csproj">
       <Project>{99d27bbb-8539-42ac-a082-a9e21d566a57}</Project>
       <Name>WeatherDotGovAlerts</Name>

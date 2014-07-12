@@ -9,7 +9,9 @@
     mc:Ignorable="d"
     Background="Black"
     Foreground="White">
-
+    <Grid x:Name="LayoutRoot">
+        <Grid x:Name="tileHider" Canvas.ZIndex="-20"></Grid>
+        <Grid Background="Black">
     <Hub x:Name="hub" Header="loading" Foreground="White" SectionsInViewChanged="hub_SectionsInViewChanged">
         <HubSection Header="now" x:Name="now" HeaderTemplate="{StaticResource smallHeader}">
             <DataTemplate>
@@ -172,6 +174,8 @@
             </DataTemplate>
         </HubSection>
     </Hub>
+        </Grid>
+    </Grid>
     <Page.BottomAppBar>
         <CommandBar x:Name="appBar" Opacity="0.85">
             <CommandBar.PrimaryCommands>

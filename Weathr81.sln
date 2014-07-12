@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundTask", "Backgroun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StoreLabels", "StoreLabels\StoreLabels.csproj", "{E77FFD98-EE0D-4901-8CD0-7D6FF6F1C899}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileRendererClass", "TileRenderer\TileRendererClass.csproj", "{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TileCreatorProject", "TileRenderer\TileCreatorProject.csproj", "{18EBF39A-4C34-48FA-A76B-2F08336D9ECB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

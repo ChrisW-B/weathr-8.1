@@ -8,7 +8,9 @@ using StoreLabels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using TileCreatorProject;
 using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
@@ -16,6 +18,8 @@ using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
+using Windows.Graphics.Display;
+using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.System;
@@ -325,14 +329,36 @@ namespace Weathr81
                     Serializer.save(DateTime.Now, typeof(DateTime), Values.LAST_SAVE, localStore);
                     updateWeatherInfo(ref downloadedForecast, isSI);
                     updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
+
+                    //set tile data
+                    string tempCompare = downloadedForecast.tomorrowShort + " tomorrow, and " + downloadedForecast.tempCompareC.ToLowerInvariant() + " today";
+                    string current = "Currently " + downloadedForecast.currentConditions + ", " + downloadedForecast.tempC + "°C";
+                    string today = "Today: " + downloadedForecast.todayShort + " " + downloadedForecast.todayHighC + "/" + downloadedForecast.todayLowC;
+                    string tomorrow = "Tomorrow: " + downloadedForecast.tomorrowShort + " " + downloadedForecast.tomorrowHighC + "/" + downloadedForecast.tomorrowLowC;
+                    if (!unitsAreSI())
+                    {
+                        tempCompare = downloadedForecast.tomorrowShort + " tomorrow, and " + downloadedForecast.tempCompareF.ToLowerInvariant() + " today";
+                        current = "Currently " + downloadedForecast.currentConditions + ", " + downloadedForecast.tempF + "°F";
+                        today = "Today: " + downloadedForecast.todayShort + " " + downloadedForecast.todayHighF + "/" + downloadedForecast.todayLowF;
+                        tomorrow = "Tomorrow: " + downloadedForecast.tomorrowShort + " " + downloadedForecast.tomorrowHighF + "/" + downloadedForecast.tomorrowLowF;
+                    }
+
                     if (allowedToSetBG())
                     {
                         await setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-                        //updateCurrentTile(downloadedForecast, true);
+                        TileGroup tiles = await updateCurrentTile(downloadedForecast, true);
+                        if (tiles != null)
+                        {
+                            renderTileSet(tiles, tempCompare, current, today, today);
+                        }
                     }
                     else
                     {
-                       // updateCurrentTile(downloadedForecast, false);
+                        TileGroup tiles = await updateCurrentTile(downloadedForecast, false);
+                        if (tiles != null)
+                        {
+                            renderTileSet(tiles, tempCompare, current, today, today);
+                        }
                     }
                 }
                 else
@@ -352,46 +378,83 @@ namespace Weathr81
             }
         }
 
-        //async private void updateCurrentTile(WeatherInfo downloadedForecast, bool hasBG)
-        //{
-        //    string artistName = "unknown";
-        //    TileGroup tiles = new TileGroup();
-        //    if (await tileExists())
-        //    {
-        //        UpdateTiles updateTile = new UpdateTiles();
-        //        SecondaryTile tile = await getCurrentTile();
-        //        if (hasBG)
-        //        {
-        //            LocationTemplate locTemp = locList.DataContext as LocationTemplate;
-        //            if (locTemp != null)
-        //            {
-        //                artistName = locTemp.PhotoDetails;
-        //            }
-        //            tiles = await updateTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, (ImageBrush)hub.Background, artistName);
-        //        }
-        //        else
-        //        {
-        //            tiles = await updateTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
-        //        }
-        //    }
-        //    if (currentLocation.IsDefault)
-        //    {
-        //        UpdateTiles updateTile = new UpdateTiles();
-        //        if (hasBG)
-        //        {
-        //            LocationTemplate locTemp = locList.DataContext as LocationTemplate;
-        //            if (locTemp != null)
-        //            {
-        //                artistName = locTemp.PhotoDetails;
-        //            }
-        //            tiles = await updateTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, (ImageBrush)hub.Background, artistName);
-        //        }
-        //        else
-        //        {
-        //            tiles = await updateTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
-        //        }
-        //    }
-        //}
+        //updating tile for current view
+        async private Task<TileGroup> updateCurrentTile(WeatherInfo downloadedForecast, bool hasBG)
+        {
+            await Task.Delay(new TimeSpan(0, 0, 0, 7));
+            string artistName = "unknown";
+            CreateTile createTile = new CreateTile();
+            TileGroup tiles = null;
+            if (currentLocation.IsDefault)
+            {
+                if (hasBG)
+                {
+                    ImageBrush backgroundImage = new ImageBrush();
+                    backgroundImage = hub.Background as ImageBrush;
+                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+                    if (locTemp != null)
+                    {
+                        artistName = locTemp.PhotoDetails;
+                    }
+                    return createTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, backgroundImage, artistName);
+                }
+                return createTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
+            }
+            if (await tileExists())
+            {
+                SecondaryTile tile = await getCurrentTile();
+
+                if (hasBG)
+                {
+                    ImageBrush backgroundImage = new ImageBrush();
+                    backgroundImage = hub.Background as ImageBrush;
+                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+                    if (locTemp != null)
+                    {
+                        artistName = locTemp.PhotoDetails;
+                    }
+                    return createTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, backgroundImage, artistName);
+                }
+                return createTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
+            }
+            return tiles;
+        }
+        async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
+        {
+            await renderTile(tiles.smTile, currentLocation.LocName + "sm");
+            await renderTile(tiles.sqTile, currentLocation.LocName + "sq");
+            await renderTile(tiles.wideTile, currentLocation.LocName + "wd");
+            CreateTile tileMaker = new CreateTile();
+            if (currentLocation.IsDefault)
+            {
+                tileMaker.pushImageToMainTile(Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow);
+            }
+            else if (await tileExists())
+            {
+                tileMaker.pushImageToSecondaryTile(await getCurrentTile(), Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow);
+            }
+        }
+        async private Task renderTile(UIElement tile, string tileName)
+        {
+            tileHider.Children.Add(tile);
+            RenderTargetBitmap bm = new RenderTargetBitmap();
+            await bm.RenderAsync(tile);
+            Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
+
+            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFile tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
+            DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
+
+            using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
+            {
+                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
+                await encoder.FlushAsync();
+            }
+            //tileHider.Children.Remove(tile);
+        }
+
+        //helper methods
         private bool restoreData()
         {
             //attempts to restore everything, returns true if it can
@@ -850,8 +913,7 @@ namespace Weathr81
         private void setHubBG(Uri bg)
         {
             //sets the background of the hub to a given image uri
-            BitmapImage img = new BitmapImage(bg);
-            Brush imgBrush = new ImageBrush() { ImageSource = img, Opacity = .7 };
+            Brush imgBrush = new ImageBrush() { ImageSource = new BitmapImage(bg), Opacity = .7 };
             hub.Background = imgBrush;
         }
 
@@ -906,7 +968,6 @@ namespace Weathr81
                     UpdateTiles.Register(Values.TASK_NAME, 120);
                 }
             }
-
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
             secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;

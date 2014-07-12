@@ -1,7 +1,7 @@
 ﻿
 namespace DataTemplates
 {
-    public enum TileSize
+    public enum LiveTileSize
     {
         small,
         medium,
