@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using TileCreatorProject;
+using TileCreater;
 using WeatherData;
 using WeatherDotGovAlerts;
 using Weathr81.Common;
@@ -349,7 +349,7 @@ namespace Weathr81
                         TileGroup tiles = await updateCurrentTile(downloadedForecast, true);
                         if (tiles != null)
                         {
-                            renderTileSet(tiles, tempCompare, current, today, today);
+                            await renderTileSet(tiles, tempCompare, current, today, tomorrow);
                         }
                     }
                     else
@@ -357,13 +357,13 @@ namespace Weathr81
                         TileGroup tiles = await updateCurrentTile(downloadedForecast, false);
                         if (tiles != null)
                         {
-                            renderTileSet(tiles, tempCompare, current, today, today);
+                            await renderTileSet(tiles, tempCompare, current, today, tomorrow);
                         }
                     }
                 }
                 else
                 {
-                    setBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    await setBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
                     displayError(downloadedForecast.error);
                 }
             }
@@ -396,14 +396,13 @@ namespace Weathr81
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    return createTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, backgroundImage, artistName);
+                    return createTile.createTileWithParams(downloadedForecast, backgroundImage, artistName);
                 }
-                return createTile.updateMainWithParams(downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
+                return createTile.createTileWithParams(downloadedForecast);
             }
             if (await tileExists())
             {
                 SecondaryTile tile = await getCurrentTile();
-
                 if (hasBG)
                 {
                     ImageBrush backgroundImage = new ImageBrush();
@@ -413,9 +412,9 @@ namespace Weathr81
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    return createTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC, backgroundImage, artistName);
+                    return createTile.createTileWithParams(downloadedForecast, backgroundImage, artistName);
                 }
-                return createTile.updateSecondaryWithParams(tile, downloadedForecast.currentConditions, downloadedForecast.tomorrowShort, downloadedForecast.tempCompareC, downloadedForecast.todayHighC, downloadedForecast.todayLowC, downloadedForecast.tempC, downloadedForecast.todayShort, downloadedForecast.city, downloadedForecast.tomorrowHighC, downloadedForecast.tomorrowLowC);
+                return createTile.createTileWithParams(downloadedForecast);
             }
             return tiles;
         }
@@ -427,11 +426,11 @@ namespace Weathr81
             CreateTile tileMaker = new CreateTile();
             if (currentLocation.IsDefault)
             {
-                tileMaker.pushImageToMainTile(Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow);
+                tileMaker.pushImageToTile(Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow);
             }
-            else if (await tileExists())
+            if (await tileExists())
             {
-                tileMaker.pushImageToSecondaryTile(await getCurrentTile(), Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow);
+                tileMaker.pushImageToTile(Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow, await getCurrentTile());
             }
         }
         async private Task renderTile(UIElement tile, string tileName)

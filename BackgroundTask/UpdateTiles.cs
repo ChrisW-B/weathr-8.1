@@ -9,7 +9,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
-using TileCreatorProject;
+using TileCreater;
 using WeatherData;
 using Windows.ApplicationModel.Background;
 using Windows.Graphics.Display;
@@ -18,6 +18,7 @@ using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.UI.StartScreen;
 using Windows.UI.Xaml;
+using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 using WundergroundData;
 
@@ -29,7 +30,7 @@ namespace BackgroundTask
         #region variables
 
         private static ObservableCollection<Location> locationList;
-        ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
+        private ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
         private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         #endregion
 
@@ -97,131 +98,31 @@ namespace BackgroundTask
         {
             if (allowedToUpdate())
             {
-                await updateMainTile();
-                await updateSecondaryTiles();
-            }
-        }
-
-        private bool allowedToUpdate()
-        {
-            //determines whether tiles should update or not
-            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
-            {
-                if ((bool)localStore.Values[Values.UPDATE_ON_CELL])
+                //finds the given secondary tile in the list of locations, then uses that to update the tile
+                await updateTile();
+                IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+                foreach (SecondaryTile tile in tiles)
                 {
-                    return true;
-                }
-                return isOnWifi();
-            }
-            else
-            {
-                localStore.Values[Values.UPDATE_ON_CELL] = true;
-                return true;
-            }
-        }
-        private bool allowedToAutoFind()
-        {
-            if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
-            {
-                return (bool)localStore.Values[Values.ALLOW_LOC];
-            }
-            return false;
-        }
-
-        //updating the tiles
-        async private Task updateMainTile()
-        {
-            //finds the main tile location and uses it to update the main tile
-            foreach (Location loc in locationList)
-            {
-                if (loc.IsDefault)
-                {
-                    string name = "default";
-                    string smallTileName = name + "small.png";
-                    string mediumTileName = name + "med.png";
-                    string wideTileName = name + "wide.png";
-
-                    GetGeoposition pos = new GetGeoposition(loc, allowedToAutoFind());
-                    GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 3), new TimeSpan(0, 1, 0));
-                    if (!geoTemplate.fail)
-                    {
-                        GetWundergroundData getWundData = loc.IsCurrent ? new GetWundergroundData(Values.getWundApi(), geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.getWundApi(), loc.LocUrl);
-                        WeatherInfo weatherInfo = await getWundData.getConditions();
-                        if (!weatherInfo.fail)
-                        {
-                            BackgroundTemplate data = new BackgroundTemplate()
-                            {
-                                medName = mediumTileName,
-                                wideName = wideTileName,
-                                smallName = smallTileName,
-                                weather = new BackgroundWeather()
-                                {
-                                    conditions = weatherInfo.currentConditions,
-                                    tempCompare = weatherInfo.tomorrowShort + " tomorrow, and " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
-                                    high = weatherInfo.todayHighC,
-                                    low = weatherInfo.todayLowC,
-                                    currentTemp = weatherInfo.tempC.Split('.')[0] + "°",
-                                    todayForecast = weatherInfo.todayShort,
-                                },
-                                location = new BackgroundLoc()
-                                {
-                                    location = weatherInfo.city,
-                                    lat = geoTemplate.position.Position.Latitude,
-                                    lon = geoTemplate.position.Position.Longitude,
-                                }
-
-                            };
-                            string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
-                            string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
-                            string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
-                            if (!unitsAreSI())
-                            {
-                                data.weather.high = weatherInfo.todayHighF;
-                                data.weather.low = weatherInfo.todayLowF;
-                                data.weather.currentTemp = weatherInfo.tempF.Split('.')[0] + "°";
-                                data.weather.tempCompare = "Tomorrow will be " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
-                                current = "Currently: " + weatherInfo.currentConditions + ", " + weatherInfo.tempF + "°F";
-                                today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
-                                tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
-                            }
-                            TileGroup tiles = new TileGroup();
-                            CreateTile creater = new CreateTile();
-                            if (!isTransparent())
-                            {
-                                data.flickrData = await getBGInfo(data, true, true, 0);
-                                //save flickr image so it doesn't have to be requested twice
-                                BitmapImage flickrBG = new BitmapImage(data.flickrData.imageUri);
-                                tiles = creater.createTileImages(data, ref flickrBG);
-                            }
-                            else
-                            {
-                                tiles = creater.createTileImages(data);
-                            }
-                            if (tiles != null)
-                            {
-                                await renderTile(tiles.smTile, data.smallName);
-                                await renderTile(tiles.sqTile, data.medName);
-                                await renderTile(tiles.wideTile, data.wideName);
-                            }
-                            creater.pushImageToMainTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
-                        }
-                    }
+                    Location tileLoc = findTile(tile.Arguments);
+                    await updateTile(tile, tileLoc);
                 }
             }
         }
-        async private Task updateSecondaryTiles()
+        async private Task updateTile(SecondaryTile tile=null, Location tileLoc=null)
         {
-            //finds the given secondary tile in the list of locations, then uses that to update the tile
-            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
-            foreach (SecondaryTile tile in tiles)
+            if (tileLoc == null)
             {
-                Location tileLoc = findTile(tile.Arguments);
-                await updateSecondaryTile(tile, tileLoc);
+                tileLoc = getDefaultLoc();
+                if (tileLoc == null)
+                {
+                    return;
+                }
             }
-        }
-        async private Task updateSecondaryTile(SecondaryTile tile, Location tileLoc)
-        {
-            string name = tile.TileId;
+            string name = "default";
+            if (tile != null)
+            {
+                name = tile.TileId;
+            }
             string smallTileName = name + "small.png";
             string mediumTileName = name + "med.png";
             string wideTileName = name + "wide.png";
@@ -234,64 +135,42 @@ namespace BackgroundTask
                 WeatherInfo weatherInfo = await getWundData.getConditions();
                 if (!weatherInfo.fail)
                 {
-                    BackgroundTemplate data = new BackgroundTemplate()
-                    {
-                        medName = mediumTileName,
-                        wideName = wideTileName,
-                        smallName = smallTileName,
-                        weather = new BackgroundWeather()
-                        {
-                            conditions = weatherInfo.currentConditions,
-                            tempCompare = weatherInfo.tomorrowShort + " tomorrow, and " + weatherInfo.tempCompareC.ToLowerInvariant() + " today",
-                            high = weatherInfo.todayHighC,
-                            low = weatherInfo.todayLowC,
-                            currentTemp = weatherInfo.tempC.Split('.')[0] + "°",
-                            todayForecast = weatherInfo.todayShort,
-                        },
-                        location = new BackgroundLoc()
-                        {
-                            location = weatherInfo.city,
-                            lat = geoTemplate.position.Position.Latitude,
-                            lon = geoTemplate.position.Position.Longitude,
-                        }
 
-                    };
                     string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
                     string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
                     string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
-                    if (!unitsAreSI())
-                    {
-                        data.weather.high = weatherInfo.todayHighF;
-                        data.weather.low = weatherInfo.todayLowF;
-                        data.weather.currentTemp = weatherInfo.tempF.Split('.')[0] + "°";
-                        data.weather.tempCompare = "Tomorrow will be " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
-                        current = "Currently: " + weatherInfo.currentConditions + ", " + weatherInfo.tempF + "°F";
-                        today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
-                        tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
-                    }
-                    TileGroup tiles = new TileGroup();
+                    string tempCompare = weatherInfo.tomorrowShort + " tomorrow, and " + weatherInfo.tempCompareC.ToLowerInvariant() + " today";
+
                     CreateTile creater = new CreateTile();
+                    TileGroup tiles = null;
                     if (!isTransparent())
                     {
-                        data.flickrData = await getBGInfo(data, true, true, 0);
+                        BackgroundFlickr flickrData = await getBGInfo(weatherInfo.currentConditions, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude, true, true, 0);
                         //save flickr image so it doesn't have to be requested twice
-                        BitmapImage flickrBG = new BitmapImage(data.flickrData.imageUri);
-                        tiles = creater.createTileImages(data, ref flickrBG);
+                        tiles = creater.createTileWithParams(weatherInfo, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
                     }
                     else
                     {
-                        tiles = creater.createTileImages(data);
+                        tiles = creater.createTileWithParams(weatherInfo);
                     }
                     if (tiles != null)
                     {
-                        await renderTile(tiles.smTile, data.smallName);
-                        await renderTile(tiles.sqTile, data.medName);
-                        await renderTile(tiles.wideTile, data.wideName);
+                        await renderTile(tiles.smTile, smallTileName);
+                        await renderTile(tiles.sqTile, mediumTileName);
+                        await renderTile(tiles.wideTile, wideTileName);
+                        if (tile != null)
+                        {
+                            creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow, tile);
+                        }
+                        else
+                        {
+                            creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow);
+                        }
                     }
-                    creater.pushImageToSecondaryTile(tile, Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, data.weather.tempCompare, current, today, tomorrow);
                 }
             }
         }
+        
 
         //rending tiles to images
         async private Task renderTile(UIElement tile, string tileName)
@@ -313,7 +192,43 @@ namespace BackgroundTask
         }
 
         //helpers
-        async private Task<BackgroundFlickr> getBGInfo(BackgroundTemplate data, bool useGroup, bool useLoc, int timesRun)
+        private bool allowedToAutoFind()
+        {
+            if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
+            {
+                return (bool)localStore.Values[Values.ALLOW_LOC];
+            }
+            return false;
+        }
+        private bool allowedToUpdate()
+        {
+            //determines whether tiles should update or not
+            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
+            {
+                if ((bool)localStore.Values[Values.UPDATE_ON_CELL])
+                {
+                    return true;
+                }
+                return isOnWifi();
+            }
+            else
+            {
+                localStore.Values[Values.UPDATE_ON_CELL] = true;
+                return true;
+            }
+        }
+        private Location getDefaultLoc()
+        {
+            foreach (Location loc in locationList)
+            {
+                if (loc.IsDefault)
+                {
+                    return loc;
+                }
+            }
+            return null;
+        }
+        async private Task<BackgroundFlickr> getBGInfo(string conditions, double lat, double lon, bool useGroup, bool useLoc, int timesRun)
         {
             //gets a uri for a background image from flickr
             if (timesRun > 1)
@@ -321,7 +236,7 @@ namespace BackgroundTask
                 return null;
             }
             GetFlickrInfo f = new GetFlickrInfo(Values.FLICKR_API);
-            FlickrData imgList = await f.getImages(GetFlickrInfo.getTags(data.weather.conditions), useGroup, useLoc, data.location.lat, data.location.lon);
+            FlickrData imgList = await f.getImages(GetFlickrInfo.getTags(conditions), useGroup, useLoc, lat, lon);
             if (!imgList.fail && imgList.images.Count > 0)
             {
                 Random r = new Random();
@@ -335,7 +250,7 @@ namespace BackgroundTask
             }
             else
             {
-                return await getBGInfo(data, useGroup, false, timesRun++);
+                return await getBGInfo(conditions, lat, lon, useGroup, false, timesRun++);
             }
         }
         private bool unitsAreSI()
