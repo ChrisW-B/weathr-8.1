@@ -912,7 +912,7 @@ namespace Weathr81
         private void setHubBG(Uri bg)
         {
             //sets the background of the hub to a given image uri
-            Brush imgBrush = new ImageBrush() { ImageSource = new BitmapImage(bg), Opacity = .7 };
+            Brush imgBrush = new ImageBrush() { ImageSource = new BitmapImage(bg), Opacity = .7, Stretch = Stretch.UniformToFill };
             hub.Background = imgBrush;
         }
 

@@ -188,7 +188,6 @@ namespace TileCreater
             }
             return null;
         }
-
         private Grid createImage(BackgroundTemplate data, LiveTileSize tileSize)
         {
             if (tileSize == LiveTileSize.small)
@@ -221,7 +220,6 @@ namespace TileCreater
             s.Children.Add(createSmallConditions(conditions));
             return s;
         }
-
         private TextBlock createSmallConditions(string conditions)
         {
             return new TextBlock() { Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
@@ -273,7 +271,7 @@ namespace TileCreater
         private Grid createWideDarkOverlay(string artistName)
         {
             Grid g = new Grid() { Width = 310, Height = 150, Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
-            g.Children.Add(new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
+            g.Children.Add(new TextBlock() { FontSize = 9, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
             return g;
         }
         private StackPanel createWideStackPanel(BackgroundTemplate data, bool transparent)
@@ -318,7 +316,6 @@ namespace TileCreater
             }
             return g;
         }
-
         private Grid createBackgroundGrid(LiveTileSize tileSize, bool transparent)
         {
             Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
@@ -348,12 +345,12 @@ namespace TileCreater
         }
         private TextBlock createTimeTextBlock()
         {
-            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3, 0, 0, 0) };
+            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3, 0, 0, 0), FontWeight = FontWeights.Bold };
             return t;
         }
         private TextBlock createFlickrSource(string artistName)
         {
-            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 100 };
+            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 90, FontWeight = FontWeights.Bold };
             return t;
         }
         private StackPanel createDataStackPanel(BackgroundTemplate data)
