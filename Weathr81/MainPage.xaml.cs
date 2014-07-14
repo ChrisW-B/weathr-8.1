@@ -24,6 +24,7 @@ using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI;
+using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.StartScreen;
 using Windows.UI.ViewManagement;
@@ -68,6 +69,7 @@ namespace Weathr81
         private GetGeoposition GetGeoposition;
         private Location currentLocation;
         private StatusBar statusBar;
+        CoreDispatcher dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
         #endregion
 
         public MainPage()
@@ -193,7 +195,9 @@ namespace Weathr81
                             await statusBar.ProgressIndicator.HideAsync();
                             if (nowTemplate != null && geo.position != null)
                             {
-                                setBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                                FlickrImage bgImg = await getBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                                addArtistInfo(bgImg.artist, bgImg.artistUri);
+                                setHubBG(new ImageBrush() { Opacity = .7, ImageSource = new BitmapImage(bgImg.uri) });
                             }
                         }
                     }
@@ -345,25 +349,23 @@ namespace Weathr81
 
                     if (allowedToSetBG())
                     {
-                        await setBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-                        TileGroup tiles = await updateCurrentTile(downloadedForecast, true);
-                        if (tiles != null)
-                        {
-                            await renderTileSet(tiles, tempCompare, current, today, tomorrow);
-                        }
+                        FlickrImage bgImg = await getBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
+                        addArtistInfo(bgImg.artist, bgImg.artistUri);
+                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                        setHubBG(backBrush);
+                        await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
                     }
                     else
                     {
-                        TileGroup tiles = await updateCurrentTile(downloadedForecast, false);
-                        if (tiles != null)
-                        {
-                            await renderTileSet(tiles, tempCompare, current, today, tomorrow);
-                        }
+                        await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow);
                     }
                 }
                 else
                 {
-                    await setBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    FlickrImage bgImg = await getBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
+                    addArtistInfo(bgImg.artist, bgImg.artistUri);
+                    ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                    setHubBG(backBrush);
                     displayError(downloadedForecast.error);
                 }
             }
@@ -379,45 +381,55 @@ namespace Weathr81
         }
 
         //updating tile for current view
-        async private Task<TileGroup> updateCurrentTile(WeatherInfo downloadedForecast, bool hasBG)
+        async private Task updateCurrentTile(WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow, ImageBrush background = null)
         {
-            await Task.Delay(new TimeSpan(0, 0, 0, 7));
-            string artistName = "unknown";
             CreateTile createTile = new CreateTile();
-            TileGroup tiles = null;
+            if (background != null)
+            {
+                try
+                {
+                    background.ImageOpened += async (sender, eventArgs) => await imageOpenedHandler(sender, eventArgs, downloadedForecast, tempCompare, current, today, tomorrow);
+                }
+                catch { }
+            }
+            else if (currentLocation.IsDefault)
+            {
+                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
+            }
+            else if (await tileExists())
+            {
+                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
+            }
+        }
+
+        async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
+        {
+            CreateTile createTile = new CreateTile();
+            ImageBrush background = sender as ImageBrush;
+            string artistName = "unknown";
             if (currentLocation.IsDefault)
             {
-                if (hasBG)
+                LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+                if (locTemp != null)
                 {
-                    ImageBrush backgroundImage = new ImageBrush();
-                    backgroundImage = hub.Background as ImageBrush;
-                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
-                    if (locTemp != null)
-                    {
-                        artistName = locTemp.PhotoDetails;
-                    }
-                    return createTile.createTileWithParams(downloadedForecast, backgroundImage, artistName);
+                    artistName = locTemp.PhotoDetails;
                 }
-                return createTile.createTileWithParams(downloadedForecast);
+                await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
             }
             if (await tileExists())
             {
-                SecondaryTile tile = await getCurrentTile();
-                if (hasBG)
+                if (background != null)
                 {
-                    ImageBrush backgroundImage = new ImageBrush();
-                    backgroundImage = hub.Background as ImageBrush;
                     LocationTemplate locTemp = locList.DataContext as LocationTemplate;
                     if (locTemp != null)
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    return createTile.createTileWithParams(downloadedForecast, backgroundImage, artistName);
+                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
                 }
-                return createTile.createTileWithParams(downloadedForecast);
             }
-            return tiles;
         }
+
         async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
         {
             await renderTile(tiles.smTile, currentLocation.LocName + "sm");
@@ -860,17 +872,18 @@ namespace Weathr81
         }
 
         //setting a background
-        async private Task setBG(string conditions, double lat, double lon)
+        async private Task<FlickrImage> getBG(string conditions, double lat, double lon)
         {
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your background...";
             FlickrImage bg = await getBGInfo(conditions, true, true, lat, lon, 0);
             if (bg != null)
             {
-                addArtistInfo(bg.artist, bg.artistUri);
-                setHubBG(bg.uri);
+                await statusBar.ProgressIndicator.HideAsync();
+                return bg;
             }
             await statusBar.ProgressIndicator.HideAsync();
+            return null;
         }
         private void addArtistInfo(string artistName, Uri artistUri)
         {
@@ -909,11 +922,11 @@ namespace Weathr81
                 return await getBGInfo(cond, useGroup, useLoc, lat, lon, timesRun++);
             }
         }
-        private void setHubBG(Uri bg)
+        private void setHubBG(ImageBrush bg)
         {
-            //sets the background of the hub to a given image uri
-            Brush imgBrush = new ImageBrush() { ImageSource = new BitmapImage(bg), Opacity = .7, Stretch = Stretch.UniformToFill };
-            hub.Background = imgBrush;
+            //sets the background of the hub to a given image imagebrush
+            bg.Opacity = .7;
+            hub.Background = bg;
         }
 
         //buttons and stuff
@@ -984,11 +997,18 @@ namespace Weathr81
             NowTemplate nowTemplate = (now.DataContext as NowTemplate);
             if (nowTemplate != null)
             {
-                setBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
+                FlickrImage bgImg = await getBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
+                addArtistInfo(bgImg.artist, bgImg.artistUri);
+                ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                setHubBG(backBrush);
             }
             else
             {
-                setBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
+
+                FlickrImage bgImg = await getBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
+                addArtistInfo(bgImg.artist, bgImg.artistUri);
+                ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                setHubBG(backBrush);
             }
             await statusBar.ProgressIndicator.HideAsync();
         }
