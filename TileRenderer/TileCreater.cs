@@ -402,7 +402,7 @@ namespace TileCreater
         #endregion
 
         //helper methods
-        private bool unitsAreSI()
+        public bool unitsAreSI()
         {
             //determines whether tile units should be SI
             if (store.Values.ContainsKey(Values.TILE_UNITS_ARE_SI))

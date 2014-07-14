@@ -224,8 +224,8 @@ namespace Weathr81.OtherPages
             }
             else
             {
-                transparentToggle.IsOn = true;
-                localStore.Values[Values.TRANSPARENT_TILE] = false;
+                transparentToggle.IsOn = false;
+                localStore.Values[Values.TRANSPARENT_TILE] = true;
             }
 
             if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))

@@ -339,7 +339,7 @@ namespace Weathr81
                     string current = "Currently " + downloadedForecast.currentConditions + ", " + downloadedForecast.tempC + "°C";
                     string today = "Today: " + downloadedForecast.todayShort + " " + downloadedForecast.todayHighC + "/" + downloadedForecast.todayLowC;
                     string tomorrow = "Tomorrow: " + downloadedForecast.tomorrowShort + " " + downloadedForecast.tomorrowHighC + "/" + downloadedForecast.tomorrowLowC;
-                    if (!unitsAreSI())
+                    if (!(new CreateTile().unitsAreSI()))
                     {
                         tempCompare = downloadedForecast.tomorrowShort + " tomorrow, and " + downloadedForecast.tempCompareF.ToLowerInvariant() + " today";
                         current = "Currently " + downloadedForecast.currentConditions + ", " + downloadedForecast.tempF + "°F";
@@ -401,7 +401,6 @@ namespace Weathr81
                 await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
             }
         }
-
         async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
         {
             CreateTile createTile = new CreateTile();
@@ -429,7 +428,6 @@ namespace Weathr81
                 }
             }
         }
-
         async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
         {
             await renderTile(tiles.smTile, currentLocation.LocName + "sm");

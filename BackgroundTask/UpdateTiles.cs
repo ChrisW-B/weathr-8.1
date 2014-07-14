@@ -282,8 +282,8 @@ namespace BackgroundTask
             {
                 return (bool)(localStore.Values[Values.TRANSPARENT_TILE]);
             }
-            localStore.Values[Values.TRANSPARENT_TILE] = true;
-            return true;
+            localStore.Values[Values.TRANSPARENT_TILE] = false;
+            return false;
         }
         private bool isOnWifi()
         {

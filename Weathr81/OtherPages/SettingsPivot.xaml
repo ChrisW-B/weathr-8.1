@@ -29,13 +29,13 @@
         <Pivot Grid.Row="1" x:Name="ContentRoot" SelectionChanged="ContentRoot_SelectionChanged">
             <PivotItem Header="general">
                 <StackPanel>
-                <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
+                    <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
                     <ToggleSwitch x:Name="getImages" Header="Download Background" Toggled="getImages_Toggled"></ToggleSwitch>
                     <StackPanel x:Name="getImagesOn">
                         <ToggleSwitch x:Name="bgOnWifi" Header="Wifi Only Background" Toggled="bgOnWifi_Toggled"></ToggleSwitch>
                     </StackPanel>
-            </StackPanel>
-                </PivotItem>
+                </StackPanel>
+            </PivotItem>
             <PivotItem Header="locations">
                 <StackPanel>
                     <ToggleSwitch Header="Enable Auto Location" Toggled="autoLocateToggle_Toggled"  x:Name="autoLocateToggle"></ToggleSwitch>
@@ -54,8 +54,8 @@
                                         </FlyoutBase.AttachedFlyout>
 
                                         <Image Name="default"  Source="{Binding Image}" Height="30" MinWidth="30" HorizontalAlignment="Center" VerticalAlignment="Top" />
-                                        
-                                       
+
+
                                         <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="25" Margin="0,0,0,15">
                                         </TextBlock>
                                     </StackPanel>
@@ -66,26 +66,24 @@
                 </StackPanel>
             </PivotItem>
             <PivotItem Header="tiles">
-                <StackPanel>
-                    <ToggleSwitch Name="enableBackground" Header="Allow background tile updates" Toggled="enableBackground_Toggled"/>
-                   
-                    <StackPanel Margin="0,20,0,20" x:Name="backgroundPanel">
-
+                <ScrollViewer>
+                    <StackPanel>
                         <ToggleSwitch Name="tileUnits" Header="Units" Toggled="tileUnits_Toggled" OnContent="Metric" OffContent="U.S."/>
 
                         <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Flickr Images" OffContent="Transparent"/>
+                        <ToggleSwitch Name="enableBackground" Header="Allow background tile updates" Toggled="enableBackground_Toggled" Margin="0,20,0,0"/>
 
-                        <ToggleSwitch Name="wifiOnlyToggle" Header="Only update tiles on Wifi" Toggled="wifiOnlyToggle_Toggled"  OnContent="On" OffContent="Off"/>
+                        <StackPanel Margin="0,20,0,20" x:Name="backgroundPanel">
+                            <ToggleSwitch Name="wifiOnlyToggle" Header="Only update tiles on Wifi" Toggled="wifiOnlyToggle_Toggled"  OnContent="On" OffContent="Off"/>
 
-                        <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
-                        <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
-                        <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
+                            <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
+                            <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
+                            <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
 
-                        <TextBlock VerticalAlignment="Bottom" Margin="0,20,0,0" Text="Tile will be updated next time the background task runs" Style="{ThemeResource ControlContextualInfoTextBlockStyle}"></TextBlock>
+                            <TextBlock VerticalAlignment="Bottom" Margin="0,20,0,0" Text="Tile will be updated next time the background task runs" Style="{ThemeResource ControlContextualInfoTextBlockStyle}"></TextBlock>
+                        </StackPanel>
                     </StackPanel>
-
-                </StackPanel>
-
+                </ScrollViewer>
             </PivotItem>
 
             <PivotItem Header="advanced">
