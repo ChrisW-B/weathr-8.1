@@ -30,6 +30,7 @@
             <PivotItem Header="general">
                 <StackPanel>
                     <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
+                    <ToggleSwitch Name="timeType" Header="Time" Toggled="timeType_Toggled" OnContent="24 hr" OffContent="12 hr"/>
                     <ToggleSwitch x:Name="getImages" Header="Flickr Background" Toggled="getImages_Toggled"></ToggleSwitch>
                     <StackPanel x:Name="getImagesOn">
                         <ToggleSwitch x:Name="bgOnWifi" Header="Wifi Only Background" Toggled="bgOnWifi_Toggled"></ToggleSwitch>
@@ -69,13 +70,11 @@
                 <ScrollViewer>
                     <StackPanel>
                         <ToggleSwitch Name="tileUnits" Header="Units" Toggled="tileUnits_Toggled" OnContent="Metric" OffContent="U.S."/>
-                        
-                        <ToggleSwitch Name="timeType" Header="Time" Toggled="timeType_Toggled" OnContent="24 hr" OffContent="12 hr"/>
 
                         <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Flickr Images" OffContent="Transparent"/>
                         <ToggleSwitch Name="enableBackground" Header="Update in Background" Toggled="enableBackground_Toggled" Margin="0,20,0,0"/>
 
-                        <StackPanel Margin="0,20,0,20" x:Name="backgroundPanel">
+                        <StackPanel Margin="0,0,0,20" x:Name="backgroundPanel">
                             <ToggleSwitch Name="wifiOnlyToggle" Header="Wifi only updates" Toggled="wifiOnlyToggle_Toggled"  OnContent="On" OffContent="Off"/>
 
                             <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>

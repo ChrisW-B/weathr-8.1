@@ -732,7 +732,6 @@ namespace Weathr81
             }
             await statusBar.ProgressIndicator.HideAsync();
         }
-
         private AlertsTemplate tryDisplayAlerts(ObservableCollection<ForecastIOAlert> alerts)
         {
             ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
@@ -775,10 +774,20 @@ namespace Weathr81
             foreach (HourForecast hour in hours)
             {
                 DateTime time = (unixTimeStampToDateTime(hour.time));
-                string timeString = time.ToString("h:mm tt") + " on " + time.DayOfWeek;
+                string timeString = ((twentyFourHrTime()) ? time.ToString("HH:mm") : time.ToString("h:mm tt")) + " on " + time.DayOfWeek;
                 forecastIOTemplate.forecastIO.hoursList.Add(new ForecastIOItem() { description = hour.summary, chanceOfPrecip = Convert.ToString(hour.precipProbability * 100) + "% Chance of Precip", temp = Convert.ToString((int)hour.temperature) + "°", time = timeString });
             }
             hourly.DataContext = forecastIOTemplate;
+        }
+
+        private bool twentyFourHrTime()
+        {
+            if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
+            {
+                return (bool)store.Values[Values.TWENTY_FOUR_HR_TIME];
+            }
+            store.Values[Values.TWENTY_FOUR_HR_TIME] = false;
+            return false;
         }
         private DateTime unixTimeStampToDateTime(double unixTimeStamp)
         {

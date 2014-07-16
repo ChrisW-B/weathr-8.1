@@ -57,9 +57,17 @@ namespace TileCreater
 
             if (tile != null)
             {
-                TileNotification wideNotif = wideTile.CreateNotification();
-                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
-                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(wideNotif);
+                try
+                {
+                    TileNotification wideNotif = wideTile.CreateNotification();
+                    TileUpdater updater = TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId);
+                    updater.Clear();
+                    updater.Update(wideNotif);
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Debug.WriteLine(e.Message);
+                }
             }
             else
             {
