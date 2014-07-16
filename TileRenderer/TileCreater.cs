@@ -222,11 +222,11 @@ namespace TileCreater
         }
         private TextBlock createSmallConditions(string conditions)
         {
-            return new TextBlock() { Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
+            return new TextBlock() {IsTextScaleFactorEnabled=false, Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
         }
         private TextBlock createSmallTempText(string temp)
         {
-            return new TextBlock() { Text = temp, FontSize = 30, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
+            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = temp, FontSize = 30, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         }
         private Grid createWideTile(BackgroundTemplate data, ref ImageBrush background)
         {
@@ -271,7 +271,7 @@ namespace TileCreater
         private Grid createWideDarkOverlay(string artistName)
         {
             Grid g = new Grid() { Width = 310, Height = 150, Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
-            g.Children.Add(new TextBlock() { FontSize = 9, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
+            g.Children.Add(new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
             return g;
         }
         private StackPanel createWideStackPanel(BackgroundTemplate data, bool transparent)
@@ -290,7 +290,7 @@ namespace TileCreater
         }
         private TextBlock createTomorrowShortText(string compare)
         {
-            return new TextBlock() { Text = compare.ToUpper(), FontWeight = FontWeights.ExtraBold, FontSize = 15, TextWrapping = TextWrapping.WrapWholeWords, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right, Margin = new Thickness(0, 0, 5, 0) };
+            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = compare.ToUpper(), FontWeight = FontWeights.ExtraBold, FontSize = 15, TextWrapping = TextWrapping.WrapWholeWords, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right, Margin = new Thickness(0, 0, 5, 0) };
         }
         private Grid createFirstHalf(BackgroundTemplate data, bool transparent)
         {
@@ -345,12 +345,12 @@ namespace TileCreater
         }
         private TextBlock createTimeTextBlock()
         {
-            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3, 0, 0, 0), FontWeight = FontWeights.Bold };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3, 0, 0, 0), FontWeight = FontWeights.Bold };
             return t;
         }
         private TextBlock createFlickrSource(string artistName)
         {
-            TextBlock t = new TextBlock() { FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 90, FontWeight = FontWeights.Bold };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 90, FontWeight = FontWeights.Bold };
             return t;
         }
         private StackPanel createDataStackPanel(BackgroundTemplate data)
@@ -374,7 +374,7 @@ namespace TileCreater
         }
         private TextBlock createTempTextBlock(string temperature)
         {
-            TextBlock t = new TextBlock() { Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, HorizontalAlignment = HorizontalAlignment.Right };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, HorizontalAlignment = HorizontalAlignment.Right };
             return t;
         }
         private StackPanel createForecastStackPanel(BackgroundTemplate data)
@@ -386,17 +386,17 @@ namespace TileCreater
         }
         private TextBlock createConditionsTextBlock(string conditions)
         {
-            TextBlock t = new TextBlock() { Text = conditions.ToUpperInvariant(), FontWeight = FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = conditions.ToUpperInvariant(), FontWeight = FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             return t;
         }
         private TextBlock createHiLoTextBlock(string high, string low)
         {
-            TextBlock t = new TextBlock() { Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width = 80 };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width = 80 };
             return t;
         }
         private TextBlock createLocationTextBlock(string location)
         {
-            TextBlock t = new TextBlock() { Text = location.ToUpper(), FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = location.ToUpper(), FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
             return t;
         }
         #endregion

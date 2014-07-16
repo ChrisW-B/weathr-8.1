@@ -181,6 +181,7 @@ namespace Weathr81
                         }
                         else
                         {
+                            statusBar.ProgressIndicator.HideAsync();
                             displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
                         }
                     }
@@ -307,9 +308,11 @@ namespace Weathr81
         private void displayError(string errorMsg)
         {
             now.DataContext = new NowTemplate() { errorText = errorMsg };
+            hourly.DataContext = null;
             forecast.DataContext = null;
             maps.DataContext = null;
             alerts.DataContext = null;
+            statusBar.ProgressIndicator.HideAsync();
         }
         async private void updateUI()
         {
@@ -323,9 +326,14 @@ namespace Weathr81
                 {
                     downloadedForecast = await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude);
                 }
-                else
+                else if (geo.wUrl != null)
                 {
                     downloadedForecast = await setWeather(geo.wUrl);
+                }
+                else
+                {
+                    displayError("Oops, something went wrong with this location. Try removing it and adding it back");
+                    return;
                 }
                 if (!downloadedForecast.fail)
                 {
@@ -717,8 +725,34 @@ namespace Weathr81
                 {
                     tryDisplayNextHour(forecastIOClass.mins.summary);
                 }
+                if (forecastIOClass.flags.numAlerts > 0)
+                {
+                  alerts.DataContext =   tryDisplayAlerts(forecastIOClass.Alerts);
+                }
             }
             await statusBar.ProgressIndicator.HideAsync();
+        }
+
+        private AlertsTemplate tryDisplayAlerts(ObservableCollection<ForecastIOAlert> alerts)
+        {
+            ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
+            foreach (ForecastIOAlert item in alerts)
+            {
+                AlertItem alert = new AlertItem();
+                if (item.uri != null)
+                {
+                    alert.allClear = false;
+                }
+                else
+                {
+                    alert.allClear = true;
+                }
+                alert.Headline = item.title;
+                alert.details = item.description;
+                alert.TextUrl = item.uri;
+                alertsData.Add(alert);
+            }
+            return new AlertsTemplate() { alerts = new AlertList() { alertList = alertsData } };
         }
         private void tryDisplayNextHour(string minSum)
         {
@@ -841,6 +875,7 @@ namespace Weathr81
         //set up alerts
         async private void setAlerts(double lat, double lon)
         {
+            return;
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting alerts...";
             GetAlerts a = new GetAlerts(lat, lon);
@@ -848,7 +883,7 @@ namespace Weathr81
             alerts.DataContext = createAlertsList(d.alerts);
             await statusBar.ProgressIndicator.HideAsync();
         }
-        private object createAlertsList(ObservableCollection<Alert> alerts)
+        private AlertsTemplate createAlertsList(ObservableCollection<Alert> alerts)
         {
             ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
             foreach (Alert item in alerts)
@@ -948,7 +983,8 @@ namespace Weathr81
             AlertItem alert = (AlertItem)(sender as StackPanel).DataContext;
             if (!alert.allClear)
             {
-                Launcher.LaunchUriAsync(new Uri(alert.TextUrl));
+                MessageDialog d = new MessageDialog(alert.details,alert.Headline);
+                d.ShowAsync();
             }
             return;
         }
@@ -1077,7 +1113,10 @@ namespace Weathr81
                         await statusBar.ProgressIndicator.ShowAsync();
                         statusBar.ProgressIndicator.Text = "Getting alerts...";
                         GeoTemplate geoAlerts = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                        setAlerts(geoAlerts.position.Position.Latitude, geoAlerts.position.Position.Longitude);
+                        if (!geoAlerts.fail)
+                        {
+                            setAlerts(geoAlerts.position.Position.Latitude, geoAlerts.position.Position.Longitude);
+                        }
                         await statusBar.ProgressIndicator.HideAsync();
                         break;
                     case "locList":

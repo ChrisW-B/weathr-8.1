@@ -15,5 +15,6 @@ namespace DataTemplates
         public string Headline { get; set; }
         public string TextUrl { get; set; }
         public bool allClear { get; set; }
+        public string details { get; set; }
     }
 }

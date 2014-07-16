@@ -224,6 +224,10 @@ namespace ForecastIOData
             {
                 alerts.Add(doEachAlert(elm));
             }
+            if (alerts.Count == 0)
+            {
+                alerts.Add(new ForecastIOAlert() { title = "Nothing right now!", uri = null });
+            }
             return alerts;
         }
         private ForecastIOAlert doEachAlert(XElement elm)
@@ -241,6 +245,9 @@ namespace ForecastIOData
 
             XElement expires = elm.Element("expires");
             alert.expires = doDouble(expires);
+
+            XElement uri = elm.Element("uri");
+            alert.uri = doString(uri);
 
             return alert;
         }
