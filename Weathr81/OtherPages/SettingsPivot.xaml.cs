@@ -190,6 +190,15 @@ namespace Weathr81.OtherPages
         }
         private void setUpTileSection()
         {
+            if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
+            {
+                timeType.IsOn = (bool)store.Values[Values.TWENTY_FOUR_HR_TIME];
+            }
+            else
+            {
+                timeType.IsOn = false;
+                store.Values[Values.TWENTY_FOUR_HR_TIME] = false;
+            }
             if (localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
             {
                 bool allowed = (bool)localStore.Values[Values.ALLOW_BG_TASK];
@@ -446,6 +455,17 @@ namespace Weathr81.OtherPages
             }
             return;
         }
+        private void timeType_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                ToggleSwitch t = sender as ToggleSwitch;
+                if (t != null)
+                {
+                    store.Values[Values.TWENTY_FOUR_HR_TIME] = t.IsOn;
+                }
+            }
+        }
         #endregion
 
         #region advanced pivot
@@ -583,5 +603,7 @@ namespace Weathr81.OtherPages
                 appBar.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
             }
         }
+
+        
     }
 }

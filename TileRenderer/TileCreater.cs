@@ -345,9 +345,20 @@ namespace TileCreater
         }
         private TextBlock createTimeTextBlock()
         {
-            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = DateTime.Now.ToString("h:mm tt"), Margin = new Thickness(3, 0, 0, 0), FontWeight = FontWeights.Bold };
+            string time = "";
+            if (twentyFourHrTime())
+            {
+                time = DateTime.Now.ToString("HH:mm");
+            }
+            else{
+                time = DateTime.Now.ToString("h:mm tt");
+            }
+
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = time, Margin = new Thickness(3, 0, 0, 0), FontWeight = FontWeights.Bold };
             return t;
         }
+
+       
         private TextBlock createFlickrSource(string artistName)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 90, FontWeight = FontWeights.Bold };
@@ -421,6 +432,15 @@ namespace TileCreater
             }
             localStore.Values[Values.TRANSPARENT_TILE] = true;
             return true;
+        }
+        private bool twentyFourHrTime()
+        {
+            if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
+            {
+                return (bool)store.Values[Values.TWENTY_FOUR_HR_TIME];
+            }
+                store.Values[Values.TWENTY_FOUR_HR_TIME]=false;
+                return false;
         }
     }
 }

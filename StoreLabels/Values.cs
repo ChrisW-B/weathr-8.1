@@ -28,6 +28,7 @@ namespace StoreLabels
         public const string TASK_NAME = "Weathr Tile Updater";
         public const string TILE_UNITS_ARE_SI = "tileUnitsAreSI";
         public const string TRANSPARENT_TILE = "tileIsTransparent";
+        public const string TWENTY_FOUR_HR_TIME = "use24hrTime";
         public const string UPDATE_FREQ = "updateFreq";
         public const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         public const string UNITS_ARE_SI = "unitsAreSI";
