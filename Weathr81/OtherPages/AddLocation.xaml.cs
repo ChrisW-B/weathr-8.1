@@ -3,6 +3,7 @@ using OtherPages;
 using SerializerClass;
 using StoreLabels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
@@ -12,6 +13,7 @@ using System.Xml.Linq;
 using Weathr81.Common;
 using Windows.Devices.Geolocation;
 using Windows.Storage;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
 
@@ -117,36 +119,50 @@ namespace Weathr81.OtherPages
         #region variables
         ObservableCollection<SearchItemTemplate> suggestions = new ObservableCollection<SearchItemTemplate>();
         #endregion
+        StatusBar statusBar;
+        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
         async private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            //clear suggestions and add new onese
-            suggestions.Clear();
-            Uri searchUri = new Uri("http://autocomplete.wunderground.com/aq?query=" + SearchBox.Text + "&format=XML");
-            HttpClient client = new HttpClient();
-            Stream str = await client.GetStreamAsync(searchUri);
-            populateSuggestions(XDocument.Load(str));
+            //clear suggestions and add new ones
+            statusBar = StatusBar.GetForCurrentView();
+            await statusBar.ShowAsync();
+            statusBar.ProgressIndicator.Text = "Searching...";
+            await statusBar.ProgressIndicator.ShowAsync();
+            try
+            {
+                suggestions.Clear();
+                Uri searchUri = new Uri("http://autocomplete.wunderground.com/aq?query=" + SearchBox.Text + "&format=XML");
+                HttpClient client = new HttpClient();
+                Stream str = await client.GetStreamAsync(searchUri);
+                populateSuggestions(XDocument.Load(str));
+                statusBar.ProgressIndicator.HideAsync();
+            }
+            catch
+            {
+                statusBar.ProgressIndicator.ProgressValue = 0;
+                statusBar.ProgressIndicator.Text = "There was a problem searching";
+            }
         }
         private void populateSuggestions(XDocument doc)
         {
             //using the result of a wunderground query, populate the search box
-            suggestions.Add(new SearchItemTemplate() { locName = "Current Location", isCurrent = true, wUrl = "null" });
-            var locNames = doc.Descendants().Elements("name");
+            if (allowedToAutoFind())
+            {
+                suggestions.Add(new SearchItemTemplate() { locName = "Current Location", isCurrent = true, wUrl = "currLoc" });
+            }
+            List<String> locNames = new List<string>();
+            List<String> locUrls = new List<string>();
             foreach (XElement elm in doc.Descendants().Elements("name"))
             {
-                var locationName = (string)elm.Value;
-                var wuUrlNode = elm.NextNode.NextNode.NextNode.NextNode.NextNode.NextNode;
-                string wuUrl = "";
-                if (wuUrlNode != null)
-                {
-                    wuUrl = wuUrlNode.ToString();
-                }
-                else
-                {
-                    wuUrl = elm.NextNode.NextNode.NextNode.NextNode.NextNode.ToString();
-                }
-                wuUrl = wuUrl.Replace("<l>", "");
-                wuUrl = wuUrl.Replace("</l>", "");
-                suggestions.Add(new SearchItemTemplate() { locName = locationName, wUrl = wuUrl, isCurrent = false });
+                locNames.Add((string)elm.Value);
+            }
+            foreach (XElement elm in doc.Descendants().Elements("l"))
+            {
+                locUrls.Add((string)elm.Value);
+            }
+            for (int i = 0; i < locNames.Count && i < locUrls.Count; i++)
+            {
+                suggestions.Add(new SearchItemTemplate() { locName = locNames[i], wUrl = locUrls[i], isCurrent = false });
             }
             results.ItemsSource = suggestions;
         }
@@ -161,10 +177,17 @@ namespace Weathr81.OtherPages
             }
             if (locIsNew(locs, item))
             {
-                GeoTemplate coordinates = await getCoordinates(item.locName);
-                if (!coordinates.fail)
+                if (!item.isCurrent)
                 {
-                    locs.Add(new Location() { IsCurrent = false, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
+                    GeoTemplate coordinates = await getCoordinates(item.locName);
+                    if (!coordinates.fail)
+                    {
+                        locs.Add(new Location() { IsCurrent = item.isCurrent, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl, Lat = coordinates.position.Position.Latitude, Lon = coordinates.position.Position.Longitude });
+                    }
+                }
+                else
+                {
+                    locs.Add(new Location() { IsCurrent = item.isCurrent, IsDefault = false, LocName = item.locName, LocUrl = item.wUrl });
                 }
                 Serializer.save(locs, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
             }
@@ -216,6 +239,14 @@ namespace Weathr81.OtherPages
             {
                 return new GeoTemplate() { fail = true, errorMsg = "google returned invalid coordinates" };
             }
+        }
+        private bool allowedToAutoFind()
+        {
+            if (localStore.Values.ContainsKey(Values.ALLOW_LOC))
+            {
+                return (bool)localStore.Values[Values.ALLOW_LOC];
+            }
+            return false;
         }
     }
 }

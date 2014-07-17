@@ -102,6 +102,10 @@ namespace Weathr81
             //checks whether or not app can be run
             if (isFullVersion() || boughtTime())
             {
+                if (!store.Values.ContainsKey(Values.FIRST_START))
+                {
+                    Serializer.save(DateTime.Now, typeof(DateTime), Values.FIRST_START, store);
+                }
                 return true;
             }
             else
@@ -175,6 +179,8 @@ namespace Weathr81
                     GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
                     if (!restoreData())
                     {
+                        clearApp();
+                        hub.Header = "loading...";
                         if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
                         {
                             updateUI();
@@ -202,13 +208,14 @@ namespace Weathr81
                             }
                         }
                     }
+                    disablePinIfPinned();
                 }
                 else
                 {
                     Frame.Navigate(typeof(AddLocation));
                 }
             }
-            disablePinIfPinned();
+           
         }
         private bool allowedToSetBG()
         {
@@ -308,6 +315,10 @@ namespace Weathr81
         private void displayError(string errorMsg)
         {
             now.DataContext = new NowTemplate() { errorText = errorMsg };
+            clearApp();
+        }
+        private void clearApp()
+        {
             hourly.DataContext = null;
             forecast.DataContext = null;
             maps.DataContext = null;
@@ -411,21 +422,22 @@ namespace Weathr81
         }
         async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
         {
+
             CreateTile createTile = new CreateTile();
             ImageBrush background = sender as ImageBrush;
-            string artistName = "unknown";
-            if (currentLocation.IsDefault)
+            if (background != null)
             {
-                LocationTemplate locTemp = locList.DataContext as LocationTemplate;
-                if (locTemp != null)
+                string artistName = "unknown";
+                if (currentLocation.IsDefault)
                 {
-                    artistName = locTemp.PhotoDetails;
+                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+                    if (locTemp != null)
+                    {
+                        artistName = locTemp.PhotoDetails;
+                    }
+                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
                 }
-                await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
-            }
-            if (await tileExists())
-            {
-                if (background != null)
+                if (await tileExists())
                 {
                     LocationTemplate locTemp = locList.DataContext as LocationTemplate;
                     if (locTemp != null)
@@ -438,6 +450,10 @@ namespace Weathr81
         }
         async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
         {
+            if (currentLocation.LocName == null)
+            {
+                currentLocation.LocName = hub.Header as string;
+            }
             await renderTile(tiles.smTile, currentLocation.LocName + "sm");
             await renderTile(tiles.sqTile, currentLocation.LocName + "sq");
             await renderTile(tiles.wideTile, currentLocation.LocName + "wd");
@@ -599,23 +615,28 @@ namespace Weathr81
         async private Task<bool> setFavoriteLocations()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
+            if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
+            {
+                localStore.Values[Values.IS_NEW_DEVICE] = false;
+                locTemplate.locations = await setupLocation();
+            }
             if (store.Values.ContainsKey(Values.LOC_STORE))
             {
                 ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
-                if (list != null)
-                {
-                    locTemplate.locations.locationList = list;
-                }
-                else
+                if (list == null || list.Count<1)
                 {
                     //something wrong with the list, reset roaming and try again
                     store.Values.Remove(Values.LOC_STORE);
                     await setFavoriteLocations();
                 }
+                else
+                {
+                    locTemplate.locations.locationList = list;
+                }
             }
             else
             {
-                locTemplate.locations = await setupLocation();
+               locTemplate.locations = await setupLocation();
             }
             if (currentLocation == null)
             {
@@ -655,10 +676,9 @@ namespace Weathr81
             dialog.Commands.Add(new UICommand("No", delegate(IUICommand cmd)
             {
                 localStore.Values[Values.ALLOW_LOC] = false;
+
             }));
             await dialog.ShowAsync();
-
-
             return locList;
         }
 
@@ -727,7 +747,7 @@ namespace Weathr81
                 }
                 if (forecastIOClass.flags.numAlerts > 0)
                 {
-                  alerts.DataContext =   tryDisplayAlerts(forecastIOClass.Alerts);
+                    alerts.DataContext = tryDisplayAlerts(forecastIOClass.Alerts);
                 }
             }
             await statusBar.ProgressIndicator.HideAsync();
@@ -961,7 +981,7 @@ namespace Weathr81
             }
             else
             {
-                return await getBGInfo(cond, useGroup, useLoc, lat, lon, timesRun++);
+                return await getBGInfo(cond, useGroup, false, lat, lon, timesRun++);
             }
         }
         private void setHubBG(ImageBrush bg)
@@ -992,7 +1012,7 @@ namespace Weathr81
             AlertItem alert = (AlertItem)(sender as StackPanel).DataContext;
             if (!alert.allClear)
             {
-                MessageDialog d = new MessageDialog(alert.details,alert.Headline);
+                MessageDialog d = new MessageDialog(alert.details, alert.Headline);
                 d.ShowAsync();
             }
             return;

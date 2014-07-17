@@ -16,6 +16,7 @@ namespace StoreLabels
         public const string HOURLY_SAVE = "hourSave";
         public const string IAP_FORE_IO = "forecastIOAccess";
         public const string IAP_NO_LIMIT = "unlimitedTime";
+        public const string IS_NEW_DEVICE = "newDevice";
         public const string LAST_LOC = "lastLoc";
         public const string LAST_LOC_NAME = "lastLocFullName";
         public const string LAST_SAVE = "lastSaveTime";
@@ -48,5 +49,7 @@ namespace StoreLabels
                     return "fb1dd3f4321d048d";
             }
         }
+
+        
     }
 }
