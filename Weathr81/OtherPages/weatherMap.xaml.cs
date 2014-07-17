@@ -110,12 +110,11 @@ namespace Weathr81.OtherPages
             HttpMapTileDataSource dataSource;
             if (mapLaunchClass.type == MapLaunchClass.mapType.radar)
             {
-                dataSource = new HttpMapTileDataSource(Values.RAD_URL + (DateTime.Now));
-
+                dataSource = new HttpMapTileDataSource(Values.RAD_URL + DateTime.UtcNow.Millisecond);
             }
             else
             {
-                dataSource = new HttpMapTileDataSource(Values.SAT_URL + (DateTime.Now));
+                dataSource = new HttpMapTileDataSource(Values.SAT_URL + DateTime.UtcNow.Millisecond);
             }
             MapTileSource tileSource = new MapTileSource(dataSource);
             Map.TileSources.Add(tileSource);
