@@ -43,7 +43,6 @@ namespace TileCreater
             mediumTile.Image.Alt = "altMed";
             mediumTile.Image.Src = mediumTileLoc;
             mediumTile.Square71x71Content = smallTile;
-            mediumTile.StrictValidation = true;
 
             ITileWide310x150PeekImageAndText02 wideTile = TileContentFactory.CreateTileWide310x150PeekImageAndText02();
             wideTile.TextBody1.Text = current;
@@ -53,21 +52,12 @@ namespace TileCreater
             wideTile.Image.Alt = "altWide";
             wideTile.Image.Src = wideTileLoc;
             wideTile.Square150x150Content = mediumTile;
-            wideTile.StrictValidation = true;
 
             if (tile != null)
             {
-                try
-                {
-                    TileNotification wideNotif = wideTile.CreateNotification();
-                    TileUpdater updater = TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId);
-                    updater.Clear();
-                    updater.Update(wideNotif);
-                }
-                catch (Exception e)
-                {
-                    System.Diagnostics.Debug.WriteLine(e.Message);
-                }
+                TileNotification wideNotif = wideTile.CreateNotification();
+                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
+                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(wideNotif);
             }
             else
             {
@@ -230,7 +220,7 @@ namespace TileCreater
         }
         private TextBlock createSmallConditions(string conditions)
         {
-            return new TextBlock() {IsTextScaleFactorEnabled=false, Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
+            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
         }
         private TextBlock createSmallTempText(string temp)
         {
@@ -358,7 +348,8 @@ namespace TileCreater
             {
                 time = DateTime.Now.ToString("HH:mm");
             }
-            else{
+            else
+            {
                 time = DateTime.Now.ToString("h:mm tt");
             }
 
@@ -366,7 +357,7 @@ namespace TileCreater
             return t;
         }
 
-       
+
         private TextBlock createFlickrSource(string artistName)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 90, FontWeight = FontWeights.Bold };
@@ -447,8 +438,8 @@ namespace TileCreater
             {
                 return (bool)store.Values[Values.TWENTY_FOUR_HR_TIME];
             }
-                store.Values[Values.TWENTY_FOUR_HR_TIME]=false;
-                return false;
+            store.Values[Values.TWENTY_FOUR_HR_TIME] = false;
+            return false;
         }
     }
 }

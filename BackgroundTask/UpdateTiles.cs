@@ -104,11 +104,14 @@ namespace BackgroundTask
                 foreach (SecondaryTile tile in tiles)
                 {
                     Location tileLoc = findTile(tile.Arguments);
-                    await updateTile(tile, tileLoc);
+                    if (!tileLoc.IsDefault)
+                    {
+                        await updateTile(tile, tileLoc);
+                    }
                 }
             }
         }
-        async private Task updateTile(SecondaryTile tile=null, Location tileLoc=null)
+        async private Task updateTile(SecondaryTile tile = null, Location tileLoc = null)
         {
             if (tileLoc == null)
             {
@@ -119,9 +122,9 @@ namespace BackgroundTask
                 }
             }
             string name = "default";
-            if (tile != null)
+            if (tileLoc != null)
             {
-                name = tile.TileId;
+                name = tileLoc.LocUrl.Replace(":", "").Replace(".", "").Replace("/", "");
             }
             string smallTileName = name + "small.png";
             string mediumTileName = name + "med.png";
@@ -178,12 +181,31 @@ namespace BackgroundTask
                         else
                         {
                             creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow);
+                            SecondaryTile defaultTile = await getDefaultTile();
+                            if (defaultTile != null)
+                            {
+                                creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow, defaultTile);
+                            }
                         }
                     }
                 }
             }
         }
-        
+
+        async private Task<SecondaryTile> getDefaultTile()
+        {
+            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+            foreach (SecondaryTile tile in tiles)
+            {
+                Location tileLoc = findTile(tile.Arguments);
+                if (tileLoc.IsDefault)
+                {
+                    return tile;
+                }
+            }
+            return null;
+        }
+
 
         //rending tiles to images
         async private Task renderTile(UIElement tile, string tileName)

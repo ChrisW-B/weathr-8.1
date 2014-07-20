@@ -44,7 +44,7 @@ namespace StoreLabels
         {
             Random rand = new Random();
             double val = rand.Next(100);
-            switch ((int)val % 6)
+            switch ((int)val % 8)
             {
                 case 0:
                     return "2d73e75dbfe7f75c";
