@@ -13,5 +13,6 @@ namespace DataTemplates
         public string time { get; set; }
         public string errorText { get; set; }
         public string alerts { get; set; }
+        public string uvIndex { get; set; }
     }
 }

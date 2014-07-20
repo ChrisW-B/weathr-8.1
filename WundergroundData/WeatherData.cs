@@ -68,6 +68,8 @@ namespace WeatherData
         public string todayShort { get; set; }
 
         public string tomorrowShort { get; set; }
+
+        public string UV { get; set; }
     }
 
     public class WundForecastItem

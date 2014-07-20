@@ -78,6 +78,9 @@ namespace WundergroundData
                 //current humidity
                 currentWeather.humidity = (string)currentObservation.Element("relative_humidity");
 
+                //current UV
+                currentWeather.UV = (string)currentObservation.Element("UV");
+
                 #endregion current conditions
 
                 #region forecast conditions

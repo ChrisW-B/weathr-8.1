@@ -20,6 +20,7 @@ using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
+using Windows.Foundation.Collections;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
@@ -72,7 +73,6 @@ namespace Weathr81
         private GetGeoposition GetGeoposition;
         private Location currentLocation;
         private StatusBar statusBar;
-        CoreDispatcher dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
         #endregion
 
         public MainPage()
@@ -81,6 +81,7 @@ namespace Weathr81
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
+            localStore.Values.Remove(Values.LAST_CMD_BAR);
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -97,18 +98,21 @@ namespace Weathr81
             {
                 localStore.Values[Values.LAST_HUB_SECTION] = hub.SectionsInView[0].Tag;
             }
-
+            localStore.Values.Remove(Values.LAST_CMD_BAR);
             saveData();
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
+            localStore.Values.Remove(Values.LAST_CMD_BAR);
+            BottomAppBar = new CommandBar();
             if (e.Parameter != null)
             {
                 this.currentLocation = (e.Parameter as Location);
             }
             statusBar = StatusBar.GetForCurrentView();
             statusBar.ForegroundColor = Colors.White;
+
             runApp();
         }
 
@@ -217,7 +221,6 @@ namespace Weathr81
                         {
                             await statusBar.ProgressIndicator.HideAsync();
                         }
-                        disablePinIfPinned();
                     }
                     else
                     {
@@ -274,17 +277,6 @@ namespace Weathr81
             return prof.IsWlanConnectionProfile;
         }
 
-        async private void disablePinIfPinned()
-        {
-            if (await tileExists())
-            {
-                AppBarButton pinButton = appBar.PrimaryCommands[2] as AppBarButton;
-                if (pinButton != null)
-                {
-                    pinButton.IsEnabled = false;
-                }
-            }
-        }
         async private Task<bool> tileExists()
         {
             IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
@@ -486,6 +478,8 @@ namespace Weathr81
                     await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
                 }
             }
+            await Task.Delay(new TimeSpan(0, 0, 0, 10));
+            tileHider = null;
         }
         async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
         {
@@ -493,17 +487,17 @@ namespace Weathr81
             {
                 currentLocation.LocName = hub.Header as string;
             }
-            await renderTile(tiles.smTile, currentLocation.LocName + "sm");
-            await renderTile(tiles.sqTile, currentLocation.LocName + "sq");
-            await renderTile(tiles.wideTile, currentLocation.LocName + "wd");
+            await renderTile(tiles.smTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm");
+            await renderTile(tiles.sqTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq");
+            await renderTile(tiles.wideTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd");
             CreateTile tileMaker = new CreateTile();
             if (currentLocation.IsDefault)
             {
-                tileMaker.pushImageToTile(Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow);
+                tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow);
             }
             if (await tileExists())
             {
-                tileMaker.pushImageToTile(Values.SAVE_LOC + currentLocation.LocName + "sm", Values.SAVE_LOC + currentLocation.LocName + "sq", Values.SAVE_LOC + currentLocation.LocName + "wd", tempCompare, current, today, tomorrow, await getCurrentTile());
+                tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, await getCurrentTile());
             }
         }
         async private Task renderTile(UIElement tile, string tileName)
@@ -765,7 +759,7 @@ namespace Weathr81
         private void updateWeatherInfo(ref WeatherInfo downloadedForecast, bool isSI)
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
-            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir };
+            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind: " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir, uvIndex = "UV: " +downloadedForecast.UV };
             ForecastTemplate forecastTemplate = createForecastList(downloadedForecast.forecastC);
 
             if (!isSI)
@@ -773,7 +767,7 @@ namespace Weathr81
                 nowTemplate.temp = downloadedForecast.tempF + "°";
                 nowTemplate.feelsLike = "Feels like: " + downloadedForecast.feelsLikeF + "°";
                 nowTemplate.tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareF + " TODAY";
-                nowTemplate.wind = "Wind " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir;
+                nowTemplate.wind = "Wind: " + downloadedForecast.windSpeedM + " " + downloadedForecast.windDir;
                 forecastTemplate = createForecastList(downloadedForecast.forecastF);
             }
             now.DataContext = nowTemplate;
@@ -1200,51 +1194,62 @@ namespace Weathr81
         {
             Frame.Navigate(typeof(AddLocation));
         }
+        private void alertsNum_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            hub.ScrollToSection(alerts);
+        }
 
         //set of bools to make sure things aren't set more than once
         private bool mapsSet = false;
-        private AppBarButton locButton;
 
         async private void hub_SectionsInViewChanged(object sender, SectionsInViewChangedEventArgs e)
         {
-            switch (Convert.ToInt16(hub.SectionsInView[0].Tag))
+            await Task.Delay(50);
+            int secNum = Convert.ToInt16(hub.SectionsInView[0].Tag);
+            if (hub.SectionsInView.Count > 2)
             {
-                case 0:
-                    await toggleAppMenu(true);
-                    break;
-                case 1:
-                    await toggleAppMenu();
-                    break;
-                case 2:
-                    await toggleAppMenu();
-                    await setMapsOnHubSwitch();
-                    break;
-                case 3:
-                    await toggleAppMenu();
-                    break;
-                case 4:
-                    await toggleAppMenu();
-                    break;
-                case 5:
-                    await toggleAppMenu(true);
-                    addLocButton();
-                    break;
+                secNum++;
+            }
+            secNum = (secNum == 6) ? 0 : secNum;
+            if (allowedToChangeCmdBar(secNum))
+            {
+                switch (secNum)
+                {
+                    case 0:
+                        BottomAppBar = await createCommandBar(false, true);
+                        break;
+                    case 2:
+                        await setMapsOnHubSwitch();
+                        BottomAppBar = await createCommandBar();
+                        break;
+                    case 5:
+                        BottomAppBar = await createCommandBar(true, true);
+                        break;
+                    default:
+                        BottomAppBar = await createCommandBar();
+                        break;
+                }
             }
         }
 
-        private void addLocButton()
+        private bool allowedToChangeCmdBar(int secNum)
         {
-            if (locButton == null)
+            if (hub.SectionsInView.Count > 3)
             {
-                locButton = new AppBarButton();
-                locButton.Click += addLoc_Click;
-                locButton.Icon = new SymbolIcon(Symbol.Add);
-                locButton.Label = "Add place";
+                return false;
             }
-            appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
-            appBar.PrimaryCommands.Add(locButton);
+            if (localStore.Values.ContainsKey(Values.LAST_CMD_BAR))
+            {
+                int lastLoc = (int)localStore.Values[Values.LAST_CMD_BAR];
+                if (lastLoc == secNum)
+                {
+                    //make sure each bar is only loaded once
+                    return false;
+                }
+            }
+            localStore.Values[Values.LAST_CMD_BAR] = secNum;
+            return true;
         }
-
         async private Task setMapsOnHubSwitch()
         {
             statusBar.ProgressIndicator.Text = "Setting up maps...";
@@ -1268,20 +1273,62 @@ namespace Weathr81
             }
             await statusBar.ProgressIndicator.HideAsync();
         }
-
-
-        async private Task toggleAppMenu(bool compact = false)
+        async private Task<CommandBar> createCommandBar(bool showAddLoc = false, bool compact = false)
         {
-            appBar.ClosedDisplayMode = (compact ? AppBarClosedDisplayMode.Compact : AppBarClosedDisplayMode.Minimal);
-            if (appBar.PrimaryCommands[3] != null)
+            CommandBar appBar = new CommandBar() { Opacity = .85, };
+            ObservableCollection<AppBarButton> primaryCmds = await createPrimaryCmds(showAddLoc);
+            ObservableCollection<AppBarButton> secondaryCmds = createSecondaryCmds();
+            foreach (AppBarButton cmd in primaryCmds)
             {
-                appBar.PrimaryCommands.RemoveAt(3);
+                appBar.PrimaryCommands.Add(cmd);
             }
+            foreach (AppBarButton cmd in secondaryCmds)
+            {
+                appBar.SecondaryCommands.Add(cmd);
+            }
+            toggleAppMenu(ref appBar, compact);
+            return appBar;
         }
-
-        private void alertsNum_Tapped(object sender, TappedRoutedEventArgs e)
+        private ObservableCollection<AppBarButton> createSecondaryCmds()
         {
-            hub.ScrollToSection(alerts);
+            AppBarButton about = new AppBarButton() { Label = "about" };
+            about.Click += about_Click;
+            AppBarButton changePic = new AppBarButton() { Label = "change background" };
+            changePic.Click += changePic_Click;
+            ObservableCollection<AppBarButton> cmds = new ObservableCollection<AppBarButton>();
+            cmds.Add(changePic);
+            cmds.Add(about);
+            return cmds;
+        }
+        async private Task<ObservableCollection<AppBarButton>> createPrimaryCmds(bool showAddLoc)
+        {
+            ObservableCollection<AppBarButton> cmds = new ObservableCollection<AppBarButton>();
+            AppBarButton refresh = new AppBarButton() { Label = "refresh", Icon = new BitmapIcon() { UriSource = new Uri("ms-appx:///Assets/refresh.png") } };
+            refresh.Click += refresh_Click;
+            cmds.Add(refresh);
+
+            AppBarButton settings = new AppBarButton() { Label = "settings", Icon = new SymbolIcon(Symbol.Setting) };
+            settings.Click += settings_Click;
+            cmds.Add(settings);
+
+            AppBarButton pinLoc = new AppBarButton() { Label = "pin", Icon = new SymbolIcon(Symbol.Pin) };
+            pinLoc.Click += pinLoc_Click;
+            if (await tileExists())
+            {
+                pinLoc.IsEnabled = false;
+            }
+            cmds.Add(pinLoc);
+            if (showAddLoc)
+            {
+                AppBarButton addLoc = new AppBarButton() { Label = "add place", Icon = new SymbolIcon(Symbol.Add) };
+                addLoc.Click += addLoc_Click;
+                cmds.Add(addLoc);
+            }
+            return cmds;
+        }
+        private void toggleAppMenu(ref CommandBar bar, bool compact = false)
+        {
+            bar.ClosedDisplayMode = (compact ? AppBarClosedDisplayMode.Compact : AppBarClosedDisplayMode.Minimal);
         }
     }
 }

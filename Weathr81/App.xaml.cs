@@ -81,7 +81,7 @@ namespace Weathr81
 
             if (rootFrame.Content == null)
             {
-               
+                Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
                 // Removes the turnstile navigation for startup.
                 if (rootFrame.ContentTransitions != null)
                 {

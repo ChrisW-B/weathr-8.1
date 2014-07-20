@@ -24,9 +24,10 @@
                             <TextBlock IsTextScaleFactorEnabled="False" Name="alertsNum" Text="{Binding alerts}" FontSize="25" Margin="0,-35,0,0" Grid.Column="1" HorizontalAlignment="Right" FontWeight="Bold" IsColorFontEnabled="True" Foreground="Red" Tapped="alertsNum_Tapped"/>
                             <TextBlock IsTextScaleFactorEnabled="False" Name="conditions" Text="{Binding conditions}"  Margin="-38,85,6,0" Height="90"  FontSize="34" FontFamily="Segoe UI Black" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top" LineHeight="30" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" Width="221" Padding="0,3,0,0" Foreground="White" TextAlignment="Right"/>
                             <StackPanel  Orientation="Vertical" Grid.Column="1" Margin="6,10,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" MaxHeight="190">
-                        <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding feelsLike}" Name="feelsLike"  TextWrapping="WrapWholeWords" FontSize="18" TextAlignment="Left"  Foreground="White"/>
-                                <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding wind}" Name="wind" TextWrapping="WrapWholeWords" FontSize="18" TextAlignment="Left"  Foreground="White"/>
-                                <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding humidity}" Name="humidity" TextWrapping="WrapWholeWords" FontSize="18" TextAlignment="Left"  Foreground="White" />
+                        <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding feelsLike}" Name="feelsLike"  TextWrapping="WrapWholeWords" FontSize="17" TextAlignment="Left"  Foreground="White"/>
+                                <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding uvIndex}" Name="uvIndex" TextAlignment="Left" Foreground="White" FontSize="17" TextWrapping="WrapWholeWords"/>
+                                <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding wind}" Name="wind" TextWrapping="WrapWholeWords" FontSize="17" TextAlignment="Left"  Foreground="White"/>
+                                <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding humidity}" Name="humidity" TextWrapping="WrapWholeWords" FontSize="17" TextAlignment="Left"  Foreground="White" />
                                 <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding nextHour}" Margin="0,10,0,0"  Name="nextHour"  TextWrapping="WrapWholeWords" FontSize="22" TextAlignment="Left"  Foreground="White" LineHeight="20" LineStackingStrategy="BlockLineHeight"/>
                     </StackPanel>
                     <StackPanel Grid.ColumnSpan="2"  Margin="10,200,0,150" VerticalAlignment="Top">
@@ -39,7 +40,7 @@
         <HubSection Header="hourly" x:Name="hourly" HeaderTemplate="{StaticResource smallHeader}" Tag="1">
             <DataTemplate>
                 <Grid>
-                    <ScrollViewer Margin="0,0,0,30">
+                    <ScrollViewer Margin="0,0,0,20">
                         <ItemsControl x:Name="forecastIOListBox" ItemsSource="{Binding forecastIO.hoursList}" Background="Transparent">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -178,21 +179,4 @@
     </Hub>
         </Grid>
     </Grid>
-    <Page.BottomAppBar>
-        <CommandBar x:Name="appBar" Opacity="0.85">
-            <CommandBar.PrimaryCommands>
-                <AppBarButton Label="refresh" x:Name="refresh" Click="refresh_Click">
-                    <AppBarButton.Icon>
-                        <BitmapIcon UriSource="Assets/refresh.png"/>
-                    </AppBarButton.Icon>
-                </AppBarButton>
-                <AppBarButton Label="settings" Icon="Setting" x:Name="settings" Click="settings_Click"/>
-                <AppBarButton Label="pin" x:Name="pinLoc" Icon="Pin" Click="pinLoc_Click"/>
-            </CommandBar.PrimaryCommands>
-            <CommandBar.SecondaryCommands>
-                <AppBarButton Label="change picture" x:Name="changePic" Click="changePic_Click"></AppBarButton>
-                <AppBarButton Label="about" x:Name="about" Click="about_Click"></AppBarButton>
-            </CommandBar.SecondaryCommands>
-        </CommandBar>
-    </Page.BottomAppBar>
 </Page>
