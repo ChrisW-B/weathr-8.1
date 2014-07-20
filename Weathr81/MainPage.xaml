@@ -13,7 +13,7 @@
         <Grid x:Name="tileHider" Canvas.ZIndex="-20"></Grid>
         <Grid Background="Black">
     <Hub x:Name="hub" Header="loading" Foreground="White" SectionsInViewChanged="hub_SectionsInViewChanged">
-                <HubSection Header="now" x:Name="now" HeaderTemplate="{StaticResource smallHeader}">
+                <HubSection Header="now" x:Name="now" HeaderTemplate="{StaticResource smallHeader}"  Tag="0">
             <DataTemplate>
                         <Grid Margin="0, -30, 0, 0">
                     <Grid.ColumnDefinitions>
@@ -21,6 +21,7 @@
                         <ColumnDefinition Width="9*"/>
                     </Grid.ColumnDefinitions>
                             <TextBlock IsTextScaleFactorEnabled="False"  Name="temp" Text="{Binding temp}"  FontSize="80" Margin="0,-10,6,0" VerticalAlignment="Top" Height="112" Width="172" HorizontalAlignment="Right" Foreground="White" TextAlignment="Right" FontFamily="Segoe WP" FontWeight="ExtraLight" />
+                            <TextBlock IsTextScaleFactorEnabled="False" Name="alertsNum" Text="{Binding alerts}" FontSize="25" Margin="0,-35,0,0" Grid.Column="1" HorizontalAlignment="Right" FontWeight="Bold" IsColorFontEnabled="True" Foreground="Red" Tapped="alertsNum_Tapped"/>
                             <TextBlock IsTextScaleFactorEnabled="False" Name="conditions" Text="{Binding conditions}"  Margin="-38,85,6,0" Height="90"  FontSize="34" FontFamily="Segoe UI Black" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Top" LineHeight="30" TextWrapping="Wrap" LineStackingStrategy="BlockLineHeight" Width="221" Padding="0,3,0,0" Foreground="White" TextAlignment="Right"/>
                             <StackPanel  Orientation="Vertical" Grid.Column="1" Margin="6,10,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" MaxHeight="190">
                         <TextBlock IsTextScaleFactorEnabled="False" Text="{Binding feelsLike}" Name="feelsLike"  TextWrapping="WrapWholeWords" FontSize="18" TextAlignment="Left"  Foreground="White"/>
@@ -35,7 +36,7 @@
                 </Grid>
             </DataTemplate>
         </HubSection>
-        <HubSection Header="hourly" x:Name="hourly" HeaderTemplate="{StaticResource smallHeader}">
+        <HubSection Header="hourly" x:Name="hourly" HeaderTemplate="{StaticResource smallHeader}" Tag="1">
             <DataTemplate>
                 <Grid>
                     <ScrollViewer Margin="0,0,0,30">
@@ -70,7 +71,7 @@
             </DataTemplate>
 
         </HubSection>
-        <HubSection Header="maps" x:Name="maps" HeaderTemplate="{StaticResource smallHeader}">
+        <HubSection Header="maps" x:Name="maps" HeaderTemplate="{StaticResource smallHeader}" Tag="2">
             <DataTemplate>
                 <Grid>
                     <Grid Canvas.ZIndex="2">
@@ -103,7 +104,7 @@
                 </Grid>
             </DataTemplate>
         </HubSection>
-        <HubSection Header="forecast" x:Name="forecast" HeaderTemplate="{StaticResource smallHeader}">
+        <HubSection Header="forecast" x:Name="forecast" HeaderTemplate="{StaticResource smallHeader}" Tag="3">
             <DataTemplate>
                 <ScrollViewer>
                     <ItemsControl x:Name="forecastListBox" ItemsSource="{Binding forecast.forecastList}" Margin="10,0,0,10" Background="Transparent">
@@ -126,7 +127,7 @@
                 </ScrollViewer>
             </DataTemplate>
         </HubSection>
-        <HubSection Header="alerts" x:Name="alerts" HeaderTemplate="{StaticResource smallHeader}">
+        <HubSection Header="alerts" x:Name="alerts" HeaderTemplate="{StaticResource smallHeader}" Tag="4">
             <DataTemplate>
                 <ScrollViewer>
                     <ItemsControl x:Name="alertListBox" Margin="10,0,0,42"  Background="Transparent" ItemsSource="{Binding alerts.alertList}">
@@ -146,10 +147,10 @@
                 </ScrollViewer>
             </DataTemplate>
         </HubSection>
-        <HubSection Header="locations" x:Name="locList" HeaderTemplate="{StaticResource smallHeader}">
+        <HubSection Header="locations" x:Name="locList" HeaderTemplate="{StaticResource smallHeader}" Tag="5">
             <DataTemplate>
                 <Grid>
-                    <ScrollViewer>
+                    <ScrollViewer Margin="0,0,0,10">
                         <ItemsControl x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -164,7 +165,7 @@
                     <Grid VerticalAlignment="Bottom" Margin="0,20,0,0">
                                 <RichTextBlock HorizontalAlignment="Center" DataContext="{Binding locations}" IsTextScaleFactorEnabled="False" FontSize="12">
                             <Paragraph>
-                                <Run Text="Background by "></Run>
+                                <Run Text="{Binding description}"></Run>
                                 <Hyperlink NavigateUri="{Binding ArtistUri}">
                                     <Run Foreground="White" Text="{Binding PhotoDetails}"></Run>
                                 </Hyperlink>

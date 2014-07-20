@@ -34,6 +34,8 @@ namespace StoreLabels
         public const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         public const string UNITS_ARE_SI = "unitsAreSI";
         public const string UNITS_CHANGED = "unitsChanged";
+
+        public const string LAST_HUB_SECTION = "lastHubLoc";
        
        // public const string getWundApi() = "fb1dd3f4321d048d";
 
@@ -50,6 +52,8 @@ namespace StoreLabels
             }
         }
 
-        
+
+
+       
     }
 }

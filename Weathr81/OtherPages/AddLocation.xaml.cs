@@ -139,9 +139,18 @@ namespace Weathr81.OtherPages
             }
             catch
             {
-                statusBar.ProgressIndicator.ProgressValue = 0;
-                statusBar.ProgressIndicator.Text = "There was a problem searching";
+                displayStatusError("There was a problem with the search!");
             }
+        }
+
+        async private void displayStatusError(string errorMsg)
+        {
+            statusBar.ProgressIndicator.Text = errorMsg;
+            statusBar.ProgressIndicator.ProgressValue = 0;
+            await Task.Delay(2000);
+            statusBar.ProgressIndicator.Text = "";
+            await statusBar.ProgressIndicator.HideAsync();
+            statusBar.ProgressIndicator.ProgressValue = null;
         }
         private void populateSuggestions(XDocument doc)
         {

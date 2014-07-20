@@ -8,6 +8,8 @@ using StoreLabels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using TileCreater;
@@ -22,6 +24,7 @@ using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI;
 using Windows.UI.Core;
@@ -83,6 +86,18 @@ namespace Weathr81
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedFrom(e);
+            if (e.Parameter != null)
+            {
+                if (e.Parameter.GetType() != typeof(Location))
+                {
+                    localStore.Values[Values.LAST_HUB_SECTION] = hub.SectionsInView[0].Tag;
+                }
+            }
+            else
+            {
+                localStore.Values[Values.LAST_HUB_SECTION] = hub.SectionsInView[0].Tag;
+            }
+
             saveData();
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -95,6 +110,12 @@ namespace Weathr81
             statusBar = StatusBar.GetForCurrentView();
             statusBar.ForegroundColor = Colors.White;
             runApp();
+        }
+
+        private bool connectedToInternet()
+        {
+            ConnectionProfile prof = NetworkInformation.GetInternetConnectionProfile();
+            return prof != null;
         }
 
         async private Task<bool> trialNotOver()
@@ -166,6 +187,7 @@ namespace Weathr81
         async private void runApp()
         {
             //central point of app, runs other methods
+            await statusBar.ProgressIndicator.ShowAsync();
             tryBackgroundTask();
             if (await trialNotOver())
             {
@@ -173,49 +195,50 @@ namespace Weathr81
                 statusBar.BackgroundColor = Colors.Black;
                 statusBar.BackgroundOpacity = 0;
                 statusBar.ProgressIndicator.Text = "Getting your location...";
-                await statusBar.ProgressIndicator.ShowAsync();
-                if (await setFavoriteLocations())
+                if (connectedToInternet())
                 {
-                    GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
-                    if (!restoreData())
+                    if (await setFavoriteLocations())
                     {
-                        clearApp();
-                        hub.Header = "loading...";
-                        if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
+                        GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
+                        if (!restoreData())
                         {
-                            updateUI();
+                            clearApp();
+                            hub.Header = "loading...";
+                            if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
+                            {
+                                updateUI();
+                            }
+                            else
+                            {
+                                displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                            }
                         }
                         else
                         {
-                            statusBar.ProgressIndicator.HideAsync();
-                            displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
+                            await statusBar.ProgressIndicator.HideAsync();
                         }
+                        disablePinIfPinned();
                     }
                     else
                     {
-                        await statusBar.ProgressIndicator.HideAsync();
-                        if (allowedToSetBG())
-                        {
-                            await statusBar.ProgressIndicator.ShowAsync();
-                            GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                            NowTemplate nowTemplate = (now.DataContext as NowTemplate);
-                            await statusBar.ProgressIndicator.HideAsync();
-                            if (nowTemplate != null && geo.position != null)
-                            {
-                                FlickrImage bgImg = await getBG(nowTemplate.conditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-                                addArtistInfo(bgImg.artist, bgImg.artistUri);
-                                setHubBG(new ImageBrush() { Opacity = .7, ImageSource = new BitmapImage(bgImg.uri) });
-                            }
-                        }
+                        Frame.Navigate(typeof(AddLocation));
                     }
-                    disablePinIfPinned();
                 }
                 else
                 {
-                    Frame.Navigate(typeof(AddLocation));
+                    displayError("You need to be connected to the internet!");
                 }
             }
-           
+        }
+
+        async private void displayStatusError(string errorMsg)
+        {
+            statusBar.ProgressIndicator.Text = errorMsg;
+            statusBar.ProgressIndicator.ProgressValue = 0;
+            await Task.Delay(2000);
+            statusBar.ProgressIndicator.Text = "";
+            await statusBar.ProgressIndicator.HideAsync();
+            statusBar.ProgressIndicator.ProgressValue = null;
         }
         private bool allowedToSetBG()
         {
@@ -312,18 +335,19 @@ namespace Weathr81
             }
             return false;
         }
-        private void displayError(string errorMsg)
+        async private void displayError(string errorMsg)
         {
-            now.DataContext = new NowTemplate() { errorText = errorMsg };
             clearApp();
+            await statusBar.ProgressIndicator.HideAsync();
+            now.DataContext = new NowTemplate() { errorText = errorMsg };
         }
         private void clearApp()
         {
+            now.DataContext = null;
             hourly.DataContext = null;
             forecast.DataContext = null;
             maps.DataContext = null;
             alerts.DataContext = null;
-            statusBar.ProgressIndicator.HideAsync();
         }
         async private void updateUI()
         {
@@ -349,7 +373,7 @@ namespace Weathr81
                 if (!downloadedForecast.fail)
                 {
                     bool isSI = unitsAreSI();
-                    Serializer.save(DateTime.Now, typeof(DateTime), Values.LAST_SAVE, localStore);
+                    Serializer.save(DateTime.Now, typeof(DateTime), currentLocation.LocUrl + Values.LAST_SAVE, localStore);
                     updateWeatherInfo(ref downloadedForecast, isSI);
                     updateForecastIO(geo.position.Position.Latitude, geo.position.Position.Longitude, isSI);
 
@@ -369,22 +393,37 @@ namespace Weathr81
                     if (allowedToSetBG())
                     {
                         FlickrImage bgImg = await getBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
-                        addArtistInfo(bgImg.artist, bgImg.artistUri);
-                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                        setHubBG(backBrush);
-                        await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+                        if (bgImg != null)
+                        {
+                            addArtistInfo(bgImg.artist, bgImg.artistUri);
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                            setHubBG(backBrush);
+                            await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+                            saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                        }
+                        else
+                        {
+                            await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow);
+                            displayStatusError("Couldn't download background!");
+                        }
                     }
                     else
-                    {
-                        await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow);
-                    }
+                    { await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow); }
                 }
                 else
                 {
                     FlickrImage bgImg = await getBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
-                    addArtistInfo(bgImg.artist, bgImg.artistUri);
-                    ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                    setHubBG(backBrush);
+                    if (bgImg != null)
+                    {
+                        addArtistInfo(bgImg.artist, bgImg.artistUri);
+                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                        setHubBG(backBrush);
+                        saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                    }
+                    else
+                    {
+                        displayStatusError("Couldn't download background!");
+                    }
                     displayError(downloadedForecast.error);
                 }
             }
@@ -484,7 +523,6 @@ namespace Weathr81
                 encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
                 await encoder.FlushAsync();
             }
-            //tileHider.Children.Remove(tile);
         }
 
         //helper methods
@@ -496,43 +534,48 @@ namespace Weathr81
             bool forecastDone = false;
             bool hourlyDone = false;
             bool withinThirtyMins = false;
-            bool sameLoc = false;
+            bool bgRestore = false;
             bool sameUnits = true;
             bool locName = false;
-            if (localStore.Values.ContainsKey(Values.LAST_LOC_NAME))
+
+            if (localStore.Values.ContainsKey(Values.LAST_HUB_SECTION))
             {
-                hub.Header = localStore.Values[Values.LAST_LOC_NAME];
+                hub.ScrollToSection(getSectionFromTag(Convert.ToInt16(localStore.Values[Values.LAST_HUB_SECTION])));
+            }
+            if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.LAST_LOC_NAME))
+            {
+                hub.Header = localStore.Values[currentLocation.LocUrl + Values.LAST_LOC_NAME];
                 locName = true;
             }
-            if (localStore.Values.ContainsKey(Values.NOW_SAVE))
+            if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.NOW_SAVE))
             {
-                NowTemplate nowTemplate = Serializer.get(Values.NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
+                NowTemplate nowTemplate = Serializer.get(currentLocation.LocUrl + Values.NOW_SAVE, typeof(NowTemplate), localStore) as NowTemplate;
                 if (nowTemplate != null)
                 {
                     now.DataContext = nowTemplate;
                     nowDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(Values.FORECAST_SAVE))
+            if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.FORECAST_SAVE))
             {
-                ForecastTemplate forecastTemplate = Serializer.get(Values.FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
+                ForecastTemplate forecastTemplate = Serializer.get(currentLocation.LocUrl + Values.FORECAST_SAVE, typeof(ForecastTemplate), localStore) as ForecastTemplate;
                 if (forecastTemplate != null)
                 {
                     forecast.DataContext = forecastTemplate;
                     forecastDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(Values.ALERT_SAVE))
+            if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.ALERT_SAVE))
             {
-                AlertsTemplate alertsTemplate = Serializer.get(Values.ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
+                AlertsTemplate alertsTemplate = Serializer.get(currentLocation.LocUrl + Values.ALERT_SAVE, typeof(AlertsTemplate), localStore) as AlertsTemplate;
                 if (alertsTemplate != null)
                 {
                     alerts.DataContext = alertsTemplate;
                 }
             }
-            if (localStore.Values.ContainsKey(Values.HOURLY_SAVE))
+            if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.HOURLY_SAVE))
             {
-                ObservableCollection<ForecastIOItem> forecastList = Serializer.get(Values.HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
+                ObservableCollection<ForecastIOItem> forecastList = Serializer.get(currentLocation.LocUrl + Values.HOURLY_SAVE, typeof(ObservableCollection<ForecastIOItem>), localStore) as ObservableCollection<ForecastIOItem>;
                 if (forecastList != null)
                 {
                     ForecastIOTemplate forecastTemplate = new ForecastIOTemplate() { forecastIO = new ForecastIOList() { hoursList = forecastList } };
@@ -540,19 +583,20 @@ namespace Weathr81
                     hourlyDone = true;
                 }
             }
-            if (localStore.Values.ContainsKey(Values.LAST_LOC))
+            try
             {
-                Location lastLoc = Serializer.get(Values.LAST_LOC, typeof(Location), localStore) as Location;
-                if (lastLoc != null)
-                {
-                    sameLoc = ((lastLoc.IsCurrent && currentLocation.IsCurrent) || (lastLoc.LocUrl == currentLocation.LocUrl));
-                }
+                hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
+                bgRestore = true;
             }
-            if (localStore.Values.ContainsKey(Values.LAST_SAVE))
+            catch (Exception e)
+            {
+
+            }
+            if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.LAST_SAVE))
             {
                 try
                 {
-                    DateTime lastRun = (DateTime)Serializer.get(Values.LAST_SAVE, typeof(DateTime), localStore);
+                    DateTime lastRun = (DateTime)Serializer.get(currentLocation.LocUrl + Values.LAST_SAVE, typeof(DateTime), localStore);
                     TimeSpan elapsed = DateTime.Now - lastRun;
                     withinThirtyMins = elapsed.TotalMinutes < 30;
                 }
@@ -566,7 +610,28 @@ namespace Weathr81
                 sameUnits = !(bool)localStore.Values[Values.UNITS_CHANGED];
                 localStore.Values[Values.UNITS_CHANGED] = false;
             }
-            return nowDone && forecastDone && hourlyDone && withinThirtyMins && sameLoc && sameUnits && locName;
+            return nowDone && forecastDone && hourlyDone && withinThirtyMins && sameUnits && locName && bgRestore;
+        }
+
+        private HubSection getSectionFromTag(int i)
+        {
+            switch (i)
+            {
+                case 0:
+                    return now;
+                case 1:
+                    return hourly;
+                case 2:
+                    return maps;
+                case 3:
+                    return forecast;
+                case 4:
+                    return alerts;
+                case 5:
+                    return locList;
+                default:
+                    return now;
+            }
         }
         private bool unitsAreSI()
         {
@@ -590,7 +655,7 @@ namespace Weathr81
             DataSaveClass save = new DataSaveClass();
             if (alertsData != null)
             {
-                Serializer.save(alertsData, typeof(AlertsTemplate), Values.ALERT_SAVE, localStore);
+                Serializer.save(alertsData, typeof(AlertsTemplate), currentLocation.LocUrl + Values.ALERT_SAVE, localStore);
             }
             if (forecastIOData != null)
             {
@@ -599,18 +664,18 @@ namespace Weathr81
                 {
                     shortForecast.Add(forecastIOData.forecastIO.hoursList[i]);
                 }
-                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), Values.HOURLY_SAVE, localStore);
+                Serializer.save(shortForecast, typeof(ObservableCollection<ForecastIOItem>), currentLocation.LocUrl + Values.HOURLY_SAVE, localStore);
             }
             if (nowData != null)
             {
-                Serializer.save(nowData, typeof(NowTemplate), Values.NOW_SAVE, localStore);
+                Serializer.save(nowData, typeof(NowTemplate), currentLocation.LocUrl + Values.NOW_SAVE, localStore);
             }
             if (forecastData != null)
             {
-                Serializer.save(forecastData, typeof(ForecastTemplate), Values.FORECAST_SAVE, localStore);
+                Serializer.save(forecastData, typeof(ForecastTemplate), currentLocation.LocUrl + Values.FORECAST_SAVE, localStore);
             }
-            Serializer.save(currentLocation, typeof(Location), Values.LAST_LOC, localStore);
-            localStore.Values[Values.LAST_LOC_NAME] = hub.Header;
+            //Serializer.save(currentLocation, typeof(Location), Values.LAST_LOC, localStore);
+            localStore.Values[currentLocation.LocUrl + Values.LAST_LOC_NAME] = hub.Header;
         }
         async private Task<bool> setFavoriteLocations()
         {
@@ -623,7 +688,7 @@ namespace Weathr81
             if (store.Values.ContainsKey(Values.LOC_STORE))
             {
                 ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
-                if (list == null || list.Count<1)
+                if (list == null || list.Count < 1)
                 {
                     //something wrong with the list, reset roaming and try again
                     store.Values.Remove(Values.LOC_STORE);
@@ -636,7 +701,7 @@ namespace Weathr81
             }
             else
             {
-               locTemplate.locations = await setupLocation();
+                locTemplate.locations = await setupLocation();
             }
             if (currentLocation == null)
             {
@@ -685,20 +750,16 @@ namespace Weathr81
         //set up Wunderground
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
-            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(Values.getWundApi(), lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
-            await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
         }
         async private Task<WeatherInfo> setWeather(string wUrl)
         {
-            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
             GetWundergroundData weatherData = new GetWundergroundData(Values.getWundApi(), wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
-            await statusBar.ProgressIndicator.HideAsync();
             return downloadedForecast;
         }
         private void updateWeatherInfo(ref WeatherInfo downloadedForecast, bool isSI)
@@ -731,28 +792,33 @@ namespace Weathr81
         //set up Forecast.IO
         async private void updateForecastIO(double lat, double lon, bool isSI)
         {
-            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your forecast...";
             GetForecastIOData getForecastIOData = new GetForecastIOData(lat, lon, isSI);
             ForecastIOClass forecastIOClass = await getForecastIOData.getForecast();
             if (!forecastIOClass.fail)
             {
+                ObservableCollection<AlertItem> alertsList = null;
+                String minSum = "";
                 if (forecastIOClass.flags.hoursExists)
                 {
-                    updateHourList(forecastIOClass.hours.hours);
+                    hourly.DataContext = updateHourList(forecastIOClass.hours.hours);
                 }
                 if (forecastIOClass.flags.minsExists)
                 {
-                    tryDisplayNextHour(forecastIOClass.mins.summary);
+                    minSum = forecastIOClass.mins.summary;
                 }
                 if (forecastIOClass.flags.numAlerts > 0)
                 {
-                    alerts.DataContext = tryDisplayAlerts(forecastIOClass.Alerts);
+                    alertsList = getAlertItems(forecastIOClass.Alerts);
+                    alerts.DataContext = new AlertsTemplate() { alerts = new AlertList() { alertList = alertsList } };
+                }
+                if (alerts != null)
+                {
+                    updateNowWithForecastIO(minSum, alertsList);
                 }
             }
-            await statusBar.ProgressIndicator.HideAsync();
         }
-        private AlertsTemplate tryDisplayAlerts(ObservableCollection<ForecastIOAlert> alerts)
+        private ObservableCollection<AlertItem> getAlertItems(ObservableCollection<ForecastIOAlert> alerts)
         {
             ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
             foreach (ForecastIOAlert item in alerts)
@@ -771,22 +837,35 @@ namespace Weathr81
                 alert.TextUrl = item.uri;
                 alertsData.Add(alert);
             }
-            return new AlertsTemplate() { alerts = new AlertList() { alertList = alertsData } };
+            return alertsData;
         }
-        private void tryDisplayNextHour(string minSum)
+        private void updateNowWithForecastIO(string minSum, ObservableCollection<AlertItem> alerts)
         {
-            if (now.DataContext != null)
+            NowTemplate nowContext = (now.DataContext as NowTemplate);
+            if (nowContext != null)
             {
-                NowTemplate nowContext = (now.DataContext as NowTemplate);
-                if (nowContext != null)
+                nowContext.nextHour = minSum;
+                int numAlerts = 0;
+                foreach (AlertItem alert in alerts)
                 {
-                    nowContext.nextHour = minSum;
-                    now.DataContext = null;
-                    now.DataContext = nowContext;
+                    if (!alert.allClear)
+                    {
+                        numAlerts++;
+                    }
                 }
+                if (numAlerts == 1)
+                {
+                    nowContext.alerts = "1 Alert";
+                }
+                else if (numAlerts > 1)
+                {
+                    nowContext.alerts = alerts.Count + " alerts";
+                }
+                now.DataContext = null;
+                now.DataContext = nowContext;
             }
         }
-        private void updateHourList(ObservableCollection<HourForecast> hours)
+        private ForecastIOTemplate updateHourList(ObservableCollection<HourForecast> hours)
         {
             ForecastIOTemplate forecastIOTemplate = new ForecastIOTemplate();
             forecastIOTemplate.forecastIO = new ForecastIOList();
@@ -797,9 +876,10 @@ namespace Weathr81
                 string timeString = ((twentyFourHrTime()) ? time.ToString("HH:mm") : time.ToString("h:mm tt")) + " on " + time.DayOfWeek;
                 forecastIOTemplate.forecastIO.hoursList.Add(new ForecastIOItem() { description = hour.summary, chanceOfPrecip = Convert.ToString(hour.precipProbability * 100) + "% Chance of Precip", temp = Convert.ToString((int)hour.temperature) + "°", time = timeString });
             }
-            hourly.DataContext = forecastIOTemplate;
+            return forecastIOTemplate;
         }
 
+        //forecast.io helpers
         private bool twentyFourHrTime()
         {
             if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
@@ -827,8 +907,15 @@ namespace Weathr81
         private MapControl satMap;
         private void setupMaps()
         {
-            setupRadar();
-            setupSatellite();
+            try
+            {
+                setupRadar();
+                setupSatellite();
+            }
+            catch
+            {
+                displayStatusError("Problem getting map data");
+            }
         }
         async private void setupSatellite()
         {
@@ -901,50 +988,15 @@ namespace Weathr81
             return null;
         }
 
-        //set up alerts
-        async private void setAlerts(double lat, double lon)
-        {
-            return;
-            await statusBar.ProgressIndicator.ShowAsync();
-            statusBar.ProgressIndicator.Text = "Getting alerts...";
-            GetAlerts a = new GetAlerts(lat, lon);
-            AlertData d = await a.getAlerts();
-            alerts.DataContext = createAlertsList(d.alerts);
-            await statusBar.ProgressIndicator.HideAsync();
-        }
-        private AlertsTemplate createAlertsList(ObservableCollection<Alert> alerts)
-        {
-            ObservableCollection<AlertItem> alertsData = new ObservableCollection<AlertItem>();
-            foreach (Alert item in alerts)
-            {
-                AlertItem alert = new AlertItem();
-                if (item.url != null)
-                {
-                    alert.allClear = false;
-                }
-                else
-                {
-                    alert.allClear = true;
-                }
-                alert.Headline = item.headline;
-                alert.TextUrl = item.url;
-                alertsData.Add(alert);
-            }
-            return new AlertsTemplate() { alerts = new AlertList() { alertList = alertsData } };
-        }
-
         //setting a background
         async private Task<FlickrImage> getBG(string conditions, double lat, double lon)
         {
-            await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Getting your background...";
             FlickrImage bg = await getBGInfo(conditions, true, true, lat, lon, 0);
             if (bg != null)
             {
-                await statusBar.ProgressIndicator.HideAsync();
                 return bg;
             }
-            await statusBar.ProgressIndicator.HideAsync();
             return null;
         }
         private void addArtistInfo(string artistName, Uri artistUri)
@@ -952,6 +1004,7 @@ namespace Weathr81
             LocationTemplate locTemp = locList.DataContext as LocationTemplate;
             if (locTemp != null)
             {
+                locTemp.description = "Background by ";
                 locTemp.PhotoDetails = artistName;
                 locTemp.ArtistUri = artistUri;
                 locList.DataContext = null;
@@ -981,14 +1034,54 @@ namespace Weathr81
             }
             else
             {
-                return await getBGInfo(cond, useGroup, false, lat, lon, timesRun++);
+                return await getBGInfo(cond, useGroup, false, lat, lon, timesRun + 1);
             }
         }
         private void setHubBG(ImageBrush bg)
         {
             //sets the background of the hub to a given image imagebrush
+            bg.ImageOpened += bg_ImageOpened;
             bg.Opacity = .7;
+            bg.Stretch = Stretch.UniformToFill;
             hub.Background = bg;
+        }
+
+        async private void saveBackground(Uri image, string imageName)
+        {
+            imageName = imageName.Replace(":", "").Replace(".", "").Replace("/", "") + ".png";
+            try
+            {
+                using (WebResponse response = await HttpWebRequest.CreateHttp(image).GetResponseAsync())
+                {
+                    using (Stream stream = response.GetResponseStream())
+                    {
+                        StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync(imageName, CreationCollisionOption.ReplaceExisting);
+                        using (var fileStream = await file.OpenStreamForWriteAsync())
+                        {
+                            await stream.CopyToAsync(fileStream);
+                            fileStream.Dispose();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+        public static class UsefulOperations
+        {
+            public static byte[] StreamToBytes(Stream input)
+            {
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    input.CopyTo(ms);
+                    return ms.ToArray();
+                }
+            }
+        }
+        async void bg_ImageOpened(object sender, RoutedEventArgs e)
+        {
+            await statusBar.ProgressIndicator.HideAsync();
         }
 
         //buttons and stuff
@@ -1004,24 +1097,40 @@ namespace Weathr81
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
+            localStore.Values.Remove(Values.LAST_HUB_SECTION);
             Location loc = (Location)(sender as StackPanel).DataContext;
             Frame.Navigate(typeof(MainPage), loc);
         }
-        private void Alert_Tapped(object sender, TappedRoutedEventArgs e)
+        async private void Alert_Tapped(object sender, TappedRoutedEventArgs e)
         {
             AlertItem alert = (AlertItem)(sender as StackPanel).DataContext;
+            String alertTitle = (alert.Headline != null) ? alert.Headline : "Unknown Alert";
+            String alertDetails = (alert.details != null) ? alert.details : "No more details";
             if (!alert.allClear)
             {
-                MessageDialog d = new MessageDialog(alert.details, alert.Headline);
-                d.ShowAsync();
+                MessageDialog d = new MessageDialog(alertDetails, alertTitle);
+                await d.ShowAsync();
             }
             return;
         }
         async private void refresh_Click(object sender, RoutedEventArgs e)
         {
+
             if (await trialNotOver())
             {
-                updateUI();
+                if (connectedToInternet())
+                {
+                    await statusBar.ProgressIndicator.ShowAsync();
+                    if (await setFavoriteLocations())
+                    {
+
+                        updateUI();
+                    }
+                }
+                else
+                {
+                    displayError("You need to be connected to the internet!");
+                }
             }
         }
         private void settings_Click(object sender, RoutedEventArgs e)
@@ -1064,16 +1173,24 @@ namespace Weathr81
                 addArtistInfo(bgImg.artist, bgImg.artistUri);
                 ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
                 setHubBG(backBrush);
+                saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
             }
             else
             {
 
                 FlickrImage bgImg = await getBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
-                addArtistInfo(bgImg.artist, bgImg.artistUri);
-                ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                setHubBG(backBrush);
+                if (bgImg != null)
+                {
+                    addArtistInfo(bgImg.artist, bgImg.artistUri);
+                    ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                    setHubBG(backBrush);
+                    saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                }
+                else
+                {
+                    displayStatusError("Couldn't download background!");
+                }
             }
-            await statusBar.ProgressIndicator.HideAsync();
         }
         private void about_Click(object sender, RoutedEventArgs e)
         {
@@ -1086,74 +1203,85 @@ namespace Weathr81
 
         //set of bools to make sure things aren't set more than once
         private bool mapsSet = false;
-        private AppBarButton addLocButton;
+        private AppBarButton locButton;
+
         async private void hub_SectionsInViewChanged(object sender, SectionsInViewChangedEventArgs e)
         {
-            if (addLocButton == null)
+            switch (Convert.ToInt16(hub.SectionsInView[0].Tag))
             {
-                addLocButton = new AppBarButton();
-                addLocButton.Click += addLoc_Click;
-                addLocButton.Icon = new SymbolIcon(Symbol.Add);
-                addLocButton.Label = "Add place";
+                case 0:
+                    await toggleAppMenu(true);
+                    break;
+                case 1:
+                    await toggleAppMenu();
+                    break;
+                case 2:
+                    await toggleAppMenu();
+                    await setMapsOnHubSwitch();
+                    break;
+                case 3:
+                    await toggleAppMenu();
+                    break;
+                case 4:
+                    await toggleAppMenu();
+                    break;
+                case 5:
+                    await toggleAppMenu(true);
+                    addLocButton();
+                    break;
             }
-            Hub hub = sender as Hub;
-            if (hub != null)
+        }
+
+        private void addLocButton()
+        {
+            if (locButton == null)
             {
-                HubSection section = hub.SectionsInView[0];
-                switch (section.Name)
+                locButton = new AppBarButton();
+                locButton.Click += addLoc_Click;
+                locButton.Icon = new SymbolIcon(Symbol.Add);
+                locButton.Label = "Add place";
+            }
+            appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
+            appBar.PrimaryCommands.Add(locButton);
+        }
+
+        async private Task setMapsOnHubSwitch()
+        {
+            statusBar.ProgressIndicator.Text = "Setting up maps...";
+            if (localStore.Values.ContainsKey(Values.LAST_HUB_SECTION))
+            {
+                if (Convert.ToInt16(localStore.Values[Values.LAST_HUB_SECTION]) == 2)
                 {
-                    case "now":
-                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
-                        if (appBar.PrimaryCommands.Contains(addLocButton))
-                        {
-                            appBar.PrimaryCommands.Remove(addLocButton);
-                        }
-                        break;
-                    case "hourly":
-                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
-                        if (appBar.PrimaryCommands.Contains(addLocButton))
-                        {
-                            appBar.PrimaryCommands.Remove(addLocButton);
-                        }
-                        break;
-                    case "maps":
-                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
-                        if (appBar.PrimaryCommands.Contains(addLocButton))
-                        {
-                            appBar.PrimaryCommands.Remove(addLocButton);
-                        }
-                        if (!mapsSet)
-                        {
-                            await statusBar.ProgressIndicator.ShowAsync();
-                            statusBar.ProgressIndicator.Text = "Setting up maps...";
-                            GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                            setMaps(geoMaps.position);
-                            setupMaps();
-                            await statusBar.ProgressIndicator.HideAsync();
-                            mapsSet = true;
-                        }
-                        break;
-                    case "alerts":
-                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Minimal;
-                        if (appBar.PrimaryCommands.Contains(addLocButton))
-                        {
-                            appBar.PrimaryCommands.Remove(addLocButton);
-                        }
-                        await statusBar.ProgressIndicator.ShowAsync();
-                        statusBar.ProgressIndicator.Text = "Getting alerts...";
-                        GeoTemplate geoAlerts = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                        if (!geoAlerts.fail)
-                        {
-                            setAlerts(geoAlerts.position.Position.Latitude, geoAlerts.position.Position.Longitude);
-                        }
-                        await statusBar.ProgressIndicator.HideAsync();
-                        break;
-                    case "locList":
-                        appBar.ClosedDisplayMode = AppBarClosedDisplayMode.Compact;
-                        appBar.PrimaryCommands.Add(addLocButton);
-                        break;
+                    //delay to prevent null errors
+                    await statusBar.ProgressIndicator.ShowAsync();
+                    await Task.Delay(1000);
+                    localStore.Values.Remove(Values.LAST_HUB_SECTION);
                 }
             }
+            if (!mapsSet && connectedToInternet())
+            {
+                await statusBar.ProgressIndicator.ShowAsync();
+                GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                setMaps(geoMaps.position);
+                setupMaps();
+                mapsSet = true;
+            }
+            await statusBar.ProgressIndicator.HideAsync();
+        }
+
+
+        async private Task toggleAppMenu(bool compact = false)
+        {
+            appBar.ClosedDisplayMode = (compact ? AppBarClosedDisplayMode.Compact : AppBarClosedDisplayMode.Minimal);
+            if (appBar.PrimaryCommands[3] != null)
+            {
+                appBar.PrimaryCommands.RemoveAt(3);
+            }
+        }
+
+        private void alertsNum_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            hub.ScrollToSection(alerts);
         }
     }
 }

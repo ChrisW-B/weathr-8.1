@@ -44,7 +44,7 @@ namespace FlickrInfo
         public async Task<FlickrData> getImages(string searchTerms, bool useGroup, bool useLoc, string lat = "0", string lon = "0")
         {
             //asynchronously returns a list of photos following the given parameters
-            Uri uri = new Uri(URL_PRE + SEARCH_METHOD + API_PRE + apiKey + GROUP_PRE + YAHOO_GROUP + LAT_PRE + lat + LON_PRE + lon + TAGS_PRE + searchTerms+SEARCH_POST + URL_POST, UriKind.Absolute);
+            Uri uri = new Uri(URL_PRE + SEARCH_METHOD + API_PRE + apiKey + GROUP_PRE + YAHOO_GROUP + LAT_PRE + lat + LON_PRE + lon + TAGS_PRE + searchTerms + SEARCH_POST + URL_POST, UriKind.Absolute);
             if (!useLoc)
             {
                 uri = new Uri(URL_PRE + SEARCH_METHOD + API_PRE + apiKey + GROUP_PRE + YAHOO_GROUP + TAGS_PRE + searchTerms + SEARCH_POST + URL_POST, UriKind.Absolute);
@@ -116,7 +116,6 @@ namespace FlickrInfo
 
         async public Task<FlickrUser> getUser(string userId)
         {
-            //https://api.flickr.com/services/rest/?method=flickr.people.getInfo&api_key=2781c025a4064160fc77a52739b552ff&user_id=55488870@N08&format=rest
             XDocument doc = await getXml(new Uri(URL_PRE + USER_LOOKUP_METHOD + API_PRE + apiKey + USER_PRE + userId + URL_POST));
             if (doc != null)
             {

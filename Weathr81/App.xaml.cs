@@ -1,4 +1,5 @@
 ﻿using LocationHelper;
+using StoreLabels;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -49,6 +50,7 @@ namespace Weathr81
         /// <param name="e">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
+            Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
 #if DEBUG
             if (System.Diagnostics.Debugger.IsAttached)
             {
@@ -70,7 +72,7 @@ namespace Weathr81
 
                 if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
                 {
-                   
+                    Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
                 }
 
                 // Place the frame in the current Window
@@ -79,6 +81,7 @@ namespace Weathr81
 
             if (rootFrame.Content == null)
             {
+               
                 // Removes the turnstile navigation for startup.
                 if (rootFrame.ContentTransitions != null)
                 {
@@ -100,11 +103,12 @@ namespace Weathr81
                 //    throw new Exception("Failed to create initial page");
                 //}
             }
-
+            
             if (e != null && e.Arguments != "")
             {
                 // The app was launched from a Secondary Tile
                 // Navigate to the item's page
+                Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
                 Location loc = getLocationFromArgs(e);
 
                 rootFrame.Navigate(typeof(MainPage), loc);
@@ -114,9 +118,10 @@ namespace Weathr81
             }
             else
             {
+                Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
+
                 // Navigate to the initial page
                 rootFrame.Navigate(typeof(MainPage));
-
                 //clear history when launching from tile
                 rootFrame.BackStack.Clear();
             }

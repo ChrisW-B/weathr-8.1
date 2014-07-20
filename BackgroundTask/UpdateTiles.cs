@@ -135,11 +135,17 @@ namespace BackgroundTask
                 WeatherInfo weatherInfo = await getWundData.getConditions();
                 if (!weatherInfo.fail)
                 {
-
                     string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
                     string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
                     string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
                     string tempCompare = weatherInfo.tomorrowShort + " tomorrow, and " + weatherInfo.tempCompareC.ToLowerInvariant() + " today";
+                    if (!unitsAreSI())
+                    {
+                        current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempF + "°F";
+                        today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighF + "/" + weatherInfo.todayLowF;
+                        tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
+                        tempCompare = weatherInfo.tomorrowShort + " tomorrow, and " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
+                    }
 
                     CreateTile creater = new CreateTile();
                     TileGroup tiles = null;
@@ -147,7 +153,14 @@ namespace BackgroundTask
                     {
                         BackgroundFlickr flickrData = await getBGInfo(weatherInfo.currentConditions, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude, true, true, 0);
                         //save flickr image so it doesn't have to be requested twice
-                        tiles = creater.createTileWithParams(weatherInfo, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
+                        if (flickrData != null)
+                        {
+                            tiles = creater.createTileWithParams(weatherInfo, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
+                        }
+                        else
+                        {
+                            tiles = creater.createTileWithParams(weatherInfo);
+                        }
                     }
                     else
                     {
@@ -250,7 +263,7 @@ namespace BackgroundTask
             }
             else
             {
-                return await getBGInfo(conditions, lat, lon, useGroup, false, timesRun++);
+                return await getBGInfo(conditions, lat, lon, useGroup, false, timesRun + 1);
             }
         }
         private bool unitsAreSI()

@@ -8,6 +8,7 @@ namespace LocationHelper
         public LocationList locations { get; set; }
         public string PhotoDetails { get; set; }
         public Uri ArtistUri { get; set; }
+        public string description { get; set; }
     }
     public class LocationList
     {

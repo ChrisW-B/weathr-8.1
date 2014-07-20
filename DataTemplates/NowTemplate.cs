@@ -12,5 +12,6 @@ namespace DataTemplates
         public string nextHour { get; set; }
         public string time { get; set; }
         public string errorText { get; set; }
+        public string alerts { get; set; }
     }
 }
