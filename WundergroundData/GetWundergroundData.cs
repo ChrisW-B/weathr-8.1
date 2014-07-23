@@ -67,7 +67,8 @@ namespace WundergroundData
 
                 //Current wind
                 currentWeather.windSpeedM = (string)currentObservation.Element("wind_mph") + " mph";
-                currentWeather.windSpeedK = (string)currentObservation.Element("wind_kph") + " kph";
+                double convertedWind = Math.Round((Convert.ToDouble(currentObservation.Element("wind_kph").Value)) * (5.0 / 18.0), 2);
+                currentWeather.windSpeedK = convertedWind.ToString() + " m/s";
                 currentWeather.windDir = (string)currentObservation.Element("wind_dir");
                 //Current Temp and feels like
                 currentWeather.tempC = (string)currentObservation.Element("temp_c");

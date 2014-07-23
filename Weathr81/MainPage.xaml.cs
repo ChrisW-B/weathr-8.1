@@ -760,7 +760,8 @@ namespace Weathr81
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
             NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind: " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir, };
-            nowTemplate.uvIndex = (Convert.ToInt16(downloadedForecast.UV) < -1) ? "UV Index: " + downloadedForecast.UV : "";
+            double uvIndex = Convert.ToDouble(downloadedForecast.UV);
+            nowTemplate.uvIndex = (uvIndex > -1) ? "UV Index: " + downloadedForecast.UV : "";
             ForecastTemplate forecastTemplate = createForecastList(downloadedForecast.forecastC);
 
             if (!isSI)
