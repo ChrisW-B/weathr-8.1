@@ -134,7 +134,7 @@ namespace BackgroundTask
             GeoTemplate geoTemplate = await pos.getLocation(new TimeSpan(0, 0, 500), new TimeSpan(2, 0, 0));
             if (!geoTemplate.fail)
             {
-                GetWundergroundData getWundData = tileLoc.IsCurrent ? new GetWundergroundData(Values.getWundApi(), geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.getWundApi(), tileLoc.LocUrl);
+                GetWundergroundData getWundData = tileLoc.IsCurrent ? new GetWundergroundData(Values.WUND_API_KEY, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude) : new GetWundergroundData(Values.WUND_API_KEY, tileLoc.LocUrl);
                 WeatherInfo weatherInfo = await getWundData.getConditions();
                 if (!weatherInfo.fail)
                 {

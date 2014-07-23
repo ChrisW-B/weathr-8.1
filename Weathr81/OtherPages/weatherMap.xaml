@@ -23,8 +23,8 @@
         </Grid.RowDefinitions>
         <Grid Grid.Row="1" x:Name="ContentRoot" >
             <Maps:MapControl MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="Map" ZoomLevel="5" Center="{Binding center}">
-
             </Maps:MapControl>
+            
         </Grid>
     </Grid>
 </Page>

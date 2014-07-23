@@ -35,22 +35,8 @@ namespace StoreLabels
         public const string UPDATE_ON_CELL = "allowUpdateOnNetwork";
         public const string UNITS_ARE_SI = "unitsAreSI";
         public const string UNITS_CHANGED = "unitsChanged";
-
         public const string LAST_HUB_SECTION = "lastHubLoc";
-       
-       // public const string getWundApi() = "fb1dd3f4321d048d";
-
-        public static string getWundApi()
-        {
-            Random rand = new Random();
-            double val = rand.Next(100);
-            switch ((int)val % 8)
-            {
-                case 0:
-                    return "2d73e75dbfe7f75c";
-                default:
-                    return "fb1dd3f4321d048d";
-            }
-        } 
+        public const string WUND_API_KEY = "fb1dd3f4321d048d";
+        public const string WUND_RAD_KEY = "8b22016717b94072";
     }
 }

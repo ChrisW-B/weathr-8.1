@@ -5,9 +5,11 @@ using Weathr81.Common;
 using Weathr81.HelperClasses;
 using Windows.Foundation;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Maps;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
 
@@ -99,26 +101,67 @@ namespace Weathr81.OtherPages
             if (e.Parameter != null)
             {
                 MapLaunchClass mapLaunchClass = (e.Parameter as MapLaunchClass);
+                type = mapLaunchClass.type;
                 constructMap(mapLaunchClass);
             }
-
         }
+        private MapLaunchClass.mapType type;
 
         private void constructMap(MapLaunchClass mapLaunchClass)
         {
             Map.Center = mapLaunchClass.loc.position;
-            HttpMapTileDataSource dataSource;
-            if (mapLaunchClass.type == MapLaunchClass.mapType.radar)
-            {
-                dataSource = new HttpMapTileDataSource(Values.RAD_URL + DateTime.UtcNow.Millisecond);
-            }
-            else
-            {
-                dataSource = new HttpMapTileDataSource(Values.SAT_URL + DateTime.UtcNow.Millisecond);
-            }
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource() { AllowCaching = true };
+
+            //dataSource = new HttpMapTileDataSource(Values.RAD_URL + DateTime.UtcNow.Millisecond);
+            dataSource.UriRequested += dataSource_UriRequested;
+
             MapTileSource tileSource = new MapTileSource(dataSource);
             Map.TileSources.Add(tileSource);
             addMarker(mapLaunchClass.loc);
+        }
+
+        void dataSource_UriRequested(HttpMapTileDataSource sender, MapTileUriRequestedEventArgs args)
+        {
+            MapTileUriRequestDeferral d = args.Request.GetDeferral();
+            double x = args.X;
+            double y = args.Y;
+            double zoom = args.ZoomLevel;
+            const double TILE_HEIGHT = 256, TILE_WIDTH = 256;
+            try
+            {
+                double W = (float)(x * TILE_WIDTH) * 360 / (float)(TILE_WIDTH * Math.Pow(2, zoom)) - 180;
+                double N = (float)Math.Asin((Math.Exp((0.5 - (y * TILE_HEIGHT) / (TILE_HEIGHT) / Math.Pow(2, zoom)) * 4 * Math.PI) - 1) / (Math.Exp((0.5 - (y * TILE_HEIGHT) / 256 / Math.Pow(2, zoom)) * 4 * Math.PI) + 1)) * 180 / (float)Math.PI;
+                double E = (float)((x + 1) * TILE_WIDTH) * 360 / (float)(TILE_WIDTH * Math.Pow(2, zoom)) - 180;
+                double S = (float)Math.Asin((Math.Exp((0.5 - ((y + 1) * TILE_HEIGHT) / (TILE_HEIGHT) / Math.Pow(2, zoom)) * 4 * Math.PI) - 1) / (Math.Exp((0.5 - ((y + 1) * TILE_HEIGHT) / 256 / Math.Pow(2, zoom)) * 4 * Math.PI) + 1)) * 180 / (float)Math.PI;
+
+
+                String uri;
+                if (type == MapLaunchClass.mapType.radar)
+                {
+                    uri = WUND_PRE + RAD_PRE + "rad.png?" + MIN_LON + W + MAX_LON + E + MIN_LAT + S + MAX_LAT + N + WIDTH + HEIGHT + RAD_RAINSNOW + TIME_LABEL + RAD_SHOW_BG + FRAMES + "15" + RAD_CLUTTER;
+                }
+                else
+                {
+                    uri = WUND_PRE + SAT_PRE + "sat.png?" + MIN_LON + W + MAX_LON + E + MIN_LAT + S + MAX_LAT + N + WIDTH + HEIGHT + SAT_KEY + SAT_BASEMAP + TIME_LABEL + SAT_GTT + SAT_BORDERS + FRAMES + "8";
+                }
+                args.Request.Uri = new Uri(uri);
+            }
+            catch (Exception ex)
+            {
+
+            }
+            d.Complete();
+        }
+
+        private double tileToLon(int x, int z)
+        {
+            return x / Math.Pow(2.0, z) * 360.0 - 180;
+        }
+
+        private double tileToLat(int y, int z)
+        {
+            double n = Math.PI - (2.0 * Math.PI * y) / Math.Pow(2.0, z);
+            return 180.0 / (Math.PI * (Math.Atan(Math.Sinh(n))));
         }
 
         private void addMarker(GeoTemplate loc)
@@ -148,6 +191,28 @@ namespace Weathr81.OtherPages
             this.navigationHelper.OnNavigatedFrom(e);
         }
 
+
+
         #endregion
+        private const string WUND_PRE = "http://api.wunderground.com/api/" + Values.WUND_API_KEY + "/";
+        private const string SAT_PRE = "animatedsatellite/";
+        private const string RAD_PRE = "animatedradar/";
+        private const string MIN_LON = "&minlon=";
+        private const string MIN_LAT = "&minlat=";
+        private const string MAX_LON = "&maxlon=";
+        private const string MAX_LAT = "&maxlat=";
+        private const string WIDTH = "&width=256";
+        private const string HEIGHT = "&height=256";
+        private const string SAT_KEY = "&key=sat_ir4";
+        private const string SAT_BASEMAP = "&basemap=0";
+        private const string SAT_GTT = "&gtt=107";
+        private const string SAT_BORDERS = "&borders=0";
+        private const string FRAMES = "&num=";
+        private const string RAD_RAINSNOW = "&rainsnow=1";
+        private const string RAD_SHOW_BG = "&newmaps=0";
+        private const string TIME_LABEL = "&timelabel=0";
+        private const string RAD_CLUTTER = "&noclutter=1";
+
+
     }
 }

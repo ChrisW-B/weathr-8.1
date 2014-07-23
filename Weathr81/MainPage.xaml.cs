@@ -745,21 +745,22 @@ namespace Weathr81
         async private Task<WeatherInfo> setWeather(double lat, double lon)
         {
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
-            GetWundergroundData weatherData = new GetWundergroundData(Values.getWundApi(), lat, lon);
+            GetWundergroundData weatherData = new GetWundergroundData(Values.WUND_API_KEY, lat, lon);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
         }
         async private Task<WeatherInfo> setWeather(string wUrl)
         {
             statusBar.ProgressIndicator.Text = "Getting your current weather...";
-            GetWundergroundData weatherData = new GetWundergroundData(Values.getWundApi(), wUrl);
+            GetWundergroundData weatherData = new GetWundergroundData(Values.WUND_API_KEY, wUrl);
             WeatherInfo downloadedForecast = await weatherData.getConditions();
             return downloadedForecast;
         }
         private void updateWeatherInfo(ref WeatherInfo downloadedForecast, bool isSI)
         {
             hub.Header = downloadedForecast.city + ", " + downloadedForecast.state;
-            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind: " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir, uvIndex = "UV: " +downloadedForecast.UV };
+            NowTemplate nowTemplate = new NowTemplate() { temp = downloadedForecast.tempC + "°", conditions = downloadedForecast.currentConditions.ToUpper(), feelsLike = "Feels like: " + downloadedForecast.feelsLikeC + "°", humidity = "Humidity: " + downloadedForecast.humidity, tempCompare = "TOMORROW WILL BE " + downloadedForecast.tempCompareC + " TODAY", wind = "Wind: " + downloadedForecast.windSpeedK + " " + downloadedForecast.windDir, };
+            nowTemplate.uvIndex = (Convert.ToInt16(downloadedForecast.UV) < -1) ? "UV Index: " + downloadedForecast.UV : "";
             ForecastTemplate forecastTemplate = createForecastList(downloadedForecast.forecastC);
 
             if (!isSI)
