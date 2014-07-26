@@ -38,5 +38,12 @@ namespace StoreLabels
         public const string LAST_HUB_SECTION = "lastHubLoc";
         public const string WUND_API_KEY = "fb1dd3f4321d048d";
         public const string WUND_RAD_KEY = "8b22016717b94072";
+        public const string OPEN_W_MAP_API = "beaca69bf7a829214ef1d6a3583df1d1";
+        public const string HTTP = "http://";
+        public const string OWM_MAIN = ".tile.openweathermap.org/map/";
+        public const string OWM_SAT = "clouds";
+        public const string OWM_RAD = "precipitation";
+        public const string OWM_POST = ".png";
+        public const string ALPHA_NUM = "abcdefghijklmnopqrstuvwxyz0123456789";
     }
 }

@@ -300,6 +300,7 @@ namespace Weathr81
                 }
             }
             return null;
+
         }
         private void tryBackgroundTask()
         {
@@ -344,6 +345,12 @@ namespace Weathr81
         async private void updateUI()
         {
             //updates the ui/weather conditions of app
+            if (store.Values.ContainsKey("lastError"))
+            {
+                MessageDialog d = new MessageDialog((string)store.Values["lastError"]);
+                store.Values.Remove("lastError");
+                d.ShowAsync();
+            }
             await statusBar.ProgressIndicator.ShowAsync();
             WeatherInfo downloadedForecast;
             GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
@@ -387,11 +394,22 @@ namespace Weathr81
                         FlickrImage bgImg = await getBG(downloadedForecast.currentConditions, geo.position.Position.Latitude, geo.position.Position.Longitude);
                         if (bgImg != null)
                         {
+                            hub.Background = null;
                             addArtistInfo(bgImg.artist, bgImg.artistUri);
-                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                            setHubBG(backBrush);
-                            await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
-                            saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                            string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                            if (imgLoc != null)
+                            {
+                                ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
+                                setHubBG(backBrush);
+                                await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+                            }
+                            else
+                            {
+                                displayStatusError("Unable to save background");
+                                ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                                setHubBG(backBrush);
+                                await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+                            }
                         }
                         else
                         {
@@ -407,10 +425,20 @@ namespace Weathr81
                     FlickrImage bgImg = await getBG("sky", geo.position.Position.Latitude, geo.position.Position.Longitude);
                     if (bgImg != null)
                     {
-                        addArtistInfo(bgImg.artist, bgImg.artistUri);
-                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                        setHubBG(backBrush);
-                        saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                        string imageLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                        if (imageLoc != null)
+                        {
+                            addArtistInfo(bgImg.artist, bgImg.artistUri);
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imageLoc)) };
+                            setHubBG(backBrush);
+                        }
+
+                        else
+                        {
+                            displayStatusError("Unable to save background");
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                            setHubBG(backBrush);
+                        }
                     }
                     else
                     {
@@ -453,7 +481,6 @@ namespace Weathr81
         }
         async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
         {
-
             CreateTile createTile = new CreateTile();
             ImageBrush background = sender as ImageBrush;
             if (background != null)
@@ -497,7 +524,11 @@ namespace Weathr81
             }
             if (await tileExists())
             {
-                tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, await getCurrentTile());
+                SecondaryTile currentTile = await getCurrentTile();
+                if (currentTile != null)
+                {
+                    tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, currentTile);
+                }
             }
         }
         async private Task renderTile(UIElement tile, string tileName)
@@ -668,8 +699,10 @@ namespace Weathr81
             {
                 Serializer.save(forecastData, typeof(ForecastTemplate), currentLocation.LocUrl + Values.FORECAST_SAVE, localStore);
             }
-            //Serializer.save(currentLocation, typeof(Location), Values.LAST_LOC, localStore);
-            localStore.Values[currentLocation.LocUrl + Values.LAST_LOC_NAME] = hub.Header;
+            if (hub.Header != null && currentLocation != null)
+            {
+                localStore.Values[currentLocation.LocUrl + Values.LAST_LOC_NAME] = hub.Header;
+            }
         }
         async private Task<bool> setFavoriteLocations()
         {
@@ -915,7 +948,8 @@ namespace Weathr81
         }
         async private void setupSatellite()
         {
-            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/goes-ir-4km-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource() { AllowCaching = true };
+            dataSource.UriRequested += (sender, args) => dataSource_UriRequested(sender, args, MapLaunchClass.mapType.satellite);
             MapTileSource tileSource = new MapTileSource(dataSource);
             satMap.TileSources.Add(tileSource);
             GeoTemplate point = await tryGetLocation();
@@ -928,7 +962,8 @@ namespace Weathr81
         }
         async private void setupRadar()
         {
-            HttpMapTileDataSource dataSource = new HttpMapTileDataSource("http://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{zoomlevel}/{x}/{y}.png?" + (DateTime.Now));
+            HttpMapTileDataSource dataSource = new HttpMapTileDataSource() { AllowCaching = true };
+            dataSource.UriRequested += (sender, args) => dataSource_UriRequested(sender, args, MapLaunchClass.mapType.radar);
             MapTileSource tileSource = new MapTileSource(dataSource);
             radMap.TileSources.Add(tileSource);
             GeoTemplate point = await tryGetLocation();
@@ -938,6 +973,31 @@ namespace Weathr81
                 MapControl.SetLocation(triangle, point.position);
                 radMap.Children.Add(triangle);
             }
+        }
+
+        private void dataSource_UriRequested(HttpMapTileDataSource sender, MapTileUriRequestedEventArgs args, MapLaunchClass.mapType type)
+        {
+            MapTileUriRequestDeferral d = args.Request.GetDeferral();
+            Random rand = new Random();
+            char serverPre = Values.ALPHA_NUM[rand.Next(Values.ALPHA_NUM.Length)];
+            try
+            {
+                String uri;
+                if (type == MapLaunchClass.mapType.radar)
+                {
+                    uri = Values.HTTP + serverPre + Values.OWM_MAIN + Values.OWM_RAD + "/" + args.ZoomLevel + "/" + args.X + "/" + args.Y + Values.OWM_POST;
+                }
+                else
+                {
+                    uri = Values.HTTP + serverPre + Values.OWM_MAIN + Values.OWM_SAT + "/" + args.ZoomLevel + "/" + args.X + "/" + args.Y + Values.OWM_POST;
+                }
+                args.Request.Uri = new Uri(uri);
+            }
+            catch (Exception ex)
+            {
+
+            }
+            d.Complete();
         }
         private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
@@ -1042,38 +1102,40 @@ namespace Weathr81
             hub.Background = bg;
         }
 
-        async private void saveBackground(Uri image, string imageName)
+        async private Task<string> saveBackground(Uri image, string imageName)
         {
+            hub.Background = null;
             imageName = imageName.Replace(":", "").Replace(".", "").Replace("/", "") + ".png";
             try
             {
+                // await (await ApplicationData.Current.LocalFolder.GetFileAsync(imageName)).DeleteAsync();
                 using (WebResponse response = await HttpWebRequest.CreateHttp(image).GetResponseAsync())
                 {
                     using (Stream stream = response.GetResponseStream())
                     {
                         StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync(imageName, CreationCollisionOption.ReplaceExisting);
-                        using (var fileStream = await file.OpenStreamForWriteAsync())
+                        Stream fileStream = await file.OpenStreamForWriteAsync();
+                        using (Stream outputStream = fileStream)
                         {
-                            await stream.CopyToAsync(fileStream);
+                            await stream.CopyToAsync(outputStream);
+
+                            //disposing
+                            await outputStream.FlushAsync();
+                            response.Dispose();
                             fileStream.Dispose();
+                            outputStream.Dispose();
+
+                            
                         }
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                store.Values["lastError"] = ex.Message;
             }
-        }
-        public static class UsefulOperations
-        {
-            public static byte[] StreamToBytes(Stream input)
-            {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    input.CopyTo(ms);
-                    return ms.ToArray();
-                }
-            }
+            return Values.SAVE_LOC + imageName;
+            //return null;
         }
         async void bg_ImageOpened(object sender, RoutedEventArgs e)
         {
@@ -1083,13 +1145,19 @@ namespace Weathr81
         //buttons and stuff
         async private void satMap_Tap(object sender, TappedRoutedEventArgs e)
         {
-            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.satellite };
-            Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+            if (GetGeoposition != null)
+            {
+                MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.satellite };
+                Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+            }
         }
         async private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
         {
-            MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.radar };
-            Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+            if (GetGeoposition != null)
+            {
+                MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.radar };
+                Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+            }
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -1166,21 +1234,43 @@ namespace Weathr81
             if (nowTemplate != null)
             {
                 FlickrImage bgImg = await getBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
-                addArtistInfo(bgImg.artist, bgImg.artistUri);
-                ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                setHubBG(backBrush);
-                saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                if (bgImg != null)
+                {
+                    hub.Background = null;
+                    addArtistInfo(bgImg.artist, bgImg.artistUri);
+                    string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                    if (imgLoc != null)
+                    {
+                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
+                        setHubBG(backBrush);
+                    }
+                    else
+                    {
+                        displayStatusError("Unable to save background");
+                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                        setHubBG(backBrush);
+                    }
+                }
             }
             else
             {
-
                 FlickrImage bgImg = await getBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
                 if (bgImg != null)
                 {
+                    hub.Background = null;
                     addArtistInfo(bgImg.artist, bgImg.artistUri);
-                    ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                    setHubBG(backBrush);
-                    saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                    string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                    if (imgLoc != null)
+                    {
+                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
+                        setHubBG(backBrush);
+                    }
+                    else
+                    {
+                        displayStatusError("Unable to save background");
+                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                        setHubBG(backBrush);
+                    }
                 }
                 else
                 {

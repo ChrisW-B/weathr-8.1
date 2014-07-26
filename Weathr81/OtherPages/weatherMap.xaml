@@ -21,10 +21,18 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <Grid Grid.Row="1" x:Name="ContentRoot" >
-            <Maps:MapControl MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="Map" ZoomLevel="5" Center="{Binding center}">
-            </Maps:MapControl>
-            
+            <Grid>
+                <Grid Margin="0,0,0,55">
+                    <WebView Canvas.ZIndex="1" x:Name="mapWebView" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    </WebView>
+
+                    <Maps:MapControl Canvas.ZIndex="0" MapServiceToken="YUIfouhJ8iOBbeDGnmKULA"  Name="Map" ZoomLevel="5" Center="{Binding center}">
+                    </Maps:MapControl>
+                </Grid>
+                <Button x:Name="animateButton" Click="animateButton_Click" Content="Animate" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"/>
+            </Grid>
         </Grid>
     </Grid>
 </Page>
