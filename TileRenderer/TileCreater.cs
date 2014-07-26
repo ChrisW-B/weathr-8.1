@@ -36,6 +36,7 @@ namespace TileCreater
             smallTile.ImageIcon.Src = smallTileLoc;
             smallTile.ImageIcon.Alt = "altSmall";
             smallTile.Branding = TileBranding.Name;
+            
 
             ITileSquare150x150PeekImageAndText04 mediumTile = TileContentFactory.CreateTileSquare150x150PeekImageAndText04();
             mediumTile.TextBodyWrap.Text = compare;
@@ -53,17 +54,24 @@ namespace TileCreater
             wideTile.Image.Src = wideTileLoc;
             wideTile.Square150x150Content = mediumTile;
 
-            if (tile != null)
+            try
             {
-                TileNotification wideNotif = wideTile.CreateNotification();
-                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
-                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(wideNotif);
+                if (tile != null)
+                {
+                    TileNotification wideNotif = wideTile.CreateNotification();
+                    TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
+                    TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(wideNotif);
+                }
+                else
+                {
+                    TileNotification wideNotif = wideTile.CreateNotification();
+                    TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+                    TileUpdateManager.CreateTileUpdaterForApplication().Update(wideNotif);
+                }
             }
-            else
+            catch (Exception e)
             {
-                TileNotification wideNotif = wideTile.CreateNotification();
-                TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-                TileUpdateManager.CreateTileUpdaterForApplication().Update(wideNotif);
+
             }
         }
         //gets set of tile images based on parameters
@@ -382,7 +390,7 @@ namespace TileCreater
         }
         private TextBlock createTempTextBlock(string temperature)
         {
-            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, CharacterSpacing = -80,  HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0,0,3,0) };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, CharacterSpacing = -60,  HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0,0,3,0) };
             return t;
         }
         private StackPanel createForecastStackPanel(BackgroundTemplate data)

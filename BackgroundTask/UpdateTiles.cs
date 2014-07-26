@@ -122,7 +122,7 @@ namespace BackgroundTask
             }
         }
 
-        
+
         async private Task updateTile(SecondaryTile tile = null, Location tileLoc = null)
         {
             if (tileLoc == null)
@@ -225,25 +225,10 @@ namespace BackgroundTask
             RenderTargetBitmap bm = new RenderTargetBitmap();
             await bm.RenderAsync(tile);
             Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
-            bool openFailed = false;
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
             StorageFile tileImageFile = null;
-            try
-            {
-                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.FailIfExists);
-            }
-            catch
-            {
-                openFailed = true;
-            }
-            if (openFailed)
-            {
-                await (await localFolder.GetFileAsync(tileName)).DeleteAsync(StorageDeleteOption.PermanentDelete);
-                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
-            }
-            
+            tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
             DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
-
             if (tileImageFile != null)
             {
                 using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))

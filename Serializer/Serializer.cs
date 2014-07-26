@@ -17,26 +17,24 @@ namespace SerializerClass
         }
         public static Object get(string value, Type type, ApplicationDataContainer store)
         {
-            string locAsXml = (string)store.Values[value];
-            if (locAsXml != null)
+            Object val = null;
+            try
             {
-                try
+                string locAsXml = (string)store.Values[value];
+                if (locAsXml != null)
                 {
                     XmlSerializer serializer = new XmlSerializer(type);
-                    Object val = new Object();
                     using (var reader = new StringReader(locAsXml))
                     {
                         val = serializer.Deserialize(reader);
                     }
-                    return val;
-                }
-                catch
-                {
-                    return new Object();
                 }
             }
-            return new Object();
-
+            catch
+            {
+                val = null;
+            }
+            return val;
         }
         private static string serialize(Object obj, Type type)
         {

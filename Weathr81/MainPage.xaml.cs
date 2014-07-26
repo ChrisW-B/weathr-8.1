@@ -18,6 +18,7 @@ using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
+using Windows.ApplicationModel.Email;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -102,17 +103,27 @@ namespace Weathr81
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            this.navigationHelper.OnNavigatedTo(e);
-            localStore.Values.Remove(Values.LAST_CMD_BAR);
-            BottomAppBar = new CommandBar();
-            if (e.Parameter != null)
+            try
             {
-                this.currentLocation = (e.Parameter as Location);
-            }
-            statusBar = StatusBar.GetForCurrentView();
-            statusBar.ForegroundColor = Colors.White;
+                this.navigationHelper.OnNavigatedTo(e);
+                localStore.Values.Remove(Values.LAST_CMD_BAR);
+                BottomAppBar = new CommandBar();
+                if (e.Parameter != null)
+                {
+                    this.currentLocation = (e.Parameter as Location);
+                }
+                statusBar = StatusBar.GetForCurrentView();
+                statusBar.ForegroundColor = Colors.White;
 
-            runApp();
+                runApp();
+            }
+            catch(Exception ex)
+            {
+                localStore.Values["lastError"] = ex.Message;
+                localStore.Values["lastErrorSource"] = ex.Source;
+                localStore.Values["lastErrorTrace"] = ex.StackTrace;
+                Application.Current.Exit();
+            }
         }
 
         private bool connectedToInternet()
@@ -355,8 +366,28 @@ namespace Weathr81
             //updates the ui/weather conditions of app
             if (store.Values.ContainsKey("lastError"))
             {
-                MessageDialog d = new MessageDialog((string)store.Values["lastError"]);
-                store.Values.Remove("lastError");
+                MessageDialog d = new MessageDialog("The app seems to have crashed. Would you like to send a crash report?", "Crash Detected");
+               
+                d.Commands.Add(new UICommand("Send", async delegate(IUICommand cmd)
+                {
+                    EmailMessage m = new EmailMessage()
+                    {
+                        Subject = "Weathr Crash",
+                        Body = (string)localStore.Values["lastError"] + "\n\n" + (string)localStore.Values["lastErrorSource"] + "\n\n" + (string)localStore.Values["lastErrorTrace"],
+                    };
+                    m.To.Add(new EmailRecipient("ChrisApps@outlook.com", "CB Studios"));
+                    await EmailManager.ShowComposeNewEmailAsync(m);
+                    localStore.Values.Remove("lastError");
+                    localStore.Values.Remove("lastErrorSource");
+                    localStore.Values.Remove("lastErrorTrace");
+                }));
+                d.Commands.Add(new UICommand("Cancel", delegate(IUICommand cmd)
+                    {
+                        store.Values.Remove("lastError");
+                        store.Values.Remove("lastErrorSource");
+                        store.Values.Remove("lastErrorTrace");
+                    }
+                    ));
                 await d.ShowAsync();
             }
             await statusBar.ProgressIndicator.ShowAsync();
@@ -1050,7 +1081,6 @@ namespace Weathr81
             imageName = imageName.Replace(":", "").Replace(".", "").Replace("/", "") + ".png";
             try
             {
-                // await (await ApplicationData.Current.LocalFolder.GetFileAsync(imageName)).DeleteAsync();
                 using (WebResponse response = await HttpWebRequest.CreateHttp(image).GetResponseAsync())
                 {
                     using (Stream stream = response.GetResponseStream())
@@ -1163,22 +1193,10 @@ namespace Weathr81
             RenderTargetBitmap bm = new RenderTargetBitmap();
             await bm.RenderAsync(tile);
             Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
-            bool openFailed = false;
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
             StorageFile tileImageFile = null;
-            try
-            {
-                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.FailIfExists);
-            }
-            catch
-            {
-                openFailed = true;
-            }
-            if (openFailed)
-            {
-                await (await localFolder.GetFileAsync(tileName)).DeleteAsync(StorageDeleteOption.PermanentDelete);
                 tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
-            }
+           
             DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
             if (tileImageFile != null)
             {
@@ -1275,8 +1293,8 @@ namespace Weathr81
                 }
             }
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
-            secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
-            secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
+            secondaryTile.RoamingEnabled = true;
+            secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
             secondaryTile.VisualElements.Square71x71Logo = new Uri("ms-appx:///Assets/Square71x71Logo.png");
             secondaryTile.VisualElements.Square150x150Logo = new Uri("ms-appx:///Assets/Logo.png");
             secondaryTile.VisualElements.Square310x310Logo = new Uri("ms-appx:///Assets/SmallLogo.scale-240.png");
