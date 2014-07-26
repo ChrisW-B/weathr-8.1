@@ -213,7 +213,7 @@ namespace Weathr81
             }
         }
 
-       async private void doConnected()
+        async private void doConnected()
         {
             if (await setFavoriteLocations())
             {
@@ -670,7 +670,7 @@ namespace Weathr81
             return locTemplate.locations.locationList.Count > 0;
         }
 
-        private void setCurrentLocation(ObservableCollection<Location> locations, bool isOffline=false)
+        private void setCurrentLocation(ObservableCollection<Location> locations, bool isOffline = false)
         {
             if (currentLocation == null)
             {
@@ -940,7 +940,7 @@ namespace Weathr81
             {
                 d.Complete();
             }
-            
+
         }
         private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
@@ -1067,7 +1067,7 @@ namespace Weathr81
                             fileStream.Dispose();
                             outputStream.Dispose();
 
-                            
+
                         }
                     }
                 }
@@ -1237,19 +1237,27 @@ namespace Weathr81
                     await statusBar.ProgressIndicator.ShowAsync();
                     if (await setFavoriteLocations())
                     {
-
                         updateUI();
                     }
                 }
                 else
                 {
-                    displayError("You need to be connected to the internet!");
+                    MessageDialog d = new MessageDialog("You need to connect to the internet to refresh", "No Internet Connection!");
+                    await d.ShowAsync();
                 }
             }
         }
-        private void settings_Click(object sender, RoutedEventArgs e)
+        async private void settings_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(SettingsPivot));
+            if (connectedToInternet())
+            {
+                Frame.Navigate(typeof(SettingsPivot));
+            }
+            else
+            {
+                MessageDialog d = new MessageDialog("You need to connect to the internet to change settings", "No Internet Connection!");
+                await d.ShowAsync();
+            }
         }
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
@@ -1278,63 +1286,79 @@ namespace Weathr81
         }
         async private void changePic_Click(object sender, RoutedEventArgs e)
         {
-            await statusBar.ProgressIndicator.ShowAsync();
-            GeoTemplate loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-            NowTemplate nowTemplate = (now.DataContext as NowTemplate);
-            if (nowTemplate != null)
+            if (connectedToInternet())
             {
-                FlickrImage bgImg = await getBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
-                if (bgImg != null)
+                await statusBar.ProgressIndicator.ShowAsync();
+                GeoTemplate loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                NowTemplate nowTemplate = (now.DataContext as NowTemplate);
+                if (nowTemplate != null)
                 {
-                    hub.Background = null;
-                    addArtistInfo(bgImg.artist, bgImg.artistUri);
-                    string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
-                    if (imgLoc != null)
+                    FlickrImage bgImg = await getBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
+                    if (bgImg != null)
                     {
-                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
-                        setHubBG(backBrush);
+                        hub.Background = null;
+                        addArtistInfo(bgImg.artist, bgImg.artistUri);
+                        string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                        if (imgLoc != null)
+                        {
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
+                            setHubBG(backBrush);
+                        }
+                        else
+                        {
+                            displayStatusError("Unable to save background");
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                            setHubBG(backBrush);
+                        }
+                    }
+                }
+                else
+                {
+                    FlickrImage bgImg = await getBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
+                    if (bgImg != null)
+                    {
+                        hub.Background = null;
+                        addArtistInfo(bgImg.artist, bgImg.artistUri);
+                        string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
+                        if (imgLoc != null)
+                        {
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
+                            setHubBG(backBrush);
+                        }
+                        else
+                        {
+                            displayStatusError("Unable to save background");
+                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
+                            setHubBG(backBrush);
+                        }
                     }
                     else
                     {
-                        displayStatusError("Unable to save background");
-                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                        setHubBG(backBrush);
+                        displayStatusError("Couldn't download background!");
                     }
                 }
             }
             else
             {
-                FlickrImage bgImg = await getBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
-                if (bgImg != null)
-                {
-                    hub.Background = null;
-                    addArtistInfo(bgImg.artist, bgImg.artistUri);
-                    string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
-                    if (imgLoc != null)
-                    {
-                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
-                        setHubBG(backBrush);
-                    }
-                    else
-                    {
-                        displayStatusError("Unable to save background");
-                        ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                        setHubBG(backBrush);
-                    }
-                }
-                else
-                {
-                    displayStatusError("Couldn't download background!");
-                }
+                MessageDialog d = new MessageDialog("You need to connect to the internet to change the background", "No Internet Connection!");
+                await d.ShowAsync();
             }
         }
         private void about_Click(object sender, RoutedEventArgs e)
         {
             Frame.Navigate(typeof(AboutPage));
         }
-        private void addLoc_Click(object sender, RoutedEventArgs e)
+        async private void addLoc_Click(object sender, RoutedEventArgs e)
         {
-            Frame.Navigate(typeof(AddLocation));
+            if (connectedToInternet())
+            {
+                Frame.Navigate(typeof(AddLocation));
+            }
+            else
+            {
+                MessageDialog d = new MessageDialog("You need to connect to the internet to add a location", "No Internet Connection!");
+                await d.ShowAsync();
+            }
         }
         private void alertsNum_Tapped(object sender, TappedRoutedEventArgs e)
         {
