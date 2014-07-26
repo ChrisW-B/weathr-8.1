@@ -81,7 +81,6 @@ namespace Weathr81
             this.navigationHelper = new NavigationHelper(this);
             this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
             this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
-            localStore.Values.Remove(Values.LAST_CMD_BAR);
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -349,7 +348,7 @@ namespace Weathr81
             {
                 MessageDialog d = new MessageDialog((string)store.Values["lastError"]);
                 store.Values.Remove("lastError");
-                d.ShowAsync();
+                await d.ShowAsync();
             }
             await statusBar.ProgressIndicator.ShowAsync();
             WeatherInfo downloadedForecast;
@@ -458,98 +457,6 @@ namespace Weathr81
             }
         }
 
-        //updating tile for current view
-        async private Task updateCurrentTile(WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow, ImageBrush background = null)
-        {
-            CreateTile createTile = new CreateTile();
-            if (background != null)
-            {
-                try
-                {
-                    background.ImageOpened += async (sender, eventArgs) => await imageOpenedHandler(sender, eventArgs, downloadedForecast, tempCompare, current, today, tomorrow);
-                }
-                catch { }
-            }
-            else if (currentLocation.IsDefault)
-            {
-                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
-            }
-            else if (await tileExists())
-            {
-                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
-            }
-        }
-        async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
-        {
-            CreateTile createTile = new CreateTile();
-            ImageBrush background = sender as ImageBrush;
-            if (background != null)
-            {
-                string artistName = "unknown";
-                if (currentLocation.IsDefault)
-                {
-                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
-                    if (locTemp != null)
-                    {
-                        artistName = locTemp.PhotoDetails;
-                    }
-                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
-                }
-                if (await tileExists())
-                {
-                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
-                    if (locTemp != null)
-                    {
-                        artistName = locTemp.PhotoDetails;
-                    }
-                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
-                }
-            }
-            await Task.Delay(new TimeSpan(0, 0, 0, 10));
-            tileHider = null;
-        }
-        async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
-        {
-            if (currentLocation.LocName == null)
-            {
-                currentLocation.LocName = hub.Header as string;
-            }
-            await renderTile(tiles.smTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm");
-            await renderTile(tiles.sqTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq");
-            await renderTile(tiles.wideTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd");
-            CreateTile tileMaker = new CreateTile();
-            if (currentLocation.IsDefault)
-            {
-                tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow);
-            }
-            if (await tileExists())
-            {
-                SecondaryTile currentTile = await getCurrentTile();
-                if (currentTile != null)
-                {
-                    tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, currentTile);
-                }
-            }
-        }
-        async private Task renderTile(UIElement tile, string tileName)
-        {
-            tileHider.Children.Add(tile);
-            RenderTargetBitmap bm = new RenderTargetBitmap();
-            await bm.RenderAsync(tile);
-            Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
-
-            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-            StorageFile tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
-            DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
-
-            using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
-            {
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
-                await encoder.FlushAsync();
-            }
-        }
-
         //helper methods
         private bool restoreData()
         {
@@ -613,9 +520,9 @@ namespace Weathr81
                 hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
                 bgRestore = true;
             }
-            catch (Exception e)
+            catch
             {
-
+                displayStatusError("Couldn't set your background");
             }
             if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.LAST_SAVE))
             {
@@ -637,7 +544,6 @@ namespace Weathr81
             }
             return nowDone && forecastDone && hourlyDone && withinThirtyMins && sameUnits && locName && bgRestore;
         }
-
         private HubSection getSectionFromTag(int i)
         {
             switch (i)
@@ -710,7 +616,6 @@ namespace Weathr81
             if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
             {
                 localStore.Values[Values.IS_NEW_DEVICE] = false;
-                locTemplate.locations = await setupLocation();
             }
             if (store.Values.ContainsKey(Values.LOC_STORE))
             {
@@ -974,7 +879,6 @@ namespace Weathr81
                 radMap.Children.Add(triangle);
             }
         }
-
         private void dataSource_UriRequested(HttpMapTileDataSource sender, MapTileUriRequestedEventArgs args, MapLaunchClass.mapType type)
         {
             MapTileUriRequestDeferral d = args.Request.GetDeferral();
@@ -992,12 +896,13 @@ namespace Weathr81
                     uri = Values.HTTP + serverPre + Values.OWM_MAIN + Values.OWM_SAT + "/" + args.ZoomLevel + "/" + args.X + "/" + args.Y + Values.OWM_POST;
                 }
                 args.Request.Uri = new Uri(uri);
+                d.Complete();
             }
-            catch (Exception ex)
+            catch
             {
-
+                d.Complete();
             }
-            d.Complete();
+            
         }
         private void radarMap_Loaded(object sender, RoutedEventArgs e)
         {
@@ -1101,7 +1006,6 @@ namespace Weathr81
             bg.Stretch = Stretch.UniformToFill;
             hub.Background = bg;
         }
-
         async private Task<string> saveBackground(Uri image, string imageName)
         {
             hub.Background = null;
@@ -1140,6 +1044,98 @@ namespace Weathr81
         async void bg_ImageOpened(object sender, RoutedEventArgs e)
         {
             await statusBar.ProgressIndicator.HideAsync();
+        }
+
+        //updating tile for current view
+        async private Task updateCurrentTile(WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow, ImageBrush background = null)
+        {
+            CreateTile createTile = new CreateTile();
+            if (background != null)
+            {
+                try
+                {
+                    background.ImageOpened += async (sender, eventArgs) => await imageOpenedHandler(sender, eventArgs, downloadedForecast, tempCompare, current, today, tomorrow);
+                }
+                catch { }
+            }
+            else if (currentLocation.IsDefault)
+            {
+                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
+            }
+            else if (await tileExists())
+            {
+                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
+            }
+        }
+        async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
+        {
+            CreateTile createTile = new CreateTile();
+            ImageBrush background = sender as ImageBrush;
+            if (background != null)
+            {
+                string artistName = "unknown";
+                if (currentLocation.IsDefault)
+                {
+                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+                    if (locTemp != null)
+                    {
+                        artistName = locTemp.PhotoDetails;
+                    }
+                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
+                }
+                if (await tileExists())
+                {
+                    LocationTemplate locTemp = locList.DataContext as LocationTemplate;
+                    if (locTemp != null)
+                    {
+                        artistName = locTemp.PhotoDetails;
+                    }
+                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
+                }
+            }
+            await Task.Delay(new TimeSpan(0, 0, 0, 10));
+            tileHider = null;
+        }
+        async private Task renderTileSet(TileGroup tiles, string tempCompare, string current, string today, string tomorrow)
+        {
+            if (currentLocation.LocName == null)
+            {
+                currentLocation.LocName = hub.Header as string;
+            }
+            await renderTile(tiles.smTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm");
+            await renderTile(tiles.sqTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq");
+            await renderTile(tiles.wideTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd");
+            CreateTile tileMaker = new CreateTile();
+            if (currentLocation.IsDefault)
+            {
+                tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow);
+            }
+            if (await tileExists())
+            {
+                SecondaryTile currentTile = await getCurrentTile();
+                if (currentTile != null)
+                {
+                    tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, currentTile);
+                }
+            }
+        }
+        async private Task renderTile(UIElement tile, string tileName)
+        {
+            tileHider.Children.Add(tile);
+            RenderTargetBitmap bm = new RenderTargetBitmap();
+            await bm.RenderAsync(tile);
+            Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
+
+            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFile tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
+            DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
+
+            using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
+            {
+                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
+                await encoder.FlushAsync();
+            }
         }
 
         //buttons and stuff

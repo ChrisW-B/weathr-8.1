@@ -240,7 +240,6 @@ namespace TileCreater
             {
                 g = (createBackgroundGrid(LiveTileSize.wide, true));
                 g.Children.Add(createWideStackPanel(data, true));
-
             }
             return g;
         }
@@ -352,7 +351,6 @@ namespace TileCreater
             {
                 time = DateTime.Now.ToString("h:mm tt");
             }
-
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Left, Text = time, Margin = new Thickness(3, 0, 0, 0), FontWeight = FontWeights.Bold };
             return t;
         }
@@ -371,7 +369,7 @@ namespace TileCreater
         }
         private Grid createCenterGrid(BackgroundTemplate data)
         {
-            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 5, 0) };
+            Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 2, 0) };
             g.Children.Add(createCentralStackPanel(data));
             return g;
         }
@@ -384,12 +382,12 @@ namespace TileCreater
         }
         private TextBlock createTempTextBlock(string temperature)
         {
-            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, HorizontalAlignment = HorizontalAlignment.Right };
+            TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, CharacterSpacing = -80,  HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0,0,3,0) };
             return t;
         }
         private StackPanel createForecastStackPanel(BackgroundTemplate data)
         {
-            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center, Width = 80, Margin = new Thickness(5, 0, 0, 0) };
+            StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center, Width = 80 };
             s.Children.Add(createConditionsTextBlock(data.weather.conditions));
             s.Children.Add(createHiLoTextBlock(data.weather.high, data.weather.low));
             return s;

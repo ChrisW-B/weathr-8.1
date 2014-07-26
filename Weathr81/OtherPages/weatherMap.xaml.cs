@@ -119,7 +119,7 @@ namespace Weathr81.OtherPages
             Map.TileSources.Add(tileSource);
             addMarker(mapLaunchClass.loc);
         }
-        
+
 
         void dataSource_UriRequested(HttpMapTileDataSource sender, MapTileUriRequestedEventArgs args)
         {
@@ -131,19 +131,20 @@ namespace Weathr81.OtherPages
                 String uri;
                 if (type == MapLaunchClass.mapType.radar)
                 {
-                    uri = Values.HTTP + serverPre + Values.OWM_MAIN + Values.OWM_RAD + "/" + args.ZoomLevel + "/" + args.X + "/" + args.Y +Values.OWM_POST;
+                    uri = Values.HTTP + serverPre + Values.OWM_MAIN + Values.OWM_RAD + "/" + args.ZoomLevel + "/" + args.X + "/" + args.Y + Values.OWM_POST;
                 }
                 else
                 {
                     uri = Values.HTTP + serverPre + Values.OWM_MAIN + Values.OWM_SAT + "/" + args.ZoomLevel + "/" + args.X + "/" + args.Y + Values.OWM_POST;
                 }
                 args.Request.Uri = new Uri(uri);
+                d.Complete();
             }
-            catch (Exception ex)
+            catch
             {
-
+                d.Complete();
             }
-            d.Complete();
+
         }
 
         private void addMarker(GeoTemplate loc)
@@ -182,8 +183,8 @@ namespace Weathr81.OtherPages
         private const string RAD_PRE = "radar/";
         private const string ANI_RAD_PRE = "animated" + RAD_PRE;
         private const string TILE_SIZE = "&width=256" + "&height=256";
-        private const string LARGE_TILE_SIZE = "&width=1080" + "&height=1920";
-        private const string SAT_POST = "&key=sat_ir4" +  "&gtt=107" +  "&smooth=1" + "&timelabel=0";
+        private const string LARGE_TILE_SIZE = "&width=800" + "&height=1600";
+        private const string SAT_POST = "&key=sat_ir4" + "&gtt=107" + "&smooth=1" + "&timelabel=0";
         private const string RAD_POST = "&rainsnow=1" + "&timelabel=0" + "&noclutter=1";
         private const string SHOW_SAT_BASEMAP = "&basemap=";
         private const string SHOW_SAT_BORDERS = "&borders=";
@@ -200,12 +201,12 @@ namespace Weathr81.OtherPages
         private const string RADIUS = "&radius=150";
 
         StatusBar statusBar;
-       async private void animateButton_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        async private void animateButton_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
             statusBar = StatusBar.GetForCurrentView();
             await statusBar.ProgressIndicator.ShowAsync();
             statusBar.ProgressIndicator.Text = "Loading animation...";
-            
+
             Uri uri;
             if (type == MapLaunchClass.mapType.radar)
             {
@@ -217,13 +218,13 @@ namespace Weathr81.OtherPages
             }
             mapWebView.Source = uri;
             mapWebView.NavigationCompleted += mapWebView_NavigationCompleted;
-            
+
         }
 
-       void mapWebView_NavigationCompleted(WebView sender, WebViewNavigationCompletedEventArgs args)
-       {
-           Canvas.SetZIndex(mapWebView, 2);
-           statusBar.ProgressIndicator.HideAsync();
-       }
+        async void mapWebView_NavigationCompleted(WebView sender, WebViewNavigationCompletedEventArgs args)
+        {
+            Canvas.SetZIndex(mapWebView, 2);
+            await statusBar.ProgressIndicator.HideAsync();
+        }
     }
 }

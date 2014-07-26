@@ -135,7 +135,7 @@ namespace Weathr81.OtherPages
                 HttpClient client = new HttpClient();
                 Stream str = await client.GetStreamAsync(searchUri);
                 populateSuggestions(XDocument.Load(str));
-                statusBar.ProgressIndicator.HideAsync();
+               await statusBar.ProgressIndicator.HideAsync();
             }
             catch
             {
