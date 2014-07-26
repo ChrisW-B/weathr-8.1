@@ -16,6 +16,7 @@ using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
+using Windows.UI.Notifications;
 using Windows.UI.StartScreen;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Media;
@@ -99,8 +100,9 @@ namespace BackgroundTask
             if (allowedToUpdate())
             {
                 //finds the given secondary tile in the list of locations, then uses that to update the tile
-                await updateTile();
                 IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+                clearTiles(tiles);
+                await updateTile();
                 foreach (SecondaryTile tile in tiles)
                 {
                     Location tileLoc = findTile(tile.Arguments);
@@ -111,6 +113,16 @@ namespace BackgroundTask
                 }
             }
         }
+
+        private void clearTiles(IReadOnlyCollection<SecondaryTile> tiles)
+        {
+            foreach (SecondaryTile tile in tiles)
+            {
+                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
+            }
+        }
+
+        
         async private Task updateTile(SecondaryTile tile = null, Location tileLoc = null)
         {
             if (tileLoc == null)
@@ -213,16 +225,33 @@ namespace BackgroundTask
             RenderTargetBitmap bm = new RenderTargetBitmap();
             await bm.RenderAsync(tile);
             Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
-
+            bool openFailed = false;
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-            StorageFile tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
+            StorageFile tileImageFile = null;
+            try
+            {
+                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.FailIfExists);
+            }
+            catch
+            {
+                openFailed = true;
+            }
+            if (openFailed)
+            {
+                await (await localFolder.GetFileAsync(tileName)).DeleteAsync(StorageDeleteOption.PermanentDelete);
+                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
+            }
+            
             DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
 
-            using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
+            if (tileImageFile != null)
             {
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
-                await encoder.FlushAsync();
+                using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
+                {
+                    var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+                    encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
+                    await encoder.FlushAsync();
+                }
             }
         }
 

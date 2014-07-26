@@ -200,36 +200,45 @@ namespace Weathr81
                 statusBar.ProgressIndicator.Text = "Getting your location...";
                 if (connectedToInternet())
                 {
-                    if (await setFavoriteLocations())
+                    doConnected();
+                }
+                else
+                {
+                    displayStatusError("You're not connected to the internet!");
+                    if (await setFavoriteLocations(true))
                     {
-                        GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
-                        if (!restoreData())
-                        {
-                            clearApp();
-                            hub.Header = "loading...";
-                            if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
-                            {
-                                updateUI();
-                            }
-                            else
-                            {
-                                displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
-                            }
-                        }
-                        else
-                        {
-                            await statusBar.ProgressIndicator.HideAsync();
-                        }
+                        restoreData();
+                    }
+                }
+            }
+        }
+
+       async private void doConnected()
+        {
+            if (await setFavoriteLocations())
+            {
+                GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
+                if (!restoreData())
+                {
+                    clearApp();
+                    hub.Header = "loading...";
+                    if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
+                    {
+                        updateUI();
                     }
                     else
                     {
-                        Frame.Navigate(typeof(AddLocation));
+                        displayError("I'm having a problem getting your location. Make sure location services are enabled, or try again in a little bit");
                     }
                 }
                 else
                 {
-                    displayError("You need to be connected to the internet!");
+                    await statusBar.ProgressIndicator.HideAsync();
                 }
+            }
+            else
+            {
+                Frame.Navigate(typeof(AddLocation));
             }
         }
 
@@ -610,34 +619,62 @@ namespace Weathr81
                 localStore.Values[currentLocation.LocUrl + Values.LAST_LOC_NAME] = hub.Header;
             }
         }
-        async private Task<bool> setFavoriteLocations()
+        async private Task<bool> setFavoriteLocations(bool isOffline = false)
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
-            if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
+            if (!isOffline)
             {
-                localStore.Values[Values.IS_NEW_DEVICE] = false;
-            }
-            if (store.Values.ContainsKey(Values.LOC_STORE))
-            {
-                ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
-                if (list == null || list.Count < 1)
+                if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
                 {
-                    //something wrong with the list, reset roaming and try again
-                    store.Values.Remove(Values.LOC_STORE);
-                    await setFavoriteLocations();
+                    localStore.Values[Values.IS_NEW_DEVICE] = false;
+                }
+                if (store.Values.ContainsKey(Values.LOC_STORE))
+                {
+                    ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                    if (list == null || list.Count < 1)
+                    {
+                        //something wrong with the list, reset roaming and try again
+                        store.Values.Remove(Values.LOC_STORE);
+                        await setFavoriteLocations();
+                    }
+                    else
+                    {
+                        locTemplate.locations.locationList = list;
+                    }
                 }
                 else
                 {
-                    locTemplate.locations.locationList = list;
+                    locTemplate.locations = await setupLocation();
                 }
+                setCurrentLocation(locTemplate.locations.locationList);
+                locList.DataContext = locTemplate;
+                Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, localStore);
             }
             else
             {
-                locTemplate.locations = await setupLocation();
+                if (localStore.Values.ContainsKey(Values.LOC_STORE))
+                {
+                    ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), localStore) as ObservableCollection<Location>);
+                    if (list != null)
+                    {
+                        locTemplate.locations.locationList = list;
+                        locList.DataContext = locTemplate;
+                        setCurrentLocation(list, true);
+                    }
+                    else
+                    {
+                        displayError("You need to connect to the internet!");
+                    }
+                }
             }
+            return locTemplate.locations.locationList.Count > 0;
+        }
+
+        private void setCurrentLocation(ObservableCollection<Location> locations, bool isOffline=false)
+        {
             if (currentLocation == null)
             {
-                foreach (Location loc in locTemplate.locations.locationList)
+                foreach (Location loc in locations)
                 {
                     if (loc.IsDefault)
                     {
@@ -647,17 +684,18 @@ namespace Weathr81
                 }
                 if (currentLocation == null)
                 {
-                    if (locTemplate.locations.locationList.Count > 0)
+                    if (locations.Count > 0)
                     {
-                        locTemplate.locations.locationList[0].IsDefault = true;
-                        locTemplate.locations.locationList[0].Image = "/Assets/favs.png";
-                        currentLocation = locTemplate.locations.locationList[0];
-                        Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
+                        locations[0].IsDefault = true;
+                        locations[0].Image = "/Assets/favs.png";
+                        currentLocation = locations[0];
+                        if (!isOffline)
+                        {
+                            Serializer.save(locations, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
+                        }
                     }
                 }
             }
-            locList.DataContext = locTemplate;
-            return locTemplate.locations.locationList.Count > 0;
         }
         async private Task<LocationList> setupLocation()
         {
@@ -1125,17 +1163,33 @@ namespace Weathr81
             RenderTargetBitmap bm = new RenderTargetBitmap();
             await bm.RenderAsync(tile);
             Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
-
+            bool openFailed = false;
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
-            StorageFile tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
-            DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
-
-            using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
+            StorageFile tileImageFile = null;
+            try
             {
-                var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
-                encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
-                await encoder.FlushAsync();
+                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.FailIfExists);
             }
+            catch
+            {
+                openFailed = true;
+            }
+            if (openFailed)
+            {
+                await (await localFolder.GetFileAsync(tileName)).DeleteAsync(StorageDeleteOption.PermanentDelete);
+                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
+            }
+            DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
+            if (tileImageFile != null)
+            {
+                using (var stream = await tileImageFile.OpenAsync(FileAccessMode.ReadWrite))
+                {
+                    var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, stream);
+                    encoder.SetPixelData(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Straight, (uint)bm.PixelWidth, (uint)bm.PixelHeight, dispInfo.LogicalDpi, dispInfo.LogicalDpi, pixBuf.ToArray());
+                    await encoder.FlushAsync();
+                }
+            }
+            tileHider.Children.Remove(tile);
         }
 
         //buttons and stuff
