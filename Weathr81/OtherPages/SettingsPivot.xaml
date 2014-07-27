@@ -47,7 +47,7 @@
                     </Grid>
                     <Grid Margin="0,100,0,0" VerticalAlignment="Top">
                         
-                            <ListView CanReorderItems="True" CanDragItems="True" AllowDrop="True" x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}" ScrollViewer.VerticalScrollBarVisibility="Auto" >
+                            <ListView CanDragItems="True" AllowDrop="True" x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}" ScrollViewer.VerticalScrollBarVisibility="Auto" >
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" Holding="StackPanel_Holding" >
@@ -82,7 +82,7 @@
 
                         <StackPanel Margin="0,0,0,20" x:Name="backgroundPanel">
                             <ToggleSwitch Name="wifiOnlyToggle" Header="Update" Toggled="wifiOnlyToggle_Toggled"  OnContent="Always" OffContent="Wifi Only"/>
-
+                            <ToggleSwitch Name="showAlerts" Header="Show Alerts" Toggled="showAlerts_Toggled" OnContent="On" OffContent="Off"/>
                             <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
                             <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                             <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>

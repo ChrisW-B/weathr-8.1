@@ -49,7 +49,7 @@
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
                                             <TextBlock x:Name="temp" Text="{Binding temp}" FontSize="55" FontFamily="Segoe WP" FontWeight="ExtraLight" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                             <StackPanel Margin="10, 0, 0, 0" Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                                                <TextBlock  FontSize="17"  x:Name="descrip" Text="{Binding description}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                <TextBlock Width="350" TextWrapping="WrapWholeWords"   FontSize="17"  x:Name="descrip" Text="{Binding description}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                                                 <TextBlock FontSize="17"  x:Name="precip" Text="{Binding chanceOfPrecip}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                                             </StackPanel>
                                         </StackPanel>
@@ -90,7 +90,7 @@
                             </StackPanel>
                             <Rectangle  Opacity=".3" Name="satMapBox" Height="200" Margin="10,20,0,0" Tapped="satMap_Tap" Fill="Black" />
                         </StackPanel>
-                        <TextBlock  Text="radar" Margin="222,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Tapped="radarMap_Tap" Foreground="White" Width="117"/>
+                        <TextBlock  Text="precip" Margin="222,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Tapped="radarMap_Tap" Foreground="White" Width="117"/>
                         <TextBlock  Text="satellite" Margin="222,300,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Tapped="satMap_Tap" Foreground="White" Height="42"/>
                     </Grid>
                     <Grid Canvas.ZIndex="1" Name="maps">
@@ -156,7 +156,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" Tapped="locationName_Tapped">
-                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="30" Foreground="White" Margin="0,0,0,15">
+                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="24" Foreground="White" Margin="0,0,0,20">
                                         </TextBlock>
                                     </StackPanel>
                                 </DataTemplate>

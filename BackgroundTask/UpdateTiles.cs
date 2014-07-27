@@ -1,5 +1,6 @@
 ﻿using DataTemplates;
 using FlickrInfo;
+using ForecastIOData;
 using LocationHelper;
 using SerializerClass;
 using StoreLabels;
@@ -10,6 +11,7 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using TileCreater;
+using ToastHelper;
 using WeatherData;
 using Windows.ApplicationModel.Background;
 using Windows.Graphics.Display;
@@ -141,6 +143,30 @@ namespace BackgroundTask
                 WeatherInfo weatherInfo = await getWundData.getConditions();
                 if (!weatherInfo.fail)
                 {
+                    int numAlerts = 0;
+                    if (allowedToGetAlerts())
+                    {
+                        GetForecastIOData fIO = new GetForecastIOData(geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude);
+                        ForecastIOClass forecastData = await fIO.getForecast();
+                        if (!forecastData.fail)
+                        {
+                            numAlerts = forecastData.flags.numAlerts;
+                            foreach(ForecastIOAlert alert in forecastData.Alerts){
+                                if (!alert.isAllClear)
+                                {
+                                    ToastContent t = new ToastContent.ImageAndText02()
+                                    {
+                                        Title = alert.title,
+                                        Text = alert.description,
+                                        Image = "",
+                                    };
+                                    ToastNotifier notifier = ToastNotificationManager.CreateToastNotifier();
+                                    notifier.Show(t.CreateNotification());
+                                }
+
+                            }
+                        }
+                    }
                     string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
                     string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
                     string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
@@ -161,7 +187,7 @@ namespace BackgroundTask
                         //save flickr image so it doesn't have to be requested twice
                         if (flickrData != null)
                         {
-                            tiles = creater.createTileWithParams(weatherInfo, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
+                            tiles = creater.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
                         }
                         else
                         {
@@ -192,6 +218,18 @@ namespace BackgroundTask
                         }
                     }
                 }
+            }
+        }
+
+        private bool allowedToGetAlerts()
+        {
+            if (localStore.Values.ContainsKey(Values.ALLOW_ALERTS))
+            {
+                return (bool)localStore.Values[Values.ALLOW_ALERTS];
+            }
+            else
+            {
+                return false;
             }
         }
 

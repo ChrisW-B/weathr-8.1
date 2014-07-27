@@ -103,16 +103,16 @@ namespace Weathr81
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-                this.navigationHelper.OnNavigatedTo(e);
-                localStore.Values.Remove(Values.LAST_CMD_BAR);
-                BottomAppBar = new CommandBar();
-                if (e.Parameter != null)
-                {
-                    this.currentLocation = (e.Parameter as Location);
-                }
-                statusBar = StatusBar.GetForCurrentView();
-                statusBar.ForegroundColor = Colors.White;
-                runApp();
+            this.navigationHelper.OnNavigatedTo(e);
+            localStore.Values.Remove(Values.LAST_CMD_BAR);
+            BottomAppBar = new CommandBar();
+            if (e.Parameter != null)
+            {
+                this.currentLocation = (e.Parameter as Location);
+            }
+            statusBar = StatusBar.GetForCurrentView();
+            statusBar.ForegroundColor = Colors.White;
+            runApp();
         }
 
         private bool connectedToInternet()
@@ -339,7 +339,7 @@ namespace Weathr81
                             {
                                 UpdateTiles.Register(Values.TASK_NAME, 120, true);
                             }
-                       
+
                         }
                     }
                 }
@@ -655,11 +655,20 @@ namespace Weathr81
                 }
                 else
                 {
-                    locTemplate.locations = await setupLocation();
+                    await setupLocation();
                 }
-                setCurrentLocation(locTemplate.locations.locationList);
-                locList.DataContext = locTemplate;
-                Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, localStore);
+                if (store.Values.ContainsKey(Values.LOC_STORE))
+                {
+                    locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
+                    locTemplate.locations.locationList = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+                    setCurrentLocation(locTemplate.locations.locationList);
+                    locList.DataContext = locTemplate;
+                    Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, localStore);
+                }
+                else
+                {
+                    locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
+                }
             }
             else
             {
@@ -708,10 +717,9 @@ namespace Weathr81
                 }
             }
         }
-        async private Task<LocationList> setupLocation()
+        async private Task setupLocation()
         {
-            LocationList locList = new LocationList();
-            locList.locationList = new ObservableCollection<Location>();
+            LocationList locList = new LocationList() { locationList = new ObservableCollection<Location>() };
             MessageDialog dialog = new MessageDialog("Weathr can use your phone's location to find more accurate forecast. Allow Weathr to use your location?", "Allow location?");
             dialog.Commands.Add(new UICommand("Use location", delegate(IUICommand cmd)
             {
@@ -722,10 +730,8 @@ namespace Weathr81
             dialog.Commands.Add(new UICommand("No", delegate(IUICommand cmd)
             {
                 localStore.Values[Values.ALLOW_LOC] = false;
-
             }));
             await dialog.ShowAsync();
-            return locList;
         }
 
         //set up Wunderground
@@ -785,6 +791,12 @@ namespace Weathr81
                 if (forecastIOClass.flags.hoursExists)
                 {
                     hourly.DataContext = updateHourList(forecastIOClass.hours.hours);
+                }
+                else
+                {
+                    ObservableCollection<ForecastIOItem> hours = new ObservableCollection<ForecastIOItem>();
+                    hours.Add(new ForecastIOItem() { description = "Sorry, Forecast.IO doesn't seem to support your region just yet" });
+                    hourly.DataContext = new ForecastIOTemplate() { forecastIO = new ForecastIOList() { hoursList = hours } };
                 }
                 if (forecastIOClass.flags.minsExists)
                 {
@@ -1129,7 +1141,7 @@ namespace Weathr81
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
+                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, 0, background, artistName), tempCompare, current, today, tomorrow);
                 }
                 if (await tileExists())
                 {
@@ -1138,7 +1150,7 @@ namespace Weathr81
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, background, artistName), tempCompare, current, today, tomorrow);
+                    await renderTileSet(createTile.createTileWithParams(downloadedForecast,0, background, artistName), tempCompare, current, today, tomorrow);
                 }
             }
             await Task.Delay(new TimeSpan(0, 0, 0, 10));
@@ -1175,8 +1187,8 @@ namespace Weathr81
             Windows.Storage.Streams.IBuffer pixBuf = await bm.GetPixelsAsync();
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
             StorageFile tileImageFile = null;
-                tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
-           
+            tileImageFile = await localFolder.CreateFileAsync(tileName, CreationCollisionOption.ReplaceExisting);
+
             DisplayInformation dispInfo = DisplayInformation.GetForCurrentView();
             if (tileImageFile != null)
             {

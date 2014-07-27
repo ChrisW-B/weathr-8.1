@@ -45,5 +45,6 @@ namespace StoreLabels
         public const string OWM_RAD = "precipitation";
         public const string OWM_POST = ".png";
         public const string ALPHA_NUM = "abcdefghijklmnopqrstuvwxyz0123456789";
+        public const string ALLOW_ALERTS = "enableBGAlerts";
     }
 }

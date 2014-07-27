@@ -114,6 +114,7 @@ namespace ForecastIOData
         public double expires { get; set; }
         public string description { get; set; }
         public string uri { get; set; }
+        public bool isAllClear { get; set; }
     }
     public class Flags
     {

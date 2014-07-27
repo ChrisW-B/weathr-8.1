@@ -238,6 +238,15 @@ namespace Weathr81.OtherPages
                 localStore.Values[Values.TRANSPARENT_TILE] = true;
             }
 
+            if (localStore.Values.ContainsKey(Values.ALLOW_ALERTS))
+            {
+                showAlerts.IsOn = (bool)localStore.Values[Values.ALLOW_ALERTS];
+            }
+            else
+            {
+                showAlerts.IsOn = false;
+            }
+
             if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
             {
                 updateFreq.Value = Convert.ToInt32(localStore.Values[Values.UPDATE_FREQ]);
@@ -458,6 +467,14 @@ namespace Weathr81.OtherPages
             return;
         }
 
+        private void showAlerts_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values[Values.ALLOW_ALERTS] = (sender as ToggleSwitch).IsOn;
+            }
+        }
+
         private void wifiOnlyToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (doneSetting)
@@ -652,7 +669,6 @@ namespace Weathr81.OtherPages
                 }
             }
         }
-
 
     }
 }

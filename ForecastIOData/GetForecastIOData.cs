@@ -226,7 +226,7 @@ namespace ForecastIOData
             }
             if (alerts.Count == 0)
             {
-                alerts.Add(new ForecastIOAlert() { title = "Nothing right now!", uri = null });
+                alerts.Add(new ForecastIOAlert() { title = "Nothing right now!", uri = null, description = "", isAllClear = true });
             }
             return alerts;
         }
@@ -248,6 +248,8 @@ namespace ForecastIOData
 
             XElement uri = elm.Element("uri");
             alert.uri = doString(uri);
+
+            alert.isAllClear = false;
 
             return alert;
         }
