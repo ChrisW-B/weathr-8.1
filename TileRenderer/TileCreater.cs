@@ -244,7 +244,7 @@ namespace TileCreater
         private UIElement createAlertsGrid(int numAlerts)
         {
             Grid g = new Grid() { Height = 150, Width = 150, Background = new SolidColorBrush(Colors.Transparent) };
-            TextBlock t = new TextBlock() { Height = 150, TextAlignment = TextAlignment.Right, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 15, 15, 0), FontSize = 20, IsColorFontEnabled=true, Foreground = Colors.Red };
+            TextBlock t = new TextBlock() { Height = 150, TextAlignment = TextAlignment.Right, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 15, 15, 0), FontSize = 20, IsColorFontEnabled=true, Foreground = new SolidColorBrush(Colors.Red) };
             if (numAlerts > 0)
             {
                 t.Text = numAlerts + "!";
