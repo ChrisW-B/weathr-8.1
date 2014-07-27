@@ -184,22 +184,15 @@
     <Language Code="vi-vn" InMinimumRequirementSet="true" />
   </SupportedLocales>
   <ProductReservedInfo>
-    <MainPackageIdentityName>56541CBStudios.WeathrBeta</MainPackageIdentityName>
+    <MainPackageIdentityName>56541CBStudios.WeathrPreview</MainPackageIdentityName>
     <ReservedNames>
-      <ReservedName>Weathr Beta</ReservedName>
+      <ReservedName>Weathr Preview</ReservedName>
     </ReservedNames>
   </ProductReservedInfo>
   <AccountPackageIdentityNames>
     <MainPackageIdentityName>56541CBStudios.Sunny</MainPackageIdentityName>
     <MainPackageIdentityName>56541CBStudios.Weathr</MainPackageIdentityName>
+    <MainPackageIdentityName>56541CBStudios.WeathrBeta</MainPackageIdentityName>
   </AccountPackageIdentityNames>
-  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=235c6773-f051-49f5-bb50-c6ff3340216b">
-    <BundleInfo>
-      <PackageInfo>
-        <OsMinVersion>6.3.0.0</OsMinVersion>
-        <PackageArchitecture>neutral</PackageArchitecture>
-        <PackageMaxArchitectureVersion>1.1.0.15</PackageMaxArchitectureVersion>
-      </PackageInfo>
-    </BundleInfo>
-  </PackageInfoList>
+  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=e2b834a1-b5ab-4053-b9a3-791607b29cc6" />
 </StoreAssociation>

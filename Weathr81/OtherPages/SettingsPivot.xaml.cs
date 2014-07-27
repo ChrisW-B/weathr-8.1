@@ -634,6 +634,25 @@ namespace Weathr81.OtherPages
             }
         }
 
+        private void rearrange_Click(object sender, RoutedEventArgs e)
+        {
+            if (locList.ReorderMode == ListViewReorderMode.Disabled)
+            {
+                (sender as AppBarButton).Icon = new SymbolIcon(Symbol.Save);
+                locList.ReorderMode = ListViewReorderMode.Enabled;
+            }
+            else
+            {
+                (sender as AppBarButton).Icon = new SymbolIcon(Symbol.Sort);
+                locList.ReorderMode = ListViewReorderMode.Disabled;
+                LocationTemplate newLocs = (locList.DataContext as LocationTemplate);
+                if (newLocs != null)
+                {
+                    Serializer.save(newLocs.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
+                }
+            }
+        }
+
 
     }
 }

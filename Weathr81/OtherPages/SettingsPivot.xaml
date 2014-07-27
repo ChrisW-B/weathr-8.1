@@ -46,9 +46,9 @@
                         <TextBlock Text="Press and hold locations for more options" Style="{ThemeResource ControlContextualInfoTextBlockStyle}" Margin="0,0,0,20"/>
                     </Grid>
                     <Grid Margin="0,100,0,0" VerticalAlignment="Top">
-                        <ScrollViewer>
-                            <ItemsControl x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}" ScrollViewer.VerticalScrollBarVisibility="Auto" >
-                                <ItemsControl.ItemTemplate>
+                        
+                            <ListView CanReorderItems="True" CanDragItems="True" AllowDrop="True" x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}" ScrollViewer.VerticalScrollBarVisibility="Auto" >
+                                <ListView.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" Holding="StackPanel_Holding" >
                                             <FlyoutBase.AttachedFlyout>
@@ -66,9 +66,9 @@
                                             </TextBlock>
                                         </StackPanel>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        
                     </Grid>
                 </Grid>
             </PivotItem>
@@ -103,6 +103,7 @@
         <CommandBar x:Name="appBar" Visibility="Collapsed" Opacity="0.85">
             <CommandBar.PrimaryCommands>
                 <AppBarButton Label="add place" x:Name="addLoc" Click="addLoc_Click" Icon="Add"/>
+                <AppBarButton Label="rearrange" x:Name="reorder" Click="rearrange_Click" Icon="Sort"></AppBarButton>
             </CommandBar.PrimaryCommands>
         </CommandBar>
     </Page.BottomAppBar>

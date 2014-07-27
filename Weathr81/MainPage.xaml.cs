@@ -320,10 +320,27 @@ namespace Weathr81
                     {
                         if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
                         {
-                            UpdateTiles.Register(Values.TASK_NAME, (uint)localStore.Values[Values.UPDATE_FREQ]);
-                            return;
+                            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
+                            {
+                                UpdateTiles.Register(Values.TASK_NAME, (uint)localStore.Values[Values.UPDATE_FREQ], (bool)localStore.Values[Values.UPDATE_ON_CELL]);
+                            }
+                            else
+                            {
+                                UpdateTiles.Register(Values.TASK_NAME, (uint)localStore.Values[Values.UPDATE_FREQ], true);
+                            }
                         }
-                        UpdateTiles.Register(Values.TASK_NAME, 120);
+                        else
+                        {
+                            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
+                            {
+                                UpdateTiles.Register(Values.TASK_NAME, 120, (bool)localStore.Values[Values.UPDATE_ON_CELL]);
+                            }
+                            else
+                            {
+                                UpdateTiles.Register(Values.TASK_NAME, 120, true);
+                            }
+                       
+                        }
                     }
                 }
             }
@@ -1243,18 +1260,7 @@ namespace Weathr81
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
             //activate background task if it hasn't been turned off
-            if (!localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
-            {
-                if (!UpdateTiles.IsTaskRegistered(Values.TASK_NAME))
-                {
-                    if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
-                    {
-                        UpdateTiles.Register(Values.TASK_NAME, (uint)localStore.Values[Values.UPDATE_FREQ]);
-                        return;
-                    }
-                    UpdateTiles.Register(Values.TASK_NAME, 120);
-                }
-            }
+            tryBackgroundTask();
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.RoamingEnabled = true;
             secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
