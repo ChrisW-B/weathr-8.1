@@ -103,8 +103,6 @@ namespace Weathr81
         }
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            try
-            {
                 this.navigationHelper.OnNavigatedTo(e);
                 localStore.Values.Remove(Values.LAST_CMD_BAR);
                 BottomAppBar = new CommandBar();
@@ -114,16 +112,7 @@ namespace Weathr81
                 }
                 statusBar = StatusBar.GetForCurrentView();
                 statusBar.ForegroundColor = Colors.White;
-
                 runApp();
-            }
-            catch(Exception ex)
-            {
-                localStore.Values["lastError"] = ex.Message;
-                localStore.Values["lastErrorSource"] = ex.Source;
-                localStore.Values["lastErrorTrace"] = ex.StackTrace;
-                Application.Current.Exit();
-            }
         }
 
         private bool connectedToInternet()
@@ -364,32 +353,6 @@ namespace Weathr81
         async private void updateUI()
         {
             //updates the ui/weather conditions of app
-            if (store.Values.ContainsKey("lastError"))
-            {
-                MessageDialog d = new MessageDialog("The app seems to have crashed. Would you like to send a crash report?", "Crash Detected");
-               
-                d.Commands.Add(new UICommand("Send", async delegate(IUICommand cmd)
-                {
-                    EmailMessage m = new EmailMessage()
-                    {
-                        Subject = "Weathr Crash",
-                        Body = (string)localStore.Values["lastError"] + "\n\n" + (string)localStore.Values["lastErrorSource"] + "\n\n" + (string)localStore.Values["lastErrorTrace"],
-                    };
-                    m.To.Add(new EmailRecipient("ChrisApps@outlook.com", "CB Studios"));
-                    await EmailManager.ShowComposeNewEmailAsync(m);
-                    localStore.Values.Remove("lastError");
-                    localStore.Values.Remove("lastErrorSource");
-                    localStore.Values.Remove("lastErrorTrace");
-                }));
-                d.Commands.Add(new UICommand("Cancel", delegate(IUICommand cmd)
-                    {
-                        store.Values.Remove("lastError");
-                        store.Values.Remove("lastErrorSource");
-                        store.Values.Remove("lastErrorTrace");
-                    }
-                    ));
-                await d.ShowAsync();
-            }
             await statusBar.ProgressIndicator.ShowAsync();
             WeatherInfo downloadedForecast;
             GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));

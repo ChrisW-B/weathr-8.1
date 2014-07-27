@@ -33,7 +33,7 @@
                     <ToggleSwitch Name="timeType" Header="Time" Toggled="timeType_Toggled" OnContent="24 hr" OffContent="12 hr"/>
                     <ToggleSwitch x:Name="getImages" Header="Flickr Background" Toggled="getImages_Toggled"></ToggleSwitch>
                     <StackPanel x:Name="getImagesOn">
-                        <ToggleSwitch x:Name="bgOnWifi" Header="Wifi Only Background" Toggled="bgOnWifi_Toggled"></ToggleSwitch>
+                        <ToggleSwitch x:Name="bgOnWifi" Header="Background" Toggled="bgOnWifi_Toggled" OffContent="Wifi Only" OnContent="Always"></ToggleSwitch>
                     </StackPanel>
                 </StackPanel>
             </PivotItem>
@@ -81,7 +81,7 @@
                         <ToggleSwitch Name="enableBackground" Header="Update in Background" Toggled="enableBackground_Toggled" Margin="0,20,0,0"/>
 
                         <StackPanel Margin="0,0,0,20" x:Name="backgroundPanel">
-                            <ToggleSwitch Name="wifiOnlyToggle" Header="Wifi only updates" Toggled="wifiOnlyToggle_Toggled"  OnContent="On" OffContent="Off"/>
+                            <ToggleSwitch Name="wifiOnlyToggle" Header="Update" Toggled="wifiOnlyToggle_Toggled"  OnContent="Always" OffContent="Wifi Only"/>
 
                             <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
                             <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>

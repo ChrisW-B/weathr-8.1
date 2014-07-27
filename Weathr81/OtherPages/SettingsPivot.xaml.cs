@@ -101,7 +101,7 @@ namespace Weathr81.OtherPages
         {
             this.navigationHelper.OnNavigatedTo(e);
             updateSettings();
-            
+
         }
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -187,7 +187,7 @@ namespace Weathr81.OtherPages
             if (store.Values.ContainsKey(Values.MAIN_BG_WIFI_ONLY))
             {
                 bgOnWifi.IsOn = (bool)store.Values[Values.MAIN_BG_WIFI_ONLY];
-                
+
             }
             else
             {
@@ -199,7 +199,7 @@ namespace Weathr81.OtherPages
         }
         private void setUpTileSection()
         {
-            
+
             if (localStore.Values.ContainsKey(Values.ALLOW_BG_TASK))
             {
                 bool allowed = (bool)localStore.Values[Values.ALLOW_BG_TASK];
@@ -221,11 +221,11 @@ namespace Weathr81.OtherPages
             }
             if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
             {
-                wifiOnlyToggle.IsOn = !(bool)localStore.Values[Values.UPDATE_ON_CELL];
+                wifiOnlyToggle.IsOn = (bool)localStore.Values[Values.UPDATE_ON_CELL];
             }
             else
             {
-                wifiOnlyToggle.IsOn = false;
+                wifiOnlyToggle.IsOn = true;
                 localStore.Values[Values.UPDATE_ON_CELL] = true;
             }
             if (localStore.Values.ContainsKey(Values.TRANSPARENT_TILE))
@@ -346,11 +346,27 @@ namespace Weathr81.OtherPages
                         backgroundPanel.Visibility = Windows.UI.Xaml.Visibility.Visible;
                         if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
                         {
-                            registerRecurringBG((uint)localStore.Values[Values.UPDATE_FREQ]);
+                            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
+                            {
+                                registerRecurringBG((bool)localStore.Values[Values.UPDATE_ON_CELL], (uint)localStore.Values[Values.UPDATE_FREQ]);
+                            }
+                            else
+                            {
+                                registerRecurringBG(true, (uint)localStore.Values[Values.UPDATE_FREQ]);
+                            }
                         }
                         else
                         {
-                            registerRecurringBG();
+                            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
+                            {
+                                registerRecurringBG(((bool)localStore.Values[Values.UPDATE_ON_CELL]));
+                            }
+                            else
+                            {
+                                registerRecurringBG();
+                            }
+
+
                         }
                     }
                     else
@@ -363,11 +379,11 @@ namespace Weathr81.OtherPages
             }
             return;
         }
-       
-        private void registerRecurringBG(uint mins = 120)
+
+        private void registerRecurringBG(bool cellAllowed = true, uint mins = 120)
         {
             localStore.Values[Values.UPDATE_FREQ] = mins;
-            UpdateTiles.Register(Values.TASK_NAME, mins);
+            UpdateTiles.Register(Values.TASK_NAME, mins, cellAllowed);
         }
 
         //rate slider
@@ -424,7 +440,10 @@ namespace Weathr81.OtherPages
         DispatcherTimer timer = new DispatcherTimer();
         void timer_Tick(object sender, object e)
         {
-            registerRecurringBG(Convert.ToUInt32(updateFreq.Value));
+            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
+            {
+                registerRecurringBG((bool)localStore.Values[Values.UPDATE_ON_CELL], Convert.ToUInt32(updateFreq.Value));
+            }
             timer.Stop();
             timer = null;
             timer = new DispatcherTimer();
@@ -446,7 +465,15 @@ namespace Weathr81.OtherPages
                 ToggleSwitch t = sender as ToggleSwitch;
                 if (t != null)
                 {
-                    localStore.Values[Values.UPDATE_ON_CELL] = !t.IsOn;
+                    localStore.Values[Values.UPDATE_ON_CELL] = t.IsOn;
+                    if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
+                    {
+                        registerRecurringBG(t.IsOn, (uint)localStore.Values[Values.UPDATE_FREQ]);
+                    }
+                    else
+                    {
+                        registerRecurringBG(t.IsOn);
+                    }
                 }
             }
         }
@@ -468,7 +495,7 @@ namespace Weathr81.OtherPages
             }
             return;
         }
-       
+
         #endregion
 
         #region advanced pivot
@@ -607,6 +634,6 @@ namespace Weathr81.OtherPages
             }
         }
 
-        
+
     }
 }

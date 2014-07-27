@@ -36,7 +36,7 @@ namespace BackgroundTask
         #endregion
 
         #region registration
-        public async static void Register(string name, uint mins)
+        public async static void Register(string name, uint mins, bool cellAllowed)
         {
             if (IsTaskRegistered(name))
             {
@@ -48,6 +48,10 @@ namespace BackgroundTask
             builder.TaskEntryPoint = typeof(UpdateTiles).FullName;
             builder.SetTrigger(new TimeTrigger(mins, false));
             SystemCondition condition = new SystemCondition(SystemConditionType.InternetAvailable);
+            if (!cellAllowed)
+            {
+                builder.AddCondition(new SystemCondition(SystemConditionType.FreeNetworkAvailable));
+            }
             builder.AddCondition(condition);
             builder.Register();
         }
@@ -97,31 +101,18 @@ namespace BackgroundTask
         }
         async private Task updateTiles()
         {
-            if (allowedToUpdate())
+            //finds the given secondary tile in the list of locations, then uses that to update the tile
+            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+            await updateTile();
+            foreach (SecondaryTile tile in tiles)
             {
-                //finds the given secondary tile in the list of locations, then uses that to update the tile
-                IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
-                clearTiles(tiles);
-                await updateTile();
-                foreach (SecondaryTile tile in tiles)
+                Location tileLoc = findTile(tile.Arguments);
+                if (!tileLoc.IsDefault)
                 {
-                    Location tileLoc = findTile(tile.Arguments);
-                    if (!tileLoc.IsDefault)
-                    {
-                        await updateTile(tile, tileLoc);
-                    }
+                    await updateTile(tile, tileLoc);
                 }
             }
         }
-
-        private void clearTiles(IReadOnlyCollection<SecondaryTile> tiles)
-        {
-            foreach (SecondaryTile tile in tiles)
-            {
-                TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
-            }
-        }
-
 
         async private Task updateTile(SecondaryTile tile = null, Location tileLoc = null)
         {
@@ -249,23 +240,7 @@ namespace BackgroundTask
             }
             return false;
         }
-        private bool allowedToUpdate()
-        {
-            //determines whether tiles should update or not
-            if (localStore.Values.ContainsKey(Values.UPDATE_ON_CELL))
-            {
-                if ((bool)localStore.Values[Values.UPDATE_ON_CELL])
-                {
-                    return true;
-                }
-                return isOnWifi();
-            }
-            else
-            {
-                localStore.Values[Values.UPDATE_ON_CELL] = true;
-                return true;
-            }
-        }
+
         private Location getDefaultLoc()
         {
             foreach (Location loc in locationList)
@@ -333,12 +308,6 @@ namespace BackgroundTask
             }
             localStore.Values[Values.TRANSPARENT_TILE] = false;
             return false;
-        }
-        private bool isOnWifi()
-        {
-            //checks whether phone is on wifi
-            ConnectionProfile prof = NetworkInformation.GetInternetConnectionProfile();
-            return prof.IsWlanConnectionProfile;
         }
     }
 }
