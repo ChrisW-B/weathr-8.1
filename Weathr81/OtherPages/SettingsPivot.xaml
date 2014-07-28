@@ -83,8 +83,9 @@
                         <StackPanel Margin="0,0,0,20" x:Name="backgroundPanel">
                             <ToggleSwitch Name="wifiOnlyToggle" Header="Update" Toggled="wifiOnlyToggle_Toggled"  OnContent="Always" OffContent="Wifi Only"/>
                             <ToggleSwitch Name="showAlerts" Header="Show Alerts" Toggled="showAlerts_Toggled" OnContent="On" OffContent="Off"/>
+                            <ToggleSwitch Name="notificationCenter" Header="Conditions in Action Center" Toggled="notificationCenter_Toggled"/>
                             <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
-                            <Slider x:Name="updateFreq" Minimum="15" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
+                            <Slider x:Name="updateFreq" Minimum="30" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                             <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>
 
                             <TextBlock VerticalAlignment="Bottom" Margin="0,20,0,0" Text="Tile will be updated next time the background task runs" Style="{ThemeResource ControlContextualInfoTextBlockStyle}"></TextBlock>

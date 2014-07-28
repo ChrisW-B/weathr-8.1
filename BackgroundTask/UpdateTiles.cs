@@ -148,12 +148,12 @@ namespace BackgroundTask
                     {
                         GetForecastIOData fIO = new GetForecastIOData(geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude);
                         ForecastIOClass forecastData = await fIO.getForecast();
-                        if (!forecastData.fail)
+                        if (!forecastData.fail && forecastData.Alerts!=null)
                         {
-                            numAlerts = forecastData.flags.numAlerts;
                             foreach(ForecastIOAlert alert in forecastData.Alerts){
                                 if (!alert.isAllClear)
                                 {
+                                    numAlerts++;
                                     ToastContent t = new ToastContent.ImageAndText02()
                                     {
                                         Title = alert.title,
@@ -163,10 +163,22 @@ namespace BackgroundTask
                                     ToastNotifier notifier = ToastNotificationManager.CreateToastNotifier();
                                     notifier.Show(t.CreateNotification());
                                 }
-
                             }
                         }
                     }
+
+                    if (allowedToNotify())
+                    {
+                        ToastContent t = new ToastContent.ImageAndText02()
+                        {
+                            Title = weatherInfo.city,
+                            Text = weatherInfo.currentConditions + ", " + (unitsAreSI() ? weatherInfo.tempC + "°C" : weatherInfo.tempF + "°F"),
+                            Image = "",
+                        };
+                        ToastNotifier notifier = ToastNotificationManager.CreateToastNotifier();
+                        notifier.Show(t.CreateNotification());
+                    }
+
                     string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
                     string today = "Today: " + weatherInfo.todayShort + " " + weatherInfo.todayHighC + "/" + weatherInfo.todayLowC;
                     string tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighC + "/" + weatherInfo.tomorrowLowC;
@@ -220,33 +232,6 @@ namespace BackgroundTask
                 }
             }
         }
-
-        private bool allowedToGetAlerts()
-        {
-            if (localStore.Values.ContainsKey(Values.ALLOW_ALERTS))
-            {
-                return (bool)localStore.Values[Values.ALLOW_ALERTS];
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        async private Task<SecondaryTile> getDefaultTile()
-        {
-            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
-            foreach (SecondaryTile tile in tiles)
-            {
-                Location tileLoc = findTile(tile.Arguments);
-                if (tileLoc.IsDefault)
-                {
-                    return tile;
-                }
-            }
-            return null;
-        }
-
 
         //rending tiles to images
         async private Task renderTile(UIElement tile, string tileName)
@@ -314,6 +299,38 @@ namespace BackgroundTask
             {
                 return await getBGInfo(conditions, lat, lon, useGroup, false, timesRun + 1);
             }
+        }
+        private bool allowedToNotify()
+        {
+            //determines if background is allowed to notify of current conditions
+            if (localStore.Values.ContainsKey(Values.NOTIFY_COND))
+            {
+                return (bool)localStore.Values[Values.NOTIFY_COND];
+            }
+            return false;
+        }
+        private bool allowedToGetAlerts()
+        {
+            //determine if background is allowed to notify of alerts
+            if (localStore.Values.ContainsKey(Values.ALLOW_ALERTS))
+            {
+                return (bool)localStore.Values[Values.ALLOW_ALERTS];
+            }
+            return false;
+        }
+        async private Task<SecondaryTile> getDefaultTile()
+        {
+            //gets a secondary tile that is set to the default location, if one exists
+            IReadOnlyCollection<SecondaryTile> tiles = await SecondaryTile.FindAllForPackageAsync();
+            foreach (SecondaryTile tile in tiles)
+            {
+                Location tileLoc = findTile(tile.Arguments);
+                if (tileLoc.IsDefault)
+                {
+                    return tile;
+                }
+            }
+            return null;
         }
         private bool unitsAreSI()
         {

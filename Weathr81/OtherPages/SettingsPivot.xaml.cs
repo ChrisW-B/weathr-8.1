@@ -246,10 +246,19 @@ namespace Weathr81.OtherPages
             {
                 showAlerts.IsOn = false;
             }
+            if (localStore.Values.ContainsKey(Values.NOTIFY_COND))
+            {
+                notificationCenter.IsOn = (bool)localStore.Values[Values.NOTIFY_COND];
+            }
+            else
+            {
+                showAlerts.IsOn = false;
+            }
 
             if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
             {
-                updateFreq.Value = Convert.ToInt32(localStore.Values[Values.UPDATE_FREQ]);
+                int value = Convert.ToInt32(localStore.Values[Values.UPDATE_FREQ]);
+                updateFreq.Value = (value > 30) ? value : 30;
                 currentRate.Text = printUpdateRate(updateFreq.Value);
             }
             else
@@ -494,6 +503,13 @@ namespace Weathr81.OtherPages
                 }
             }
         }
+        private void notificationCenter_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values[Values.NOTIFY_COND] = (sender as ToggleSwitch).IsOn;
+            }
+        }
 
         private void tileUnits_Toggled(object sender, RoutedEventArgs e)
         {
@@ -669,6 +685,5 @@ namespace Weathr81.OtherPages
                 }
             }
         }
-
     }
 }
