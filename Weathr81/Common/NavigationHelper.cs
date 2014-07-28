@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Weathr81.OtherPages;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -208,11 +209,12 @@ namespace Weathr81.Common
         /// <param name="e">Event data describing the conditions that led to the event.</param>
         private void HardwareButtons_BackPressed(object sender, Windows.Phone.UI.Input.BackPressedEventArgs e)
         {
-            if (this.GoBackCommand.CanExecute(null))
-            {
-                e.Handled = true;
-                this.GoBackCommand.Execute(null);
-            }
+            
+                if (this.GoBackCommand.CanExecute(null))
+                {
+                    e.Handled = true;
+                    this.GoBackCommand.Execute(null);
+                }
         }
 #else
         /// <summary>
