@@ -24,34 +24,34 @@ namespace Weathr81.OtherPages
     /// </summary>
     public sealed partial class WeatherMap : Page
     {
-        //private NavigationHelper navigationHelper;
-       // private ObservableDictionary defaultViewModel = new ObservableDictionary();
+        private NavigationHelper navigationHelper;
+        private ObservableDictionary defaultViewModel = new ObservableDictionary();
 
         public WeatherMap()
         {
             this.InitializeComponent();
 
-            //this.navigationHelper = new NavigationHelper(this);
-           // this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
-            //this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
+            this.navigationHelper = new NavigationHelper(this);
+            this.navigationHelper.LoadState += this.NavigationHelper_LoadState;
+            this.navigationHelper.SaveState += this.NavigationHelper_SaveState;
         }
 
         /// <summary>
         /// Gets the <see cref="NavigationHelper"/> associated with this <see cref="Page"/>.
         /// </summary>
-        //public NavigationHelper NavigationHelper
-        //{
-        //    get { return this.navigationHelper; }
-        //}
+        public NavigationHelper NavigationHelper
+        {
+            get { return this.navigationHelper; }
+        }
 
         /// <summary>
         /// Gets the view model for this <see cref="Page"/>.
         /// This can be changed to a strongly typed view model.
         /// </summary>
-        //public ObservableDictionary DefaultViewModel
-        //{
-        //    get { return this.defaultViewModel; }
-        //}
+        public ObservableDictionary DefaultViewModel
+        {
+            get { return this.defaultViewModel; }
+        }
 
         /// <summary>
         /// Populates the page with content passed during navigation.  Any saved state is also
@@ -99,8 +99,7 @@ namespace Weathr81.OtherPages
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
-            //this.navigationHelper.OnNavigatedTo(e);
-            HardwareButtons.BackPressed+=HardwareButtons_BackPressed;
+            this.navigationHelper.OnNavigatedTo(e);
             if (e.Parameter != null)
             {
                 MapLaunchClass mapLaunchClass = (e.Parameter as MapLaunchClass);
@@ -171,10 +170,10 @@ namespace Weathr81.OtherPages
             return triangle;
         }
 
-        //protected override void OnNavigatedFrom(NavigationEventArgs e)
-        //{
-        //    this.navigationHelper.OnNavigatedFrom(e);
-        //}
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            this.navigationHelper.OnNavigatedFrom(e);
+        }
 
 
 
@@ -184,8 +183,7 @@ namespace Weathr81.OtherPages
         private const string ANI_SAT_PRE = "animated" + SAT_PRE;
         private const string RAD_PRE = "radar/";
         private const string ANI_RAD_PRE = "animated" + RAD_PRE;
-        private const string TILE_SIZE = "&width=256" + "&height=256";
-        private const string LARGE_TILE_SIZE = "&width=800" + "&height=1600";
+        private const string LARGE_TILE_SIZE = "&width=1000" + "&height=1600";
         private const string SAT_POST = "&key=sat_ir4" + "&gtt=107" + "&smooth=1" + "&timelabel=0";
         private const string RAD_POST = "&rainsnow=1" + "&timelabel=0" + "&noclutter=1";
         private const string SHOW_SAT_BASEMAP = "&basemap=";
@@ -202,58 +200,20 @@ namespace Weathr81.OtherPages
         private const string FRAMES = "&num=";
         private const string RADIUS = "&radius=150";
 
-        StatusBar statusBar;
-        bool mapLoaded = false;
-        bool mapFront = false;
-        async private void animateButton_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        private void animateButton_Click(object sender, Windows.UI.Xaml.RoutedEventArgs e)
         {
-            if (!mapLoaded)
+            Uri uri;
+            if (type == MapLaunchClass.mapType.radar)
             {
-                statusBar = StatusBar.GetForCurrentView();
-                await statusBar.ProgressIndicator.ShowAsync();
-                statusBar.ProgressIndicator.Text = "Loading animation...";
-
-                Uri uri;
-                if (type == MapLaunchClass.mapType.radar)
-                {
-                    uri = new Uri(WUND_PRE + ANI_RAD_PRE + "aniRad.gif?" + RAD_CENTER_LON + Convert.ToString(Map.Center.Position.Longitude, new CultureInfo("en-US")) + RAD_CENTER_LAT + Convert.ToString(Map.Center.Position.Latitude, new CultureInfo("en-US")) + LARGE_TILE_SIZE + RAD_POST + FRAMES + "15" + RADIUS + SHOW_RAD_BASEMAP + "1");
-                }
-                else
-                {
-                    uri = new Uri(WUND_PRE + ANI_SAT_PRE + "aniSat.gif?" + SAT_CENTER_LON + Convert.ToString(Map.Center.Position.Longitude, new CultureInfo("en-US")) + SAT_CENTER_LAT + Convert.ToString(Map.Center.Position.Latitude, new CultureInfo("en-US")) + LARGE_TILE_SIZE + SAT_POST + FRAMES + "8" + RADIUS + SHOW_SAT_BORDERS + "1" + SHOW_SAT_BASEMAP + "1");
-                }
-                mapLoaded = true;
-                mapWebView.Source = uri;
-                mapWebView.NavigationCompleted += mapWebView_NavigationCompleted;
+                uri = new Uri(WUND_PRE + ANI_RAD_PRE + "aniRad.gif?" + RAD_CENTER_LON + Convert.ToString(Map.Center.Position.Longitude, new CultureInfo("en-US")) + RAD_CENTER_LAT + Convert.ToString(Map.Center.Position.Latitude, new CultureInfo("en-US")) + LARGE_TILE_SIZE + RAD_POST + FRAMES + "15" + RADIUS + SHOW_RAD_BASEMAP + "1");
             }
             else
             {
-                mapFront = true;
-                Canvas.SetZIndex(mapWebView, 2);
+                uri = new Uri(WUND_PRE + ANI_SAT_PRE + "aniSat.gif?" + SAT_CENTER_LON + Convert.ToString(Map.Center.Position.Longitude, new CultureInfo("en-US")) + SAT_CENTER_LAT + Convert.ToString(Map.Center.Position.Latitude, new CultureInfo("en-US")) + LARGE_TILE_SIZE + SAT_POST + FRAMES + "8" + RADIUS + SHOW_SAT_BORDERS + "1" + SHOW_SAT_BASEMAP + "1");
             }
-        }
 
-        async void mapWebView_NavigationCompleted(WebView sender, WebViewNavigationCompletedEventArgs args)
-        {
-            mapFront = true;
-            Canvas.SetZIndex(mapWebView, 2);
-            await statusBar.ProgressIndicator.HideAsync();
+            Frame.Navigate(typeof(AnimatedMap), uri);
         }
-
-        void HardwareButtons_BackPressed(object sender, BackPressedEventArgs e)
-        {
-            e.Handled = true;
-            if (mapFront)
-            {
-                mapFront = false;
-                Canvas.SetZIndex(mapWebView, -2);
-            }
-            else
-            {
-                Frame.GoBack();
-            }
-        }
-       
-
     }
 }
+
