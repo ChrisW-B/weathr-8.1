@@ -403,7 +403,6 @@ namespace Weathr81
 
         async private void updateUI(WeatherInfo downloadedForecast, GeoTemplate geo)
         {
-            ImageBrush backBrush = null;
             if (!downloadedForecast.fail)
             {
                 bool isSI = unitsAreSI();
@@ -447,7 +446,7 @@ namespace Weathr81
         }
 
 
-        async private void updateBackground(WeatherInfo downloadedForecast, GeoTemplate geo)
+        async private void updateBackground(WeatherInfo downloadedForecast, GeoTemplate geo, bool canSetTiles = true)
         {
             ImageBrush backBrush = null;
             if (allowedToSetBG())
@@ -483,7 +482,10 @@ namespace Weathr81
                     displayStatusError("Couldn't download background!");
                 }
             }
-            setTiles(ref downloadedForecast, ref backBrush);
+            if (canSetTiles)
+            {
+                setTiles(ref downloadedForecast, ref backBrush);
+            }
         }
 
 
@@ -504,7 +506,7 @@ namespace Weathr81
             }
             if (backBrush != null)
             {
-                updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+               updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
             }
             else
             {
@@ -570,15 +572,7 @@ namespace Weathr81
                     hourlyDone = true;
                 }
             }
-            try
-            {
-                hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
-                bgRestore = true;
-            }
-            catch
-            {
-                displayStatusError("Couldn't set your background");
-            }
+           
             if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.LAST_SAVE))
             {
                 try
@@ -596,6 +590,33 @@ namespace Weathr81
             {
                 sameUnits = !(bool)localStore.Values[Values.UNITS_CHANGED];
                 localStore.Values[Values.UNITS_CHANGED] = false;
+            }
+            try
+            {
+                if (localStore.Values.ContainsKey(Values.USE_FLICKR_BG))
+                {
+                    if ((bool)localStore.Values[Values.USE_FLICKR_BG])
+                    {
+                        hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
+                    }
+                    else
+                    {
+                        NowTemplate nowTemp = now.DataContext as NowTemplate;
+                        if (nowTemp != null)
+                        {
+                            updateBackground(new WeatherInfo() { currentConditions = nowTemp.conditions }, new GeoTemplate() { position = new Geopoint(new BasicGeoposition() { Altitude=0, Longitude=0, Latitude=0 }) }, false);
+                        }
+                    }
+                }
+                else
+                {
+                    hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
+                }
+                bgRestore = true;
+            }
+            catch
+            {
+                displayStatusError("Couldn't set your background");
             }
             return nowDone && forecastDone && hourlyDone && withinThirtyMins && sameUnits && locName && bgRestore;
         }
@@ -1071,13 +1092,11 @@ namespace Weathr81
                 return await getBG(conditions, lat, lon);
             }
         }
-
         private FlickrImage getBuiltInImage(string conditions)
         {
             Random rand = new Random();
             return new FlickrImage() { uri = new Uri("ms-appx:///Assets/Backgrounds/" + convertConditionsToFolder(conditions) + "/" + rand.Next(1, 3) + ".jpg") };
         }
-
         private string convertConditionsToFolder(string cond)
         {
             if (cond == null)
@@ -1389,53 +1408,15 @@ namespace Weathr81
             if (connectedToInternet())
             {
                 await statusBar.ProgressIndicator.ShowAsync();
-                GeoTemplate loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
                 NowTemplate nowTemplate = (now.DataContext as NowTemplate);
                 if (nowTemplate != null)
                 {
-                    FlickrImage bgImg = await getBG(nowTemplate.conditions, loc.position.Position.Latitude, loc.position.Position.Longitude);
-                    if (bgImg != null)
-                    {
-                        hub.Background = null;
-                        addArtistInfo(bgImg.artist, bgImg.artistUri);
-                        string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
-                        if (imgLoc != null)
-                        {
-                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
-                            setHubBG(backBrush);
-                        }
-                        else
-                        {
-                            displayStatusError("Unable to save background");
-                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                            setHubBG(backBrush);
-                        }
-                    }
+                    updateBackground(new WeatherInfo() { currentConditions = nowTemplate.conditions }, geo, false);
                 }
                 else
                 {
-                    FlickrImage bgImg = await getBG("sky", loc.position.Position.Latitude, loc.position.Position.Longitude);
-                    if (bgImg != null)
-                    {
-                        hub.Background = null;
-                        addArtistInfo(bgImg.artist, bgImg.artistUri);
-                        string imgLoc = await saveBackground(bgImg.uri, currentLocation.LocUrl + "recentBG");
-                        if (imgLoc != null)
-                        {
-                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(new Uri(imgLoc)) };
-                            setHubBG(backBrush);
-                        }
-                        else
-                        {
-                            displayStatusError("Unable to save background");
-                            ImageBrush backBrush = new ImageBrush() { ImageSource = new BitmapImage(bgImg.uri) };
-                            setHubBG(backBrush);
-                        }
-                    }
-                    else
-                    {
-                        displayStatusError("Couldn't download background!");
-                    }
+                    displayStatusError("Couldn't get background!");
                 }
             }
             else
