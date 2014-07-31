@@ -31,8 +31,9 @@
                 <StackPanel>
                     <ToggleSwitch x:Name="units" Header="Units" VerticalAlignment="Top" Toggled="Units_Toggled" OnContent="Metric" OffContent="U.S."/>
                     <ToggleSwitch Name="timeType" Header="Time" Toggled="timeType_Toggled" OnContent="24 hr" OffContent="12 hr"/>
-                    <ToggleSwitch x:Name="getImages" Header="Flickr Background" Toggled="getImages_Toggled"></ToggleSwitch>
+                    <ToggleSwitch x:Name="getImages" Header="Backgrounds" Toggled="getImages_Toggled"></ToggleSwitch>
                     <StackPanel x:Name="getImagesOn">
+                        <ToggleSwitch x:Name="getFlickr" Header="Image Source" Toggled="getFlickr_Toggled" OnContent="Flickr" OffContent="Built In"/>
                         <ToggleSwitch x:Name="bgOnWifi" Header="Background" Toggled="bgOnWifi_Toggled" OffContent="Wifi Only" OnContent="Always"></ToggleSwitch>
                     </StackPanel>
                 </StackPanel>

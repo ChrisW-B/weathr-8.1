@@ -14,7 +14,7 @@
     <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{76F1466A-8B6D-4E39-A767-685A06062A39};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AppxBundle>Auto</AppxBundle>
+    <AppxBundle>Always</AppxBundle>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <AppxBundlePlatforms>neutral</AppxBundlePlatforms>
     <NuGetPackageImportStamp>85760a94</NuGetPackageImportStamp>
@@ -160,6 +160,27 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\Backgrounds\Clear\1.jpg" />
+    <Content Include="Assets\Backgrounds\Clear\2.jpg" />
+    <Content Include="Assets\Backgrounds\Clear\3.jpg" />
+    <Content Include="Assets\Backgrounds\Cloudy\1.jpg" />
+    <Content Include="Assets\Backgrounds\Cloudy\2.jpg" />
+    <Content Include="Assets\Backgrounds\Cloudy\3.jpg" />
+    <Content Include="Assets\Backgrounds\Foggy\1.jpg" />
+    <Content Include="Assets\Backgrounds\Foggy\2.jpg" />
+    <Content Include="Assets\Backgrounds\Foggy\3.jpg" />
+    <Content Include="Assets\Backgrounds\PartlyCloudy\1.jpg" />
+    <Content Include="Assets\Backgrounds\PartlyCloudy\2.jpg" />
+    <Content Include="Assets\Backgrounds\PartlyCloudy\3.jpg" />
+    <Content Include="Assets\Backgrounds\Rain\1.jpg" />
+    <Content Include="Assets\Backgrounds\Rain\2.jpg" />
+    <Content Include="Assets\Backgrounds\Rain\3.jpg" />
+    <Content Include="Assets\Backgrounds\Snow\1.jpg" />
+    <Content Include="Assets\Backgrounds\Snow\2.jpg" />
+    <Content Include="Assets\Backgrounds\Snow\3.jpg" />
+    <Content Include="Assets\Backgrounds\Thunderstorm\1.jpg" />
+    <Content Include="Assets\Backgrounds\Thunderstorm\2.jpg" />
+    <Content Include="Assets\Backgrounds\Thunderstorm\3.jpg" />
     <Content Include="Assets\BadgeLogo.scale-240.png" />
     <Content Include="Assets\favs.png" />
     <Content Include="Assets\Logo.scale-240.png" />

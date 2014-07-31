@@ -146,6 +146,14 @@ namespace Weathr81.OtherPages
         }
         private void setUpGeneralSection()
         {
+            if (localStore.Values.ContainsKey(Values.USE_FLICKR_BG))
+            {
+                getFlickr.IsOn = (bool)localStore.Values[Values.USE_FLICKR_BG];
+            }
+            else
+            {
+                getFlickr.IsOn = true;
+            }
             if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
             {
                 timeType.IsOn = (bool)store.Values[Values.TWENTY_FOUR_HR_TIME];
@@ -281,6 +289,14 @@ namespace Weathr81.OtherPages
         #endregion
 
         #region general pivot
+        private void getFlickr_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (doneSetting)
+            {
+                localStore.Values[Values.USE_FLICKR_BG] = (sender as ToggleSwitch).IsOn;
+            }
+
+        }
         private void Units_Toggled(object sender, RoutedEventArgs e)
         {
             if (doneSetting)
@@ -685,5 +701,7 @@ namespace Weathr81.OtherPages
                 }
             }
         }
+
+        
     }
 }
