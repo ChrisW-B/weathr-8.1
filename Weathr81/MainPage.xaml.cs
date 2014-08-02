@@ -1339,17 +1339,29 @@ namespace Weathr81
         {
             if (GetGeoposition != null)
             {
-                MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.satellite };
-                Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+                GeoTemplate temp = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                if (temp != null)
+                {
+                    MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = temp, type = MapLaunchClass.mapType.satellite };
+                    Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+                    return;
+                }
             }
+            displayStatusError("Oops, not ready yet. Try opening maps in a few seconds");
         }
         async private void radarMap_Tap(object sender, TappedRoutedEventArgs e)
         {
             if (GetGeoposition != null)
             {
-                MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0)), type = MapLaunchClass.mapType.radar };
-                Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+                GeoTemplate temp = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                if (temp != null)
+                {
+                    MapLaunchClass mapLaunchClass = new MapLaunchClass() { loc = temp, type = MapLaunchClass.mapType.radar };
+                    Frame.Navigate(typeof(WeatherMap), mapLaunchClass);
+                    return;
+                }
             }
+            displayStatusError("Oops, not ready yet. Try opening maps in a few seconds");
         }
         private void locationName_Tapped(object sender, TappedRoutedEventArgs e)
         {
