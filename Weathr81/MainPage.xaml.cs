@@ -713,6 +713,7 @@ namespace Weathr81
             if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
             {
                 localStore.Values[Values.IS_NEW_DEVICE] = false;
+                await setupLocation();
             }
             else if (store.Values.ContainsKey(Values.LOC_STORE))
             {

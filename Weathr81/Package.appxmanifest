@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
-  <Identity Name="56541CBStudios.WeathrBeta" Publisher="CN=611495F7-A5B9-44E0-8989-5C76FCB7AB4E" Version="1.1.0.23" />
+  <Identity Name="56541CBStudios.WeathrBeta" Publisher="CN=611495F7-A5B9-44E0-8989-5C76FCB7AB4E" Version="1.1.0.24" />
   <mp:PhoneIdentity PhoneProductId="995091a2-b1c4-44c0-be97-3553d41d44fb" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Weathr Beta</DisplayName>
