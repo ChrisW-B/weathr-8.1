@@ -148,9 +148,10 @@ namespace BackgroundTask
                     {
                         GetForecastIOData fIO = new GetForecastIOData(geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude);
                         ForecastIOClass forecastData = await fIO.getForecast();
-                        if (!forecastData.fail && forecastData.Alerts!=null)
+                        if (!forecastData.fail && forecastData.Alerts != null)
                         {
-                            foreach(ForecastIOAlert alert in forecastData.Alerts){
+                            foreach (ForecastIOAlert alert in forecastData.Alerts)
+                            {
                                 if (!alert.isAllClear)
                                 {
                                     numAlerts++;
@@ -195,11 +196,18 @@ namespace BackgroundTask
                     TileGroup tiles = null;
                     if (!isTransparent())
                     {
-                        BackgroundFlickr flickrData = await getBGInfo(weatherInfo.currentConditions, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude, true, true, 0);
+                        BackgroundFlickr flickrData = await getBGInfo(weatherInfo.currentConditions, geoTemplate.position.Position.Latitude, geoTemplate.position.Position.Longitude, true, true);
                         //save flickr image so it doesn't have to be requested twice
                         if (flickrData != null)
                         {
-                            tiles = creater.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
+                            if (flickrData.userName != null)
+                            {
+                                tiles = creater.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
+                            }
+                            else
+                            {
+                                tiles = creater.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) });
+                            }
                         }
                         else
                         {
@@ -275,9 +283,79 @@ namespace BackgroundTask
             }
             return null;
         }
-        async private Task<BackgroundFlickr> getBGInfo(string conditions, double lat, double lon, bool useGroup, bool useLoc, int timesRun)
+
+        async private Task<BackgroundFlickr> getBGInfo(string conditions, double lat, double lon, bool useGroup, bool useLoc)
         {
             //gets a uri for a background image from flickr
+            if (localStore.Values.ContainsKey(Values.TILES_USE_FLICKR_BG))
+            {
+                if ((bool)localStore.Values[Values.TILES_USE_FLICKR_BG])
+                {
+                    return await getFlickrBackground(conditions, lat, lon, useGroup, useLoc, 0);
+                }
+                else
+                {
+                    return getLocalBackground(conditions);
+                }
+            }
+            else
+            {
+                return await getFlickrBackground(conditions, lat, lon, useGroup, useLoc, 0);
+            }
+        }
+
+        private BackgroundFlickr getLocalBackground(string conditions)
+        {
+            Random rand = new Random();
+            return new BackgroundFlickr() { imageUri = new Uri("ms-appx:///Assets/Backgrounds/" + convertConditionsToFolder(conditions) + "/" + rand.Next(1, 4) + ".jpg") };
+        }
+        private string convertConditionsToFolder(string cond)
+        {
+            if (cond == null)
+            {
+                return "Clear";
+            }
+            else
+            {
+                string weatherUpper = cond.ToUpper();
+
+                if (weatherUpper.Contains("THUNDER"))
+                {
+                    return "Thunderstorm";
+                }
+                else if (weatherUpper.Contains("RAIN"))
+                {
+                    return "Rain";
+                }
+                else if (weatherUpper.Contains("SNOW") || weatherUpper.Contains("FLURRY"))
+                {
+                    return "Snow";
+                }
+                else if (weatherUpper.Contains("FOG") || weatherUpper.Contains("MIST"))
+                {
+                    return "Fog";
+                }
+                else if (weatherUpper.Contains("CLEAR"))
+                {
+                    return "Clear";
+                }
+                else if (weatherUpper.Contains("OVERCAST"))
+                {
+                    return "Cloudy";
+                }
+                else if (weatherUpper.Contains("CLOUDS") || weatherUpper.Contains("CLOUDY"))
+                {
+                    return "PartlyCloudy";
+                }
+                else
+                {
+                    return "Clear";
+                }
+            }
+        }
+
+        async private Task<BackgroundFlickr> getFlickrBackground(string conditions, double lat, double lon, bool useGroup, bool useLoc, int timesRun)
+        {
             if (timesRun > 1)
             {
                 return null;
@@ -297,9 +375,13 @@ namespace BackgroundTask
             }
             else
             {
-                return await getBGInfo(conditions, lat, lon, useGroup, false, timesRun + 1);
+                return await getFlickrBackground(conditions, lat, lon, useGroup, false, timesRun + 1);
             }
         }
+
+
+
+
         private bool allowedToNotify()
         {
             //determines if background is allowed to notify of current conditions

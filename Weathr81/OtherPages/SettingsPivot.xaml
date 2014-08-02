@@ -33,8 +33,10 @@
                     <ToggleSwitch Name="timeType" Header="Time" Toggled="timeType_Toggled" OnContent="24 hr" OffContent="12 hr"/>
                     <ToggleSwitch x:Name="getImages" Header="Backgrounds" Toggled="getImages_Toggled"></ToggleSwitch>
                     <StackPanel x:Name="getImagesOn">
-                        <ToggleSwitch x:Name="getFlickr" Header="Image Source" Toggled="getFlickr_Toggled" OnContent="Flickr" OffContent="Built In"/>
-                        <ToggleSwitch x:Name="bgOnWifi" Header="Background" Toggled="bgOnWifi_Toggled" OffContent="Wifi Only" OnContent="Always"></ToggleSwitch>
+                        <ToggleSwitch x:Name="getFlickr" Header="Image Source" Toggled="getFlickr_Toggled" OnContent="Flickr" OffContent="Built In" Margin="10,0,-0.333,0"/>
+                        <StackPanel x:Name="getFlickrOn" Margin="10,0,0,0">
+                        <ToggleSwitch x:Name="bgOnWifi" Header="Background" Toggled="bgOnWifi_Toggled" OffContent="Wifi Only" OnContent="Always" Margin="10,0,0,0"></ToggleSwitch>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </PivotItem>
@@ -81,10 +83,11 @@
                         <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Flickr Images" OffContent="Transparent"/>
                         <ToggleSwitch Name="enableBackground" Header="Update in Background" Toggled="enableBackground_Toggled" Margin="0,20,0,0"/>
 
-                        <StackPanel Margin="0,0,0,20" x:Name="backgroundPanel">
+                        <StackPanel Margin="10,0,0,0" x:Name="backgroundPanel">
                             <ToggleSwitch Name="wifiOnlyToggle" Header="Update" Toggled="wifiOnlyToggle_Toggled"  OnContent="Always" OffContent="Wifi Only"/>
+                            <ToggleSwitch Name="builtInTileBG" Header="Images" OnContent="Flickr" OffContent="Built In" Toggled="builtInTileBG_Toggled"/>
                             <ToggleSwitch Name="showAlerts" Header="Show Alerts" Toggled="showAlerts_Toggled" OnContent="On" OffContent="Off"/>
-                            <ToggleSwitch Name="notificationCenter" Header="Conditions in Action Center" Toggled="notificationCenter_Toggled"/>
+                            <ToggleSwitch Name="notificationCenter" Header="Notify Conditions" Toggled="notificationCenter_Toggled"/>
                             <TextBlock HorizontalAlignment="Center" FontSize="18" Text="Tile Update Frequency" Margin="0,20,0,0"/>
                             <Slider x:Name="updateFreq" Minimum="30" Maximum="720" ValueChanged="updateFreq_ValueChanged" StepFrequency="15"/>
                             <TextBlock FontSize="16" HorizontalAlignment="Center" x:Name="currentRate"></TextBlock>

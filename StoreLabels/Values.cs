@@ -48,5 +48,6 @@ namespace StoreLabels
         public const string ALLOW_ALERTS = "enableBGAlerts";
         public const string NOTIFY_COND = "allowedToNotifyConditions";
         public const string USE_FLICKR_BG = "useFlickrOverBulitIn";
+        public static string TILES_USE_FLICKR_BG="useFlickrOnTiles";
     }
 }

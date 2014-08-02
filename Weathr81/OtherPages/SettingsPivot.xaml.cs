@@ -154,6 +154,7 @@ namespace Weathr81.OtherPages
             {
                 getFlickr.IsOn = true;
             }
+            getFlickrOn.Visibility = getFlickr.IsOn ? Visibility.Visible : Visibility.Collapsed;
             if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
             {
                 timeType.IsOn = (bool)store.Values[Values.TWENTY_FOUR_HR_TIME];
@@ -245,7 +246,7 @@ namespace Weathr81.OtherPages
                 transparentToggle.IsOn = false;
                 localStore.Values[Values.TRANSPARENT_TILE] = true;
             }
-
+            builtInTileBG.Visibility = transparentToggle.IsOn ? Visibility.Visible : Visibility.Collapsed;
             if (localStore.Values.ContainsKey(Values.ALLOW_ALERTS))
             {
                 showAlerts.IsOn = (bool)localStore.Values[Values.ALLOW_ALERTS];
@@ -294,6 +295,7 @@ namespace Weathr81.OtherPages
             if (doneSetting)
             {
                 localStore.Values[Values.USE_FLICKR_BG] = (sender as ToggleSwitch).IsOn;
+                getFlickrOn.Visibility = (sender as ToggleSwitch).IsOn ? Visibility.Visible : Visibility.Collapsed;
             }
 
         }
@@ -488,6 +490,7 @@ namespace Weathr81.OtherPages
             if (doneSetting)
             {
                 localStore.Values[Values.TRANSPARENT_TILE] = !(sender as ToggleSwitch).IsOn;
+                builtInTileBG.Visibility = (sender as ToggleSwitch).IsOn ? Visibility.Visible : Visibility.Collapsed;
             }
             return;
         }
@@ -700,6 +703,11 @@ namespace Weathr81.OtherPages
                     Serializer.save(newLocs.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, store);
                 }
             }
+        }
+
+        private void builtInTileBG_Toggled(object sender, RoutedEventArgs e)
+        {
+
         }
 
         

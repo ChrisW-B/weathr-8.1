@@ -109,7 +109,10 @@ namespace TileCreater
                     newBg.ImageSource = background.ImageSource;
                     newBg.Opacity = 1;
                     newBg.Stretch = Stretch.UniformToFill;
-                    data.flickrData.userName = artistName;
+                    if (artistName != null)
+                    {
+                        data.flickrData.userName = artistName;
+                    }
                     return createTileImages(data, numAlerts, ref newBg);
                 }
                 return createTileImages(data, numAlerts);
@@ -230,7 +233,14 @@ namespace TileCreater
             if (background != null)
             {
                 g = (createBackgroundGrid(LiveTileSize.wide, false, ref background));
-                g.Children.Add(createWideDarkOverlay(data.flickrData.userName));
+                if (data.flickrData.userName != null)
+                {
+                    g.Children.Add(createWideDarkOverlay(data.flickrData.userName));
+                }
+                else
+                {
+                    g.Children.Add(createWideDarkOverlay());
+                }
                 g.Children.Add(createWideStackPanel(data, numAlerts, true));
             }
             else
@@ -274,10 +284,13 @@ namespace TileCreater
             g.Children.Add(createOverlay(data, numAlerts, true));
             return g;
         }
-        private Grid createWideDarkOverlay(string artistName)
+        private Grid createWideDarkOverlay(string artistName=null)
         {
             Grid g = new Grid() { Width = 310, Height = 150, Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
-            g.Children.Add(new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
+            if (artistName != null)
+            {
+                g.Children.Add(new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0) });
+            }
             return g;
         }
         private StackPanel createWideStackPanel(BackgroundTemplate data, int numAlerts, bool transparent)
@@ -343,7 +356,10 @@ namespace TileCreater
             if (!transparent)
             {
                 g.Background = new SolidColorBrush(Colors.Black) { Opacity = .3 };
-                g.Children.Add(createFlickrSource(data.flickrData.userName));
+                if (data.flickrData.userName != null)
+                {
+                    g.Children.Add(createFlickrSource(data.flickrData.userName));
+                }
             }
             g.Children.Add(createDataStackPanel(data));
             g.Children.Add(createLocationTextBlock(data.location.location));

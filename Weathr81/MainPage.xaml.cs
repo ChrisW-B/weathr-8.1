@@ -104,6 +104,11 @@ namespace Weathr81
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
+            startUp(e);
+        }
+
+        private void startUp(NavigationEventArgs e)
+        {
             localStore.Values.Remove(Values.LAST_CMD_BAR);
             BottomAppBar = new CommandBar();
             if (e.Parameter != null)
@@ -205,7 +210,7 @@ namespace Weathr81
                 else
                 {
                     displayStatusError("You're not connected to the internet!");
-                    if (await setFavoriteLocations(true))
+                    if (await setLocations(true))
                     {
                         restoreData();
                     }
@@ -215,7 +220,7 @@ namespace Weathr81
 
         async private void doConnected()
         {
-            if (await setFavoriteLocations())
+            if (await setLocations())
             {
                 GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
                 if (!restoreData())
@@ -401,7 +406,7 @@ namespace Weathr81
             }
         }
 
-        async private void updateUI(WeatherInfo downloadedForecast, GeoTemplate geo)
+        private void updateUI(WeatherInfo downloadedForecast, GeoTemplate geo)
         {
             if (!downloadedForecast.fail)
             {
@@ -417,7 +422,6 @@ namespace Weathr81
                 displayError(downloadedForecast.error);
             }
         }
-
         async private void updateEmptyBackground(GeoTemplate geo)
         {
             ImageBrush backBrush = null;
@@ -444,8 +448,6 @@ namespace Weathr81
                 displayStatusError("Couldn't download background!");
             }
         }
-
-
         async private void updateBackground(WeatherInfo downloadedForecast, GeoTemplate geo, bool canSetTiles = true)
         {
             ImageBrush backBrush = null;
@@ -487,9 +489,6 @@ namespace Weathr81
                 setTiles(ref downloadedForecast, ref backBrush);
             }
         }
-
-
-
         private void setTiles(ref WeatherInfo downloadedForecast, ref ImageBrush backBrush)
         {
             //set tile data
@@ -686,64 +685,77 @@ namespace Weathr81
                 localStore.Values[currentLocation.LocUrl + Values.LAST_LOC_NAME] = hub.Header;
             }
         }
-        async private Task<bool> setFavoriteLocations(bool isOffline = false)
+        async private Task<bool> setLocations(bool isOffline = false)
         {
-            LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() };
+            LocationTemplate locTemplate = null;
             if (!isOffline)
             {
-                if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
-                {
-                    localStore.Values[Values.IS_NEW_DEVICE] = false;
-                }
-                if (store.Values.ContainsKey(Values.LOC_STORE))
-                {
-                    ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
-                    if (list == null || list.Count < 1)
-                    {
-                        //something wrong with the list, reset roaming and try again
-                        store.Values.Remove(Values.LOC_STORE);
-                        await setFavoriteLocations();
-                    }
-                    else
-                    {
-                        locTemplate.locations.locationList = list;
-                    }
-                }
-                else
-                {
-                    await setupLocation();
-                }
-                if (store.Values.ContainsKey(Values.LOC_STORE))
-                {
-                    locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
-                    locTemplate.locations.locationList = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
-                    setCurrentLocation(locTemplate.locations.locationList);
-                    locList.DataContext = locTemplate;
-                    Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, localStore);
-                }
-                else
-                {
-                    locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
-                }
+                locTemplate = await onlineLocationSetup();
             }
             else
             {
-                if (localStore.Values.ContainsKey(Values.LOC_STORE))
+               locTemplate = offlineLocationSetup();
+            }
+            if (locTemplate != null && locTemplate.locations != null && locTemplate.locations.locationList != null)
+            {
+                setCurrentLocation(locTemplate.locations.locationList);
+                return locTemplate.locations.locationList.Count > 0;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+       async private Task<LocationTemplate> onlineLocationSetup()
+        {
+            LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
+            if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
+            {
+                localStore.Values[Values.IS_NEW_DEVICE] = false;
+            }
+            else if (store.Values.ContainsKey(Values.LOC_STORE))
+            {
+                locTemplate.locations.locationList = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+                if (locTemplate.locations.locationList == null || locTemplate.locations.locationList.Count < 1)
                 {
-                    ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), localStore) as ObservableCollection<Location>);
-                    if (list != null)
-                    {
-                        locTemplate.locations.locationList = list;
-                        locList.DataContext = locTemplate;
-                        setCurrentLocation(list, true);
-                    }
-                    else
-                    {
-                        displayError("You need to connect to the internet!");
-                    }
+                    //something wrong with the list, reset roaming and try again
+                    store.Values.Remove(Values.LOC_STORE);
+                }
+                else
+                {
+                    locList.DataContext = locTemplate;
+                    Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, localStore);
                 }
             }
-            return locTemplate.locations.locationList.Count > 0;
+            if (!(locTemplate.locations.locationList.Count > 0))
+            {
+                await setupLocation();
+                locTemplate.locations.locationList = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+            }
+            return locTemplate;
+        }
+
+        private LocationTemplate offlineLocationSetup()
+        {
+            LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
+            if (localStore.Values.ContainsKey(Values.LOC_STORE))
+            {
+                ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), localStore) as ObservableCollection<Location>);
+                if (list != null)
+                {
+                    locTemplate.locations.locationList = list;
+                    locList.DataContext = locTemplate;
+                    setCurrentLocation(list, true);
+                    return locTemplate;
+                }
+                else
+                {
+                    displayError("You need to connect to the internet!");
+                    return locTemplate;
+                }
+            }
+            return locTemplate;
         }
 
         private void setCurrentLocation(ObservableCollection<Location> locations, bool isOffline = false)
@@ -1095,7 +1107,7 @@ namespace Weathr81
         private FlickrImage getBuiltInImage(string conditions)
         {
             Random rand = new Random();
-            return new FlickrImage() { uri = new Uri("ms-appx:///Assets/Backgrounds/" + convertConditionsToFolder(conditions) + "/" + rand.Next(1, 3) + ".jpg") };
+            return new FlickrImage() { uri = new Uri("ms-appx:///Assets/Backgrounds/" + convertConditionsToFolder(conditions) + "/" + rand.Next(1, 4) + ".jpg") };
         }
         private string convertConditionsToFolder(string cond)
         {
@@ -1365,7 +1377,7 @@ namespace Weathr81
                 if (connectedToInternet())
                 {
                     await statusBar.ProgressIndicator.ShowAsync();
-                    if (await setFavoriteLocations())
+                    if (await setLocations())
                     {
                         beginUpdate();
                     }
