@@ -220,7 +220,14 @@ namespace Weathr81
 
         async private void doConnected()
         {
-            if (await setLocations())
+            bool success;
+            try{
+                success = await setLocations();
+            }
+            catch{
+                success = false;
+            }
+            if (success)
             {
                 GetGeoposition = new GetGeoposition(currentLocation, allowedToAutoFind());
                 if (!restoreData())
@@ -714,6 +721,7 @@ namespace Weathr81
             {
                 localStore.Values[Values.IS_NEW_DEVICE] = false;
                 await setupLocation();
+                locTemplate.locations.locationList = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
             }
             else if (store.Values.ContainsKey(Values.LOC_STORE))
             {
@@ -722,6 +730,7 @@ namespace Weathr81
                 {
                     //something wrong with the list, reset roaming and try again
                     store.Values.Remove(Values.LOC_STORE);
+                    locTemplate = await onlineLocationSetup();
                 }
                 else
                 {
@@ -733,6 +742,10 @@ namespace Weathr81
             {
                 await setupLocation();
                 locTemplate.locations.locationList = Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>;
+                if (locTemplate.locations.locationList == null)
+                {
+                    locTemplate.locations.locationList = new ObservableCollection<Location>();
+                }
             }
             return locTemplate;
         }

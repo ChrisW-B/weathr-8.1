@@ -553,15 +553,20 @@ namespace Weathr81.OtherPages
         #region advanced pivot
         async private void Button_Click(object sender, RoutedEventArgs e)
         {
-            MessageDialog dialog = new MessageDialog("This will remove all of your saved data and settings on for Weathr on all of your devices, and reset everything, including backups. Are you sure you want to delete?", "Are you sure?");
-            dialog.Commands.Add(new UICommand("Reset Everything", delegate(IUICommand cmd)
+            MessageDialog dialog = new MessageDialog("This will remove all of your saved data and settings on for Weathr on all of your devices, and reset everything, including backups, then close the app. Are you sure you want to delete?", "Are you sure?");
+            dialog.Commands.Add(new UICommand("Reset Everything", async delegate(IUICommand cmd)
             {
                 DateTime firstRun = (DateTime)Serializer.get(Values.FIRST_START, typeof(DateTime), store);
                 store.Values.Clear();
                 localStore.Values.Clear();
                 UpdateTiles.Unregister(Values.TASK_NAME);
                 Serializer.save(firstRun, typeof(DateTime), Values.FIRST_START, store);
-                updateSettings();
+                MessageDialog exitDialog = new MessageDialog("Sucessfully reset. In order to complete, please exit the app and relaunch it", "Reset Complete!");
+                exitDialog.Commands.Add(new UICommand("Exit", delegate(IUICommand exitCmd)
+                    {
+                        App.Current.Exit();
+                    }));
+               await exitDialog.ShowAsync();
             }));
             dialog.Commands.Add(new UICommand("No"));
             await dialog.ShowAsync();
