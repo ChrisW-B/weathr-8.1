@@ -1,4 +1,5 @@
-﻿using LocationHelper;
+﻿using DataTemplates;
+using LocationHelper;
 using StoreLabels;
 using System;
 using System.Collections.Generic;
@@ -7,11 +8,13 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using Weathr81.OtherPages;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.SpeechSynthesis;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -41,6 +44,62 @@ namespace Weathr81
             this.InitializeComponent();
             this.Suspending += this.OnSuspending;
         }
+        // Was the app activated by a voice command?
+       async protected override void OnActivated(IActivatedEventArgs args)
+        {
+            base.OnActivated(args);
+            if (args.Kind == Windows.ApplicationModel.Activation.ActivationKind.VoiceCommand)
+            {
+                var commandArgs = args as Windows.ApplicationModel.Activation.VoiceCommandActivatedEventArgs;
+                Windows.Media.SpeechRecognition.SpeechRecognitionResult speechRecognitionResult = commandArgs.Result;
+
+                // If so, get the name of the voice command, the actual text spoken, and the value of Command/Navigate@Target.
+                string voiceCommandName = speechRecognitionResult.RulePath[0];
+                string textSpoken = speechRecognitionResult.Text;
+                string navigationTarget = speechRecognitionResult.SemanticInterpretation.Properties["NavigationTarget"][0];
+
+                switch (voiceCommandName)
+                {
+                    case "umbrella":
+                        if (textSpoken.Contains("today"))
+                        {
+                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.umbrella });
+                        }
+                        else if (textSpoken.Contains("tomorrow"))
+                        {
+                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.umbrella });
+                        }
+                        break;
+                    case "conditions":
+                        if (textSpoken.Contains("today"))
+                        {
+                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.conditions });
+                        }
+                        else if (textSpoken.Contains("tomorrow"))
+                        {
+                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.conditions });
+                        }
+                        break;
+                    case "jacket":
+                        if (textSpoken.Contains("today"))
+                        {
+                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.jacket });
+                        }
+                        else if (textSpoken.Contains("tomorrow"))
+                        {
+                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.jacket });
+                        }
+                        break;
+                    default:
+                        // There is no match for the voice command name.
+                        break;
+                }
+            }
+        }
+
+
+
+
 
         /// <summary>
         /// Invoked when the application is launched normally by the end user.  Other entry points
@@ -103,7 +162,7 @@ namespace Weathr81
                 //    throw new Exception("Failed to create initial page");
                 //}
             }
-            
+
             if (e != null && e.Arguments != "")
             {
                 // The app was launched from a Secondary Tile
@@ -126,7 +185,7 @@ namespace Weathr81
                 rootFrame.BackStack.Clear();
             }
 
-            
+
 
             // Ensure the current window is active
             Window.Current.Activate();
@@ -166,7 +225,7 @@ namespace Weathr81
         {
             String[] latLong = (args.TileId).Split('_');
 
-            Location loc = new Location() { IsCurrent = (args.Arguments == null)||(args.Arguments=="currLoc"), Lat = Convert.ToDouble(latLong[0], new CultureInfo("en-US")), Lon = Convert.ToDouble(latLong[1], new CultureInfo("en-US")) };
+            Location loc = new Location() { IsCurrent = (args.Arguments == null) || (args.Arguments == "currLoc"), Lat = Convert.ToDouble(latLong[0], new CultureInfo("en-US")), Lon = Convert.ToDouble(latLong[1], new CultureInfo("en-US")) };
             if (args.Arguments != null)
             {
                 loc.LocUrl = args.Arguments;

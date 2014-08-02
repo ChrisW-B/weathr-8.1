@@ -18,12 +18,15 @@ using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
+using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.Email;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
+using Windows.Media.SpeechRecognition;
+using Windows.Media.SpeechSynthesis;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.Storage.Streams;
@@ -104,20 +107,188 @@ namespace Weathr81
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
-            startUp(e);
+            VoiceTemplate template = e.Parameter as VoiceTemplate;
+            if (template != null)
+            {
+                setupVoiceCommand(template);
+            }
+
+                startUp(e);
         }
+
+        #region voice commands
+        private void setupVoiceCommand(VoiceTemplate vTemp)
+        {
+            SpeechSynthesizer synth = new SpeechSynthesizer();
+            attemptToSpeakWeather(synth, vTemp);
+        }
+        async private void attemptToSpeakWeather(SpeechSynthesizer synth, VoiceTemplate vTemp)
+        {
+            GetGeoposition getGeo = new GetGeoposition(findDefaultPosition(), allowedToAutoFind());
+            GeoTemplate geo = await getGeo.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+            if (!geo.fail)
+            {
+                getWeather(synth, vTemp, geo);
+            }
+        }
+        async private void getWeather(SpeechSynthesizer synth, VoiceTemplate vTemp, GeoTemplate geo)
+        {
+            GetWundergroundData getWeather = null;
+            if (geo.useCoord)
+            {
+                getWeather = new GetWundergroundData(Values.WUND_API_KEY, geo.position.Position.Latitude, geo.position.Position.Longitude);
+            }
+            else
+            {
+                getWeather = new GetWundergroundData(Values.WUND_API_KEY, geo.wUrl);
+            }
+
+            WeatherInfo weather = await getWeather.getConditions();
+            if (!weather.fail)
+            {
+                switch (vTemp.type)
+                {
+                    case VoiceCommandType.conditions:
+                        speakConditions(synth, vTemp, weather);
+                        break;
+                    case VoiceCommandType.jacket:
+                        speakJacket(synth, vTemp, weather);
+                        break;
+                    case VoiceCommandType.umbrella:
+                        speakUmbrella(synth, vTemp, weather);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        async private void speakConditions(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather)
+        {
+            string speechString = "";
+            if (vTemp.day == VoiceCommandDay.today)
+            {
+                speechString = "It's " + weather.tempC + "degrees and " + weather.currentConditions + " right now, " + weather.todayShort + " with a high of " + weather.todayHighC + " for the rest of the day";
+            }
+            else
+            {
+                speechString = "Tomorrow should have a high of about " + weather.tomorrowHighC + " with a forecast of " + weather.tomorrowShort;
+            }
+            SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
+            playStream(stream);
+        }
+        async private void speakJacket(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather)
+        {
+            string speechString = "";
+            if (vTemp.day == VoiceCommandDay.today)
+            {
+                speechString = convertToSpeech(weather.todayShort, weather.todayHighF, weather.todayHighC);
+            }
+            else
+            {
+                speechString = convertToSpeech(weather.tomorrowShort, weather.tomorrowHighF, weather.tomorrowHighC);
+            }
+            SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
+            playStream(stream);
+        }
+        private string convertToSpeech(string cond, string hiF, string hiC)
+        {
+            cond = cond.ToUpperInvariant();
+            bool warm = false;
+            bool cool = false;
+            bool cold = false;
+            bool precip = false;
+            int temp = Convert.ToInt32(hiF);
+            if (cond.Contains("RAIN") || cond.Contains("SNOW") || cond.Contains("SLEET") || cond.Contains("SHOWER"))
+            {
+                precip = true;
+            }
+            if (temp > 65)
+            {
+                warm = true;
+            }
+            else if (temp > 40)
+            {
+                cool = true;
+            }
+            else
+            {
+                cold = true;
+            }
+            string poss = (precip) ? "definitely" : (cold) ? "definitely" : (cool) ? "maybe" : "no";
+            string tempFeel = (cold) ? "cold" : (cool) ? "cool" : "warm" + (poss == "definitely" ? ", but " : "");
+            return poss + " I don't think so, it's going to be " + tempFeel + " and " + cond;
+        }
+        async private void speakUmbrella(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather)
+        {
+            string speechString = "";
+            bool precip = false;
+            bool lightPrecip = false;
+            string cond = "";
+            if (vTemp.day == VoiceCommandDay.today)
+            {
+                cond = weather.todayShort.ToUpperInvariant();
+            }
+            else
+            {
+                cond = weather.tomorrowShort.ToUpperInvariant();
+            }
+            if (cond.Contains("RAIN") || cond.Contains("SNOW") || cond.Contains("SLEET"))
+            {
+                precip = true;
+            }
+            else if (cond.Contains("SHOWER") || cond.Contains("THUNDER"))
+            {
+                lightPrecip = true;
+            }
+            speechString = ((precip) ? "definitely" : (lightPrecip) ? "maybe" : "no") + ", " + cond + ((vTemp.day == VoiceCommandDay.today) ? " today" : " tomorrow");
+            SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
+            playStream(stream);
+        }
+        private Location findDefaultPosition()
+        {
+            if (store.Values.ContainsKey(Values.LOC_STORE))
+            {
+                ObservableCollection<Location> list = (Serializer.get(Values.LOC_STORE, typeof(ObservableCollection<Location>), store) as ObservableCollection<Location>);
+                foreach (Location loc in list)
+                {
+                    if (loc.IsDefault)
+                    {
+                        return loc;
+                    }
+                }
+            }
+            return null;
+        }
+        private void playStream(SpeechSynthesisStream stream)
+        {
+            media.SetSource(stream, stream.ContentType);
+            media.Play();
+        }
+        #endregion
 
         private void startUp(NavigationEventArgs e)
         {
+            if (e.NavigationMode == NavigationMode.New)
+            {
+                setupVoiceCommands();
+                localStore.Values.Remove(Values.LAST_HUB_SECTION);
+            }
             localStore.Values.Remove(Values.LAST_CMD_BAR);
             BottomAppBar = new CommandBar();
-            if (e.Parameter != null)
+            Location loc = e.Parameter as Location;
+            if(loc!=null)
             {
-                this.currentLocation = (e.Parameter as Location);
+                this.currentLocation = loc;
             }
             statusBar = StatusBar.GetForCurrentView();
             statusBar.ForegroundColor = Colors.White;
             runApp();
+        }
+
+        async private void setupVoiceCommands()
+        {
+            StorageFile vcd = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///WeathrVoice.xml"));
+            await VoiceCommandManager.InstallCommandSetsFromStorageFileAsync(vcd);
         }
 
         private bool connectedToInternet()
@@ -221,10 +392,12 @@ namespace Weathr81
         async private void doConnected()
         {
             bool success;
-            try{
+            try
+            {
                 success = await setLocations();
             }
-            catch{
+            catch
+            {
                 success = false;
             }
             if (success)
@@ -363,6 +536,7 @@ namespace Weathr81
             {
                 return (bool)localStore.Values[Values.ALLOW_LOC];
             }
+            localStore.Values[Values.ALLOW_LOC] = false;
             return false;
         }
         async private void displayError(string errorMsg)
@@ -512,7 +686,7 @@ namespace Weathr81
             }
             if (backBrush != null)
             {
-               updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+                updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
             }
             else
             {
@@ -578,7 +752,7 @@ namespace Weathr81
                     hourlyDone = true;
                 }
             }
-           
+
             if (localStore.Values.ContainsKey(currentLocation.LocUrl + Values.LAST_SAVE))
             {
                 try
@@ -610,7 +784,7 @@ namespace Weathr81
                         NowTemplate nowTemp = now.DataContext as NowTemplate;
                         if (nowTemp != null)
                         {
-                            updateBackground(new WeatherInfo() { currentConditions = nowTemp.conditions }, new GeoTemplate() { position = new Geopoint(new BasicGeoposition() { Altitude=0, Longitude=0, Latitude=0 }) }, false);
+                            updateBackground(new WeatherInfo() { currentConditions = nowTemp.conditions }, new GeoTemplate() { position = new Geopoint(new BasicGeoposition() { Altitude = 0, Longitude = 0, Latitude = 0 }) }, false);
                         }
                     }
                 }
@@ -701,7 +875,7 @@ namespace Weathr81
             }
             else
             {
-               locTemplate = offlineLocationSetup();
+                locTemplate = offlineLocationSetup();
             }
             if (locTemplate != null && locTemplate.locations != null && locTemplate.locations.locationList != null)
             {
@@ -714,7 +888,7 @@ namespace Weathr81
             }
         }
 
-       async private Task<LocationTemplate> onlineLocationSetup()
+        async private Task<LocationTemplate> onlineLocationSetup()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
             if (!localStore.Values.ContainsKey(Values.IS_NEW_DEVICE))
