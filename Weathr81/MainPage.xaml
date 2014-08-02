@@ -39,26 +39,24 @@
         </HubSection>
         <HubSection Header="hourly" x:Name="hourly" HeaderTemplate="{StaticResource smallHeader}" Tag="1">
             <DataTemplate>
-                <Grid>
-                    <ScrollViewer Margin="0,0,0,20">
-                        <ItemsControl x:Name="forecastIOListBox" ItemsSource="{Binding forecastIO.hoursList}" Background="Transparent">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Vertical">
-                                        <TextBlock x:Name="header" Text="{Binding time}" Foreground="White" FontFamily="Segoe UI SemiLight" FontSize="20"/>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                            <TextBlock x:Name="temp" Text="{Binding temp}" FontSize="55" FontFamily="Segoe WP" FontWeight="ExtraLight" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                            <StackPanel Margin="10, 0, 0, 0" Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                                                <TextBlock Width="350" TextWrapping="WrapWholeWords"   FontSize="17"  x:Name="descrip" Text="{Binding description}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                                <TextBlock FontSize="17"  x:Name="precip" Text="{Binding chanceOfPrecip}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <Grid>
+                            <ListView x:Name="forecastIOListBox" ItemsSource="{Binding forecastIO.hoursList}" Background="Transparent" Margin="0,0,0,15">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Vertical">
+                                            <TextBlock x:Name="header" Text="{Binding time}" Foreground="White" FontFamily="Segoe UI SemiLight" FontSize="20"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                <TextBlock x:Name="temp" Text="{Binding temp}" FontSize="55" FontFamily="Segoe WP" FontWeight="ExtraLight" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                <StackPanel Margin="10, 0, 0, 0" Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                                    <TextBlock Width="350" TextWrapping="WrapWholeWords"   FontSize="17"  x:Name="descrip" Text="{Binding description}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                    <TextBlock FontSize="17"  x:Name="precip" Text="{Binding chanceOfPrecip}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                                </StackPanel>
                                             </StackPanel>
                                         </StackPanel>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                    <Grid Grid.ColumnSpan="2" VerticalAlignment="Bottom">
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <Grid Grid.ColumnSpan="2" VerticalAlignment="Bottom">
                                 <RichTextBlock IsTextScaleFactorEnabled="False" HorizontalAlignment="Center" FontSize="12" >
                             <Paragraph>
                                 <Run Text="Short term data provided by"></Run>
@@ -106,64 +104,58 @@
             </DataTemplate>
         </HubSection>
         <HubSection Header="forecast" x:Name="forecast" HeaderTemplate="{StaticResource smallHeader}" Tag="3">
-            <DataTemplate>
-                <ScrollViewer>
-                    <ItemsControl x:Name="forecastListBox" ItemsSource="{Binding forecast.forecastList}" Margin="10,0,0,10" Background="Transparent">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Vertical">
-                                    <TextBlock x:Name="title"
+                    <DataTemplate>
+                        <ListView x:Name="forecastListBox" ItemsSource="{Binding forecast.forecastList}" Margin="10,0,0,10" Background="Transparent">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Vertical">
+                                        <TextBlock x:Name="title"
                                                Text="{Binding title}" Foreground="White" FontFamily="Segoe UI SemiLight" FontSize="30"
                                                />
-                                    <TextBlock x:Name="forecast"
+                                        <TextBlock x:Name="forecast"
                                     Text="{Binding text}" 
                                            FontSize="20"
                                            Margin="15,0,0,15"
                                            Foreground="White" FontFamily="Segoe UI" TextWrapping="Wrap" HorizontalAlignment="Left" VerticalAlignment="Top"                                          
                                            />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </DataTemplate>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </DataTemplate>
         </HubSection>
         <HubSection Header="alerts" x:Name="alerts" HeaderTemplate="{StaticResource smallHeader}" Tag="4">
-            <DataTemplate>
-                <ScrollViewer>
-                    <ItemsControl x:Name="alertListBox" Margin="10,0,0,42"  Background="Transparent" ItemsSource="{Binding alerts.alertList}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" Tapped="Alert_Tapped">
-                                            <TextBlock x:Name="entry" Margin="0,0,0,10" 
+                    <DataTemplate>
+                        <ListView x:Name="alertListBox" Margin="10,0,0,42"  Background="Transparent" ItemsSource="{Binding alerts.alertList}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Tapped="Alert_Tapped">
+                                        <TextBlock x:Name="entry" Margin="0,0,0,10" 
                                     Text="{Binding Headline}" 
                                            FontSize="23"
                                                Width="330"
                                            Tag="{Binding TextUrl}" Foreground="White"  FontFamily="Segoe UI"  TextWrapping="WrapWholeWords" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                    </TextBlock>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </DataTemplate>
-        </HubSection>
-        <HubSection Header="locations" x:Name="locList" HeaderTemplate="{StaticResource smallHeader}" Tag="5">
-            <DataTemplate>
-                <Grid>
-                    <ScrollViewer Margin="0,0,0,10">
-                        <ItemsControl x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Tapped="locationName_Tapped">
-                                        <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="24" Foreground="White" Margin="0,0,0,20">
                                         </TextBlock>
                                     </StackPanel>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                    <Grid VerticalAlignment="Bottom" Margin="0,20,0,0">
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </DataTemplate>
+        </HubSection>
+        <HubSection Header="locations" x:Name="locList" HeaderTemplate="{StaticResource smallHeader}" Tag="5">
+            <DataTemplate>
+                        <Grid>
+                            <ListView x:Name="locList"  Background="Transparent" ItemsSource="{Binding locations.locationList}" Margin="0,0,0,10">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Tapped="locationName_Tapped">
+                                            <TextBlock x:Name="locationName" Text="{Binding LocName}" FontFamily="Segoe UI SemiLight" FontSize="24" Foreground="White" Margin="0,0,0,20">
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <Grid VerticalAlignment="Bottom" Margin="0,20,0,0">
                                 <RichTextBlock HorizontalAlignment="Center" DataContext="{Binding locations}" IsTextScaleFactorEnabled="False" FontSize="12">
                             <Paragraph>
                                 <Run Text="{Binding description}"></Run>

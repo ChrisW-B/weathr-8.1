@@ -56,9 +56,9 @@
                                         <StackPanel Orientation="Horizontal" Holding="StackPanel_Holding" >
                                             <FlyoutBase.AttachedFlyout>
                                                 <MenuFlyout>
-                                                    <MenuFlyoutItem Text="Remove" x:Name="removeItem" Click="removeItem_Click" Tag="{Binding LocUrl}" />
-                                                    <MenuFlyoutItem Text="Pin" x:Name="pinItem" Click="pinItem_Click" Tag="{Binding LocUrl}"/>
-                                                    <MenuFlyoutItem Text="Make Default" x:Name="makeItemDefault" Click="makeItemDefault_Click" Tag="{Binding LocUrl}" />
+                                                    <MenuFlyoutItem Text="remove" x:Name="removeItem" Click="removeItem_Click" Tag="{Binding LocUrl}" />
+                                                    <MenuFlyoutItem Text="pin" x:Name="pinItem" Click="pinItem_Click" Tag="{Binding LocUrl}"/>
+                                                    <MenuFlyoutItem Text="make default" x:Name="makeItemDefault" Click="makeItemDefault_Click" Tag="{Binding LocUrl}" />
                                                 </MenuFlyout>
                                             </FlyoutBase.AttachedFlyout>
 
