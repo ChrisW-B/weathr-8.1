@@ -91,6 +91,11 @@ namespace Weathr81
             Frame root = Window.Current.Content as Frame;
             if (args.Kind == Windows.ApplicationModel.Activation.ActivationKind.VoiceCommand)
             {
+
+                // The app was launched from a Secondary Tile
+                // Navigate to the item's page
+                Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
+
                 var commandArgs = args as Windows.ApplicationModel.Activation.VoiceCommandActivatedEventArgs;
                 Windows.Media.SpeechRecognition.SpeechRecognitionResult speechRecognitionResult = commandArgs.Result;
 
@@ -135,6 +140,8 @@ namespace Weathr81
                         // There is no match for the voice command name.
                         break;
                 }
+                //clear history when launching from tile
+                rootFrame.BackStack.Clear();
             }
         }
 

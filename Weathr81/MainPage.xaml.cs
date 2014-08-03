@@ -141,13 +141,26 @@ namespace Weathr81
         async private void speakConditions(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather)
         {
             string speechString = "";
+            string temp = weather.tempC;
+            string high = weather.todayHighC;
+            string low = weather.todayLowC;
+            string tomorrowHigh = weather.tomorrowHighC;
+            string tomorrowLow = weather.tomorrowLowC;
+            if (!unitsAreSI())
+            {
+                temp = weather.tempF;
+                high = weather.todayHighF;
+                low = weather.todayLowF;
+                tomorrowHigh = weather.tomorrowHighF;
+                tomorrowLow = weather.tomorrowLowF;
+            }
             if (vTemp.day == VoiceCommandDay.today)
             {
-                speechString = "It's " + weather.tempC + "degrees and " + weather.currentConditions + " right now, " + weather.todayShort + " with a high of " + weather.todayHighC + " for the rest of the day";
+                speechString = "It's " + temp + "degrees and " + weather.currentConditions + " right now, " + weather.todayShort + " with a high of " +high+" and low of " + low + " for the rest of the day";
             }
             else
             {
-                speechString = "Tomorrow should have a high of about " + weather.tomorrowHighC + " with a forecast of " + weather.tomorrowShort;
+                speechString = "Tomorrow should have a high of about " + tomorrowHigh + " and low of about "+ tomorrowLow + " with a forecast of " + weather.tomorrowShort;
             }
             SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
             playStream(stream);
@@ -157,16 +170,16 @@ namespace Weathr81
             string speechString = "";
             if (vTemp.day == VoiceCommandDay.today)
             {
-                speechString = convertToSpeech(weather.todayShort, weather.todayHighF, weather.todayHighC);
+                speechString = convertToJacketSpeech(weather.todayShort, weather.todayHighF, " today");
             }
             else
             {
-                speechString = convertToSpeech(weather.tomorrowShort, weather.tomorrowHighF, weather.tomorrowHighC);
+                speechString = convertToJacketSpeech(weather.tomorrowShort, weather.tomorrowHighF, " tomorrow");
             }
             SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
             playStream(stream);
         }
-        private string convertToSpeech(string cond, string hiF, string hiC)
+        private string convertToJacketSpeech(string cond, string hiF, string dayName)
         {
             cond = cond.ToUpperInvariant();
 
@@ -182,13 +195,13 @@ namespace Weathr81
             {
                 cool = true;
             }
-            else
+            else if(temp<40)
             {
                 cold = true;
             }
-            string poss = (precip) ? "definitely" : (cold) ? "definitely" : (cool) ? "maybe" : "no";
+            string poss = (precip) ? "you should definitely wear a jacket, " : (cold) ? "you should definitely wear a jacket, " : (cool) ? "You may want a jacket, its going to be" : "No, you should be good without a jacket, ";
             string tempFeel = (cold) ? "cold" : (cool) ? "cool" : "warm" + (poss == "definitely" ? ", but " : "");
-            return poss + " I don't think so, it's going to be " + tempFeel + " and " + cond;
+            return poss +  tempFeel + " and " + cond + dayName;
         }
         async private void speakUmbrella(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather)
         {
@@ -212,7 +225,7 @@ namespace Weathr81
             {
                 lightPrecip = true;
             }
-            speechString = ((precip) ? "definitely" : (lightPrecip) ? "maybe" : "no") + ", " + cond + ((vTemp.day == VoiceCommandDay.today) ? " today" : " tomorrow");
+            speechString = ((precip) ? "you should definitely bring an umbrella " : (lightPrecip) ? "You may need an umbrella " : "No, you shouldn't need an umbrella ") + ", " + cond + ((vTemp.day == VoiceCommandDay.today) ? " today" : " tomorrow");
             SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
             playStream(stream);
         }
@@ -269,8 +282,12 @@ namespace Weathr81
 
         async private void setupVoiceCommands()
         {
-            StorageFile vcd = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///WeathrVoice.xml"));
-            await VoiceCommandManager.InstallCommandSetsFromStorageFileAsync(vcd);
+            try
+            {
+                StorageFile vcd = await StorageFile.GetFileFromApplicationUriAsync(new Uri("ms-appx:///WeathrVoice.xml"));
+                await VoiceCommandManager.InstallCommandSetsFromStorageFileAsync(vcd);
+            }
+            catch { }
         }
 
         private bool connectedToInternet()
@@ -432,9 +449,17 @@ namespace Weathr81
             GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             if (!geo.fail)
             {
+                WeatherInfo forecast=null;
                 if (geo.useCoord)
                 {
-                    WeatherInfo forecast = (await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude));
+                    forecast = (await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude));
+                }
+                else
+                {
+                    forecast = await setWeather(geo.wUrl);
+                }
+                if (!forecast.fail)
+                {
                     setupVoiceCommand(vT, forecast, geo);
                 }
             }
