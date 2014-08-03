@@ -92,7 +92,7 @@ namespace Weathr81
             this.navigationHelper.OnNavigatedFrom(e);
             if (e.Parameter != null)
             {
-                if (e.Parameter.GetType() != typeof(Location))
+                if (e.Parameter.GetType() != typeof(Location) && hub!=null && hub.SectionsInView!=null && hub.SectionsInView.Count>0)
                 {
                     localStore.Values[Values.LAST_HUB_SECTION] = hub.SectionsInView[0].Tag;
                 }
@@ -107,43 +107,19 @@ namespace Weathr81
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             this.navigationHelper.OnNavigatedTo(e);
-            VoiceTemplate template = e.Parameter as VoiceTemplate;
-            if (template != null)
-            {
-                setupVoiceCommand(template);
-            }
 
-                startUp(e);
+            startUp(e);
         }
 
         #region voice commands
-        private void setupVoiceCommand(VoiceTemplate vTemp)
+
+        private void setupVoiceCommand(VoiceTemplate vTemp, WeatherInfo weather, GeoTemplate geo)
         {
             SpeechSynthesizer synth = new SpeechSynthesizer();
-            attemptToSpeakWeather(synth, vTemp);
+            attemptToSpeakWeather(synth, vTemp, weather, geo);
         }
-        async private void attemptToSpeakWeather(SpeechSynthesizer synth, VoiceTemplate vTemp)
+        private void attemptToSpeakWeather(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather, GeoTemplate geo)
         {
-            GetGeoposition getGeo = new GetGeoposition(findDefaultPosition(), allowedToAutoFind());
-            GeoTemplate geo = await getGeo.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-            if (!geo.fail)
-            {
-                getWeather(synth, vTemp, geo);
-            }
-        }
-        async private void getWeather(SpeechSynthesizer synth, VoiceTemplate vTemp, GeoTemplate geo)
-        {
-            GetWundergroundData getWeather = null;
-            if (geo.useCoord)
-            {
-                getWeather = new GetWundergroundData(Values.WUND_API_KEY, geo.position.Position.Latitude, geo.position.Position.Longitude);
-            }
-            else
-            {
-                getWeather = new GetWundergroundData(Values.WUND_API_KEY, geo.wUrl);
-            }
-
-            WeatherInfo weather = await getWeather.getConditions();
             if (!weather.fail)
             {
                 switch (vTemp.type)
@@ -193,7 +169,7 @@ namespace Weathr81
         private string convertToSpeech(string cond, string hiF, string hiC)
         {
             cond = cond.ToUpperInvariant();
-            bool warm = false;
+
             bool cool = false;
             bool cold = false;
             bool precip = false;
@@ -202,11 +178,7 @@ namespace Weathr81
             {
                 precip = true;
             }
-            if (temp > 65)
-            {
-                warm = true;
-            }
-            else if (temp > 40)
+            else if (temp > 40 && temp < 65)
             {
                 cool = true;
             }
@@ -268,21 +240,31 @@ namespace Weathr81
 
         private void startUp(NavigationEventArgs e)
         {
+            VoiceTemplate template = null;
             if (e.NavigationMode == NavigationMode.New)
             {
-                setupVoiceCommands();
+                Task.Run(() => setupVoiceCommands());
                 localStore.Values.Remove(Values.LAST_HUB_SECTION);
+                template = e.Parameter as VoiceTemplate;
             }
-            localStore.Values.Remove(Values.LAST_CMD_BAR);
-            BottomAppBar = new CommandBar();
             Location loc = e.Parameter as Location;
-            if(loc!=null)
+            if (loc != null)
             {
                 this.currentLocation = loc;
             }
+
+            localStore.Values.Remove(Values.LAST_CMD_BAR);
+            BottomAppBar = new CommandBar();
             statusBar = StatusBar.GetForCurrentView();
             statusBar.ForegroundColor = Colors.White;
-            runApp();
+            if (template != null)
+            {
+                runApp(template);
+            }
+            else
+            {
+                runApp();
+            }
         }
 
         async private void setupVoiceCommands()
@@ -363,7 +345,7 @@ namespace Weathr81
             return true;
         }
 
-        async private void runApp()
+        async private void runApp(VoiceTemplate vT = null)
         {
             //central point of app, runs other methods
             await statusBar.ProgressIndicator.ShowAsync();
@@ -376,7 +358,14 @@ namespace Weathr81
                 statusBar.ProgressIndicator.Text = "Getting your location...";
                 if (connectedToInternet())
                 {
-                    doConnected();
+                    if (vT != null)
+                    {
+                        doConnected(vT);
+                    }
+                    else
+                    {
+                        doConnected();
+                    }
                 }
                 else
                 {
@@ -389,7 +378,7 @@ namespace Weathr81
             }
         }
 
-        async private void doConnected()
+        async private void doConnected(VoiceTemplate vT = null)
         {
             bool success;
             try
@@ -409,7 +398,14 @@ namespace Weathr81
                     hub.Header = "loading...";
                     if (!(await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0))).fail) //gets geoLocation too
                     {
-                        beginUpdate();
+                        if (vT != null)
+                        {
+                            beginUpdate(vT);
+                        }
+                        else
+                        {
+                            beginUpdate();
+                        }
                     }
                     else
                     {
@@ -418,12 +414,29 @@ namespace Weathr81
                 }
                 else
                 {
+                    if (vT != null)
+                    {
+                        setupWeatherForSpeech(vT);
+                    }
                     await statusBar.ProgressIndicator.HideAsync();
                 }
             }
             else
             {
                 Frame.Navigate(typeof(AddLocation));
+            }
+        }
+
+        async private void setupWeatherForSpeech(VoiceTemplate vT)
+        {
+            GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+            if (!geo.fail)
+            {
+                if (geo.useCoord)
+                {
+                    WeatherInfo forecast = (await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude));
+                    setupVoiceCommand(vT, forecast, geo);
+                }
             }
         }
 
@@ -553,7 +566,7 @@ namespace Weathr81
             maps.DataContext = null;
             alerts.DataContext = null;
         }
-        async private void beginUpdate()
+        async private void beginUpdate(VoiceTemplate vT = null)
         {
             //updates the ui/weather conditions of app
             await statusBar.ProgressIndicator.ShowAsync();
@@ -563,6 +576,10 @@ namespace Weathr81
                 if (geo.useCoord)
                 {
                     WeatherInfo forecast = (await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude));
+                    if (vT != null)
+                    {
+                        setupVoiceCommand(vT, forecast, geo);
+                    }
                     updateUI(forecast, geo);
                 }
                 else if (geo.wUrl != null)
@@ -879,6 +896,7 @@ namespace Weathr81
             }
             if (locTemplate != null && locTemplate.locations != null && locTemplate.locations.locationList != null)
             {
+                locList.DataContext = locTemplate;
                 setCurrentLocation(locTemplate.locations.locationList);
                 return locTemplate.locations.locationList.Count > 0;
             }
@@ -887,7 +905,6 @@ namespace Weathr81
                 return false;
             }
         }
-
         async private Task<LocationTemplate> onlineLocationSetup()
         {
             LocationTemplate locTemplate = new LocationTemplate() { locations = new LocationList() { locationList = new ObservableCollection<Location>() } };
@@ -908,7 +925,6 @@ namespace Weathr81
                 }
                 else
                 {
-                    locList.DataContext = locTemplate;
                     Serializer.save(locTemplate.locations.locationList, typeof(ObservableCollection<Location>), Values.LOC_STORE, localStore);
                 }
             }

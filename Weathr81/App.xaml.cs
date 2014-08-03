@@ -44,10 +44,51 @@ namespace Weathr81
             this.InitializeComponent();
             this.Suspending += this.OnSuspending;
         }
+        private bool CommonInitialize()
+        {
+            bool appInitializationRequired = false;
+            Frame rootFrame = Window.Current.Content as Frame;
+
+            // Do not repeat app initialization when the Window already has content,
+            // just ensure that the window is active
+            if (rootFrame == null)
+            {
+                // Create a Frame to act as the navigation context and navigate to the first page
+                rootFrame = new Frame();
+
+                // Change this value to a cache size that is appropriate for your application
+                rootFrame.CacheSize = 1;
+
+                // Place the frame in the current Window
+                Window.Current.Content = rootFrame;
+            }
+
+            if (rootFrame.Content == null)
+            {
+                // Removes the turnstile navigation for startup.
+                if (rootFrame.ContentTransitions != null)
+                {
+                    this.transitions = new TransitionCollection();
+                    foreach (var c in rootFrame.ContentTransitions)
+                    {
+                        this.transitions.Add(c);
+                    }
+                }
+
+                rootFrame.ContentTransitions = null;
+                rootFrame.Navigated += this.RootFrame_FirstNavigated;
+
+                appInitializationRequired = true;
+            }
+
+            return appInitializationRequired;
+        }
         // Was the app activated by a voice command?
-       async protected override void OnActivated(IActivatedEventArgs args)
+        protected override void OnActivated(IActivatedEventArgs args)
         {
             base.OnActivated(args);
+            OnLaunched();
+            Frame root = Window.Current.Content as Frame;
             if (args.Kind == Windows.ApplicationModel.Activation.ActivationKind.VoiceCommand)
             {
                 var commandArgs = args as Windows.ApplicationModel.Activation.VoiceCommandActivatedEventArgs;
@@ -63,31 +104,31 @@ namespace Weathr81
                     case "umbrella":
                         if (textSpoken.Contains("today"))
                         {
-                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.umbrella });
+                            root.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.umbrella });
                         }
                         else if (textSpoken.Contains("tomorrow"))
                         {
-                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.umbrella });
+                            root.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.umbrella });
                         }
                         break;
                     case "conditions":
                         if (textSpoken.Contains("today"))
                         {
-                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.conditions });
+                            root.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.conditions });
                         }
                         else if (textSpoken.Contains("tomorrow"))
                         {
-                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.conditions });
+                            root.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.conditions });
                         }
                         break;
                     case "jacket":
                         if (textSpoken.Contains("today"))
                         {
-                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.jacket });
+                            root.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.today, type = VoiceCommandType.jacket });
                         }
                         else if (textSpoken.Contains("tomorrow"))
                         {
-                            rootFrame.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.jacket });
+                            root.Navigate(typeof(MainPage), new VoiceTemplate() { day = VoiceCommandDay.tomorrow, type = VoiceCommandType.jacket });
                         }
                         break;
                     default:
@@ -107,7 +148,7 @@ namespace Weathr81
         /// search results, and so forth.
         /// </summary>
         /// <param name="e">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs e)
+        protected override void OnLaunched(LaunchActivatedEventArgs e=null)
         {
             Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
 #if DEBUG
@@ -129,7 +170,7 @@ namespace Weathr81
                 // TODO: change this value to a cache size that is appropriate for your application
                 rootFrame.CacheSize = 1;
 
-                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
+                if (e!=null && e.PreviousExecutionState == ApplicationExecutionState.Terminated)
                 {
                     Windows.Storage.ApplicationData.Current.LocalSettings.Values.Remove(Values.LAST_HUB_SECTION);
                 }

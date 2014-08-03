@@ -3,27 +3,27 @@
 
   <CommandSet xml:lang="en-us" Name="Weathr">
     <CommandPrefix>Weather</CommandPrefix>
-    <Example>Test Speech Recognition</Example>
+    <Example>Ask about the weather</Example>
 
     <Command Name="umbrella">
       <Example>will I need an umbrella today?</Example>
       <ListenFor>{doWill} I need an umbrella {day}?</ListenFor>
       <Feedback>Let me check {day}'s weather</Feedback>
-      <Navigate/>
+      <Navigate Target="MainPage.xaml"/>
     </Command>
 
     <Command Name="conditions">
       <Example>what will tomorrow be like?</Example>
       <ListenFor>What will {day} be like?</ListenFor>
       <Feedback>Let me check {day}'s weather</Feedback>
-      <Navigate/>
+      <Navigate Target="MainPage.xaml"/>
     </Command>
 
     <Command Name="jacket">
       <Example>do I need a jacket today?</Example>
       <ListenFor>{doWill} I need a jacket {day}?</ListenFor>
       <Feedback>Let me check {day}'s weather</Feedback>
-      <Navigate/>
+      <Navigate Target="MainPage.xaml"/>
     </Command>
     
 
