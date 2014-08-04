@@ -80,7 +80,7 @@
                     <StackPanel>
                         <ToggleSwitch Name="tileUnits" Header="Units" Toggled="tileUnits_Toggled" OnContent="Metric" OffContent="U.S."/>
 
-                        <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Flickr Images" OffContent="Transparent"/>
+                        <ToggleSwitch Name="transparentToggle" Header="Tile Background" Toggled="TransparentTile_Toggled" OnContent="Weather Images" OffContent="Transparent"/>
                         <ToggleSwitch Name="enableBackground" Header="Update in Background" Toggled="enableBackground_Toggled" Margin="0,20,0,0"/>
 
                         <StackPanel Margin="10,0,0,0" x:Name="backgroundPanel">

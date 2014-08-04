@@ -247,6 +247,16 @@ namespace Weathr81.OtherPages
                 localStore.Values[Values.TRANSPARENT_TILE] = true;
             }
             builtInTileBG.Visibility = transparentToggle.IsOn ? Visibility.Visible : Visibility.Collapsed;
+
+            if (localStore.Values.ContainsKey(Values.TILES_USE_FLICKR_BG))
+            {
+                builtInTileBG.IsOn = (bool)localStore.Values[Values.TILES_USE_FLICKR_BG];
+            }
+            else
+            {
+                builtInTileBG.IsOn = true;
+            }
+
             if (localStore.Values.ContainsKey(Values.ALLOW_ALERTS))
             {
                 showAlerts.IsOn = (bool)localStore.Values[Values.ALLOW_ALERTS];
@@ -261,7 +271,7 @@ namespace Weathr81.OtherPages
             }
             else
             {
-                showAlerts.IsOn = false;
+                notificationCenter.IsOn = false;
             }
 
             if (localStore.Values.ContainsKey(Values.UPDATE_FREQ))
@@ -712,7 +722,10 @@ namespace Weathr81.OtherPages
 
         private void builtInTileBG_Toggled(object sender, RoutedEventArgs e)
         {
-
+            if (doneSetting)
+            {
+                localStore.Values[Values.TILES_USE_FLICKR_BG] = (sender as ToggleSwitch).IsOn;
+            }
         }
 
         
