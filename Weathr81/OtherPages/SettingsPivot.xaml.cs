@@ -628,11 +628,12 @@ namespace Weathr81.OtherPages
                 if (location != null)
                 {
                     SecondaryTile secondaryTile = new SecondaryTile() { Arguments = location.LocUrl, TileId = location.Lat + "_" + location.Lon, DisplayName = location.LocName, RoamingEnabled = true };
-                    secondaryTile.VisualElements.ShowNameOnSquare150x150Logo = true;
-                    secondaryTile.VisualElements.ShowNameOnWide310x150Logo = true;
-                    secondaryTile.VisualElements.Square150x150Logo = new Uri("ms-appx:///Assets/Square71x71Logo.scale-240.png");
+                    secondaryTile.RoamingEnabled = true;
+                    secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
+                    secondaryTile.VisualElements.Square71x71Logo = new Uri("ms-appx:///Assets/Square71x71Logo.png");
+                    secondaryTile.VisualElements.Square150x150Logo = new Uri("ms-appx:///Assets/Logo.png");
                     secondaryTile.VisualElements.Square310x310Logo = new Uri("ms-appx:///Assets/SmallLogo.scale-240.png");
-                    secondaryTile.VisualElements.Wide310x150Logo = new Uri("ms-appx:///Assets/WideLogo.scale-240.png");
+                    secondaryTile.VisualElements.Wide310x150Logo = new Uri("ms-appx:///Assets/WideLogo.png");
                     await secondaryTile.RequestCreateAsync();
                 }
             }

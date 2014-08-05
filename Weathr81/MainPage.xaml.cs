@@ -1645,7 +1645,7 @@ namespace Weathr81
         async private void pinLoc_Click(object sender, RoutedEventArgs e)
         {
             //activate background task if it hasn't been turned off
-            tryBackgroundTask();
+            tryBackgroundTask(); //change this so it can be forced to turn on if not already turned off
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.RoamingEnabled = true;
             secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
@@ -1654,7 +1654,6 @@ namespace Weathr81
             secondaryTile.VisualElements.Square310x310Logo = new Uri("ms-appx:///Assets/SmallLogo.scale-240.png");
             secondaryTile.VisualElements.Wide310x150Logo = new Uri("ms-appx:///Assets/WideLogo.png");
             await secondaryTile.RequestCreateAsync();
-
         }
         async private void changePic_Click(object sender, RoutedEventArgs e)
         {

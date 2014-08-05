@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
-  <Identity Name="56541CBStudios.WeathrBeta" Publisher="CN=611495F7-A5B9-44E0-8989-5C76FCB7AB4E" Version="1.1.0.27" />
-  <mp:PhoneIdentity PhoneProductId="995091a2-b1c4-44c0-be97-3553d41d44fb" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="56541CBStudios.WeathrBeta" Publisher="CN=611495F7-A5B9-44E0-8989-5C76FCB7AB4E" Version="1.1.0.32" />
+  <mp:PhoneIdentity PhoneProductId="3bc2b48e-95fd-4ef2-825a-9a2d9289108f" PhonePublisherId="6b72e231-93c0-4e18-b20d-449acf2b5d53" />
   <Properties>
     <DisplayName>Weathr Beta</DisplayName>
     <PublisherDisplayName>CB Studios</PublisherDisplayName>
