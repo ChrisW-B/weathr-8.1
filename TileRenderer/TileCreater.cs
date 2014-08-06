@@ -159,11 +159,7 @@ namespace TileCreater
         //creating grid of tile design
         private Grid createImage(BackgroundTemplate data, LiveTileSize tileSize, int numAlerts, ref ImageBrush background)
         {
-            if (tileSize == LiveTileSize.small)
-            {
-                return createSmallTile(data.weather.currentTemp, data.weather.conditions);
-            }
-            else if (background != null)
+            if (background != null)
             {
                 if (tileSize == LiveTileSize.medium)
                 {
@@ -172,6 +168,10 @@ namespace TileCreater
                 else if (tileSize == LiveTileSize.wide)
                 {
                     return createWideTile(data, numAlerts, ref background);
+                }
+                else if (tileSize == LiveTileSize.small)
+                {
+                    return createSmallTile(data.weather.currentTemp, data.weather.conditions, ref background);
                 }
             }
             else
@@ -183,6 +183,10 @@ namespace TileCreater
                 else if (tileSize == LiveTileSize.wide)
                 {
                     return createWideTile(data, numAlerts);
+                }
+                else if (tileSize == LiveTileSize.small)
+                {
+                    return createSmallTile(data.weather.currentTemp, data.weather.conditions);
                 }
             }
             return null;
@@ -203,29 +207,34 @@ namespace TileCreater
             }
             return null;
         }
-        private Grid createSmallTile(string temp, string conditions)
+        private Grid createSmallTile(string temp, string conditions, ref ImageBrush background)
         {
-            Grid g;
-
-            g = createBackgroundGrid(LiveTileSize.small, true);
-            g.Children.Add(createSmallOverlay(temp, conditions));
-
+            Grid g = createBackgroundGrid(LiveTileSize.small, false, ref background);
+            g.Children.Add(createSmallOverlay(temp, conditions, true));
             return g;
         }
-        private StackPanel createSmallOverlay(string temp, string conditions)
+        private Grid createSmallTile(string temp, string conditions)
         {
-            StackPanel s = new StackPanel() { };
+            Grid g= createBackgroundGrid(LiveTileSize.small, true);
+            g.Children.Add(createSmallOverlay(temp, conditions, false));
+            return g;
+        }
+        private Grid createSmallOverlay(string temp, string conditions, bool hasBackground)
+        {
+            Grid g = new Grid() { Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
+            StackPanel s = new StackPanel() { Margin = new Thickness(5,5,5,5) };
             s.Children.Add(createSmallTempText(temp));
             s.Children.Add(createSmallConditions(conditions));
-            return s;
+            g.Children.Add(s);
+            return g;
         }
         private TextBlock createSmallConditions(string conditions)
         {
-            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = conditions.ToUpper(), FontSize = 12, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
+            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = conditions.ToUpper(), FontSize = 10, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
         }
         private TextBlock createSmallTempText(string temp)
         {
-            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = temp, FontSize = 30, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
+            return new TextBlock() { IsTextScaleFactorEnabled = false, Text = temp, FontSize = 25, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         }
         private Grid createWideTile(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
         {
