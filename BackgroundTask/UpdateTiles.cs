@@ -11,9 +11,9 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using TileCreater;
-using ToastHelper;
 using WeatherData;
 using Windows.ApplicationModel.Background;
+using Windows.Data.Xml.Dom;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Networking.Connectivity;
@@ -155,29 +155,14 @@ namespace BackgroundTask
                                 if (!alert.isAllClear)
                                 {
                                     numAlerts++;
-                                    ToastContent t = new ToastContent.ImageAndText02()
-                                    {
-                                        Title = alert.title,
-                                        Text = alert.description,
-                                        Image = "",
-                                    };
-                                    ToastNotifier notifier = ToastNotificationManager.CreateToastNotifier();
-                                    notifier.Show(t.CreateNotification());
+                                    createToastNotif(weatherInfo.city, alert.title);
                                 }
                             }
                         }
                     }
-
                     if (allowedToNotify())
                     {
-                        ToastContent t = new ToastContent.ImageAndText02()
-                        {
-                            Title = weatherInfo.city,
-                            Text = weatherInfo.currentConditions + ", " + (unitsAreSI() ? weatherInfo.tempC + "°C" : weatherInfo.tempF + "°F"),
-                            Image = "",
-                        };
-                        ToastNotifier notifier = ToastNotificationManager.CreateToastNotifier();
-                        notifier.Show(t.CreateNotification());
+                        createToastNotif(weatherInfo.city, weatherInfo.currentConditions + ", " + (unitsAreSI() ? weatherInfo.tempC + "°C" : weatherInfo.tempF + "°F"));
                     }
 
                     string current = "Currently " + weatherInfo.currentConditions + ", " + weatherInfo.tempC + "°C";
@@ -239,6 +224,16 @@ namespace BackgroundTask
                     }
                 }
             }
+        }
+
+        private void createToastNotif(string title, string text)
+        {
+            XmlDocument toastXml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+            XmlNodeList toastTextElements = toastXml.GetElementsByTagName("text");
+            toastTextElements[0].AppendChild(toastXml.CreateTextNode(title));
+            toastTextElements[1].AppendChild(toastXml.CreateTextNode(text));
+            ToastNotification notif = new ToastNotification(toastXml);
+            ToastNotificationManager.CreateToastNotifier().Show(notif);
         }
 
         //rending tiles to images
