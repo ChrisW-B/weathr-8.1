@@ -3,6 +3,7 @@ using StoreLabels;
 using System;
 using System.Threading.Tasks;
 using WeatherData;
+using Windows.Data.Xml.Dom;
 using Windows.Storage;
 using Windows.UI;
 using Windows.UI.Notifications;
@@ -31,49 +32,47 @@ namespace TileCreater
                     return;
                 }
             }
-            var smallXml = BadgeUpdateManager.GetTemplateContent(BadgeTemplateType.BadgeGlyph);
-            //ITileSquare71x71IconWithBadge smallTile = TileContentFactory.CreateTileSquare71x71IconWithBadge();
-            //smallTile.ImageIcon.Src = smallTileLoc;
-            //smallTile.ImageIcon.Alt = "altSmall";
-            //smallTile.Branding = TileBranding.Name;
 
+            string tileXml =
+                "<tile>"
+               + "<visual version='3' branding='none'>"
+               + "<binding template='TileSquare71x71Image'>"
+               + "<image id='1' src='" + smallTileLoc + "' alt='altSmall'/>"
+               + "</binding>"
+               + "<binding template='TileSquare150x150PeekImageAndText04' fallback='TileSquarePeekImageAndText04'>"
+               + "<image id='1' src='" + mediumTileLoc + "' alt='altMed'/>"
+               + "<text id='1'>" + compare + "</text>"
+               + "</binding>"
+               + "<binding template='TileWide310x150PeekImageAndText02' fallback='TileWidePeekImageAndText02'>"
+               + "<image id='1' src='" + wideTileLoc + "' alt='altWide'/>"
+               + "<text id='1'>" + current + "</text>"
+               + "<text id='2'>" + today + "</text>"
+               + "<text id='3'>" + tomorrow + "</text>"
+               + "</binding>"
+               + "</visual>"
+               + "</tile>";
 
-            //ITileSquare150x150PeekImageAndText04 mediumTile = TileContentFactory.CreateTileSquare150x150PeekImageAndText04();
-            //mediumTile.TextBodyWrap.Text = compare;
-            //mediumTile.Branding = TileBranding.None;
-            //mediumTile.Image.Alt = "altMed";
-            //mediumTile.Image.Src = mediumTileLoc;
-            //mediumTile.Square71x71Content = smallTile;
+            XmlDocument tileDom = new XmlDocument();
+            tileDom.LoadXml(tileXml);
+            try
+            {
+                if (tile != null)
+                {
+                    TileNotification tileNotif = new TileNotification(tileDom);
+                    TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
+                    TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(tileNotif);
+                }
+                else
+                {
+                    TileNotification tileNotif = new TileNotification(tileDom);
+                    TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+                    TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotif);
+                }
+            }
+            catch (Exception e)
+            {
 
-            //ITileWide310x150PeekImageAndText02 wideTile = TileContentFactory.CreateTileWide310x150PeekImageAndText02();
-            //wideTile.TextBody1.Text = current;
-            //wideTile.TextBody2.Text = today;
-            //wideTile.TextBody3.Text = tomorrow;
-            //wideTile.Branding = TileBranding.None;
-            //wideTile.Image.Alt = "altWide";
-            //wideTile.Image.Src = wideTileLoc;
-            //wideTile.Square150x150Content = mediumTile;
-            var hello = "hi";
-            hello += "i";
-            //try
-            //{
-            //    if (tile != null)
-            //    {
-            //        TileNotification wideNotif = wideTile.CreateNotification();
-            //        TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
-            //        TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(wideNotif);
-            //    }
-            //    else
-            //    {
-            //        TileNotification wideNotif = wideTile.CreateNotification();
-            //        TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-            //        TileUpdateManager.CreateTileUpdaterForApplication().Update(wideNotif);
-            //    }
-            //}
-            //catch (Exception e)
-            //{
-
-            //}
+            }
         }
         //gets set of tile images based on parameters
         public TileGroup createTileWithParams(WeatherInfo weatherInfo, int numAlerts = 0, ImageBrush background = null, string artistName = null)
