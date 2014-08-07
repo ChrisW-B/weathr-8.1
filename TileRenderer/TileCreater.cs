@@ -59,8 +59,9 @@ namespace TileCreater
                 if (tile != null)
                 {
                     TileNotification tileNotif = new TileNotification(tileDom);
-                    TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Clear();
-                    TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId).Update(tileNotif);
+                    TileUpdater updater = TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId);
+                    updater.Clear();
+                    updater.Update(tileNotif);
                 }
                 else
                 {
@@ -221,7 +222,11 @@ namespace TileCreater
         }
         private Grid createSmallOverlay(string temp, string conditions, bool hasBackground)
         {
-            Grid g = new Grid() { Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
+            Grid g = new Grid();
+            if (hasBackground)
+            {
+                g.Background = new SolidColorBrush(Colors.Black) { Opacity = .3 };
+            }
             StackPanel s = new StackPanel() { Margin = new Thickness(5,5,5,5) };
             s.Children.Add(createSmallTempText(temp));
             s.Children.Add(createSmallConditions(conditions));

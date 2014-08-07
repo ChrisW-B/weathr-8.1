@@ -118,9 +118,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SmallTile.xaml.cs">
-      <DependentUpon>SmallTile.xaml</DependentUpon>
-    </Compile>
     <Compile Include="TileExample.xaml.cs">
       <DependentUpon>TileExample.xaml</DependentUpon>
     </Compile>
@@ -128,10 +125,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="SmallTile.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="TileExample.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -24,16 +24,15 @@
         <!-- Title Panel -->
         <StackPanel Grid.Row="0" Margin="19,0,0,0">
             <TextBlock Text="WEATHR" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
-            <TextBlock Text="add location" Margin="0,-6.5,0,26.5" Style="{ThemeResource HeaderTextBlockStyle}" CharacterSpacing="{ThemeResource PivotHeaderItemCharacterSpacing}"/>
+            <TextBlock Text="add location" Margin="0,-6.5,0,15.5" Style="{ThemeResource HeaderTextBlockStyle}" CharacterSpacing="{ThemeResource PivotHeaderItemCharacterSpacing}"/>
         </StackPanel>
 
-        <Grid Grid.Row="1" x:Name="ContentRoot" Margin="19,9.5,19,0">
+        <Grid Grid.Row="1" x:Name="ContentRoot" Margin="19,0,19,0">
 
-            <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,490">
-                <StackPanel Orientation="Vertical" Margin="0,0,0,-470">
-                    <TextBox Name="SearchBox" HorizontalAlignment="Left" VerticalAlignment="Top" TextChanged="SearchBox_TextChanged" Width="338" Margin="0,0,0,0">
-                    </TextBox>
-                    <ListBox MaxHeight="400" Width="338" x:Name="results" SelectionChanged="results_SelectionChanged" DataContext="{Binding suggestions}" VerticalContentAlignment="Top" HorizontalContentAlignment="Left">
+            <Grid x:Name="ContentPanel" Grid.Row="1" >
+                <StackPanel Orientation="Vertical" >
+                    <TextBox Name="SearchBox" VerticalAlignment="Stretch" TextChanged="SearchBox_TextChanged" Margin="0,0,0,0"/>
+                    <ListBox MaxHeight="400" x:Name="results" SelectionChanged="results_SelectionChanged" DataContext="{Binding suggestions}" VerticalContentAlignment="Top" HorizontalContentAlignment="Left">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock x:Name="entry" FontSize="18" Text="{Binding locName}"/>
