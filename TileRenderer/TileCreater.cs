@@ -1,7 +1,7 @@
 ﻿using DataTemplates;
 using StoreLabels;
 using System;
-using System.Threading.Tasks;
+using System.Xml.Linq;
 using WeatherData;
 using Windows.Data.Xml.Dom;
 using Windows.Storage;
@@ -12,17 +12,18 @@ using Windows.UI.Text;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 
 namespace TileCreater
 {
-    public class CreateTile
+    
+
+    public static class CreateTile
     {
-        private ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
-        private ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
+        private static ApplicationDataContainer store = ApplicationData.Current.RoamingSettings;
+        private static ApplicationDataContainer localStore = Windows.Storage.ApplicationData.Current.LocalSettings;
 
         //push images to tiles
-        public void pushImageToTile(string smallTileLoc, string mediumTileLoc, string wideTileLoc, string compare, string current, string today, string tomorrow, SecondaryTile tile = null)
+        public static void pushImageToTile(string smallTileLoc, string mediumTileLoc, string wideTileLoc, string compare, string current, string today, string tomorrow, SecondaryTile tile = null)
         {
             //pushes the image to the tiles
             if (tile != null)
@@ -52,31 +53,32 @@ namespace TileCreater
                + "</visual>"
                + "</tile>";
 
-            XmlDocument tileDom = new XmlDocument();
-            tileDom.LoadXml(tileXml);
-            try
-            {
-                if (tile != null)
-                {
-                    TileNotification tileNotif = new TileNotification(tileDom);
-                    TileUpdater updater = TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId);
-                    updater.Clear();
-                    updater.Update(tileNotif);
-                }
-                else
-                {
-                    TileNotification tileNotif = new TileNotification(tileDom);
-                    TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-                    TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotif);
-                }
-            }
-            catch (Exception e)
-            {
+         XmlDocument xml = new XmlDocument();
+            xml.LoadXml(tileXml);
 
-            }
+
+                TileNotification tileNotif = new TileNotification(xml);
+                try
+                {
+                    if (tile != null)
+                    {
+                        TileUpdater updater = TileUpdateManager.CreateTileUpdaterForSecondaryTile(tile.TileId);
+                        updater.Clear();
+                        updater.Update(tileNotif);
+                    }
+                    else
+                    {
+                        TileUpdateManager.CreateTileUpdaterForApplication().Clear();
+                        TileUpdateManager.CreateTileUpdaterForApplication().Update(tileNotif);
+                    }
+                }
+                catch (Exception e)
+                {
+
+                }
         }
         //gets set of tile images based on parameters
-        public TileGroup createTileWithParams(WeatherInfo weatherInfo, int numAlerts = 0, ImageBrush background = null, string artistName = null)
+        public static TileGroup createTileWithParams(WeatherInfo weatherInfo, int numAlerts = 0, ImageBrush background = null, string artistName = null)
         {
             if (!weatherInfo.fail)
             {
@@ -122,7 +124,7 @@ namespace TileCreater
         }
 
         //tile rendering
-        private TileGroup createTileImages(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
+        private static TileGroup createTileImages(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
         {
             //given lat, lon, and conditions, creates a tile image
             try
@@ -139,7 +141,7 @@ namespace TileCreater
                 return null;
             }
         }
-        private TileGroup createTileImages(BackgroundTemplate data, int numAlerts)
+        private static TileGroup createTileImages(BackgroundTemplate data, int numAlerts)
         {
             //given lat, lon, and conditions, creates a tile image
             try
@@ -158,7 +160,7 @@ namespace TileCreater
 
         #region tile ui design
         //creating grid of tile design
-        private Grid createImage(BackgroundTemplate data, LiveTileSize tileSize, int numAlerts, ref ImageBrush background)
+        private static Grid createImage(BackgroundTemplate data, LiveTileSize tileSize, int numAlerts, ref ImageBrush background)
         {
             if (background != null)
             {
@@ -192,7 +194,7 @@ namespace TileCreater
             }
             return null;
         }
-        private Grid createImage(BackgroundTemplate data, int numAlerts, LiveTileSize tileSize)
+        private static Grid createImage(BackgroundTemplate data, int numAlerts, LiveTileSize tileSize)
         {
             if (tileSize == LiveTileSize.small)
             {
@@ -208,40 +210,40 @@ namespace TileCreater
             }
             return null;
         }
-        private Grid createSmallTile(string temp, string conditions, ref ImageBrush background)
+        private static Grid createSmallTile(string temp, string conditions, ref ImageBrush background)
         {
             Grid g = createBackgroundGrid(LiveTileSize.small, false, ref background);
             g.Children.Add(createSmallOverlay(temp, conditions, true));
             return g;
         }
-        private Grid createSmallTile(string temp, string conditions)
+        private static Grid createSmallTile(string temp, string conditions)
         {
-            Grid g= createBackgroundGrid(LiveTileSize.small, true);
+            Grid g = createBackgroundGrid(LiveTileSize.small, true);
             g.Children.Add(createSmallOverlay(temp, conditions, false));
             return g;
         }
-        private Grid createSmallOverlay(string temp, string conditions, bool hasBackground)
+        private static Grid createSmallOverlay(string temp, string conditions, bool hasBackground)
         {
             Grid g = new Grid();
             if (hasBackground)
             {
                 g.Background = new SolidColorBrush(Colors.Black) { Opacity = .3 };
             }
-            StackPanel s = new StackPanel() { Margin = new Thickness(5,5,5,5) };
+            StackPanel s = new StackPanel() { Margin = new Thickness(5, 5, 5, 5) };
             s.Children.Add(createSmallTempText(temp));
             s.Children.Add(createSmallConditions(conditions));
             g.Children.Add(s);
             return g;
         }
-        private TextBlock createSmallConditions(string conditions)
+        private static TextBlock createSmallConditions(string conditions)
         {
             return new TextBlock() { IsTextScaleFactorEnabled = false, Text = conditions.ToUpper(), FontSize = 10, FontWeight = FontWeights.ExtraBold, VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = Windows.UI.Xaml.HorizontalAlignment.Right, TextTrimming = TextTrimming.Clip, TextWrapping = TextWrapping.WrapWholeWords };
         }
-        private TextBlock createSmallTempText(string temp)
+        private static TextBlock createSmallTempText(string temp)
         {
             return new TextBlock() { IsTextScaleFactorEnabled = false, Text = temp, FontSize = 25, FontWeight = FontWeights.Thin, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
         }
-        private Grid createWideTile(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
+        private static Grid createWideTile(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
         {
             Grid g;
             if (background != null)
@@ -264,11 +266,10 @@ namespace TileCreater
             }
             return g;
         }
-
-        private UIElement createAlertsGrid(int numAlerts)
+        private static UIElement createAlertsGrid(int numAlerts)
         {
             Grid g = new Grid() { Height = 150, Width = 150, Background = new SolidColorBrush(Colors.Transparent) };
-            TextBlock t = new TextBlock() { Height = 150, TextAlignment = TextAlignment.Right, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 15, 15, 0), FontSize = 20, IsColorFontEnabled=true, Foreground = new SolidColorBrush(Colors.Red) };
+            TextBlock t = new TextBlock() { Height = 150, TextAlignment = TextAlignment.Right, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 15, 15, 0), FontSize = 20, IsColorFontEnabled = true, Foreground = new SolidColorBrush(Colors.Red) };
             if (numAlerts > 0)
             {
                 t.Text = numAlerts + "!";
@@ -276,7 +277,7 @@ namespace TileCreater
             g.Children.Add(t);
             return g;
         }
-        private Grid createWideTile(BackgroundTemplate data, int numAlerts)
+        private static Grid createWideTile(BackgroundTemplate data, int numAlerts)
         {
             Grid g;
 
@@ -284,21 +285,21 @@ namespace TileCreater
             g.Children.Add(createWideStackPanel(data, numAlerts, true));
             return g;
         }
-        private Grid createMediumTile(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
+        private static Grid createMediumTile(BackgroundTemplate data, int numAlerts, ref ImageBrush background)
         {
             Grid g;
             g = createBackgroundGrid(LiveTileSize.medium, false, ref background);
             g.Children.Add(createOverlay(data, numAlerts, false));
             return g;
         }
-        private Grid createMediumTile(BackgroundTemplate data, int numAlerts)
+        private static Grid createMediumTile(BackgroundTemplate data, int numAlerts)
         {
             Grid g;
             g = createBackgroundGrid(LiveTileSize.medium, true);
             g.Children.Add(createOverlay(data, numAlerts, true));
             return g;
         }
-        private Grid createWideDarkOverlay(string artistName=null)
+        private static Grid createWideDarkOverlay(string artistName = null)
         {
             Grid g = new Grid() { Width = 310, Height = 150, Background = new SolidColorBrush(Colors.Black) { Opacity = .3 } };
             if (artistName != null)
@@ -307,7 +308,7 @@ namespace TileCreater
             }
             return g;
         }
-        private StackPanel createWideStackPanel(BackgroundTemplate data, int numAlerts, bool transparent)
+        private static StackPanel createWideStackPanel(BackgroundTemplate data, int numAlerts, bool transparent)
         {
             StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal };
             s.Children.Add(createFirstHalf(data, numAlerts, transparent));
@@ -315,23 +316,23 @@ namespace TileCreater
             return s;
 
         }
-        private Grid createTomorrowBox(string compare)
+        private static Grid createTomorrowBox(string compare)
         {
             Grid g = new Grid() { Width = 150, Height = 150, Margin = new Thickness(10, 0, 0, 0) };
             g.Children.Add(createTomorrowShortText(compare));
             return g;
         }
-        private TextBlock createTomorrowShortText(string compare)
+        private static TextBlock createTomorrowShortText(string compare)
         {
             return new TextBlock() { IsTextScaleFactorEnabled = false, Text = compare.ToUpper(), FontWeight = FontWeights.ExtraBold, FontSize = 15, TextWrapping = TextWrapping.WrapWholeWords, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right, Margin = new Thickness(0, 0, 5, 0) };
         }
-        private Grid createFirstHalf(BackgroundTemplate data, int numAlerts, bool transparent)
+        private static Grid createFirstHalf(BackgroundTemplate data, int numAlerts, bool transparent)
         {
             Grid g = new Grid() { Height = 150, Width = 150 };
             g.Children.Add(createOverlay(data, numAlerts, transparent));
             return g;
         }
-        private Grid createBackgroundGrid(LiveTileSize tileSize, bool transparent, ref ImageBrush background)
+        private static Grid createBackgroundGrid(LiveTileSize tileSize, bool transparent, ref ImageBrush background)
         {
             Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
             g.Height = g.Width = 150;
@@ -349,7 +350,7 @@ namespace TileCreater
             }
             return g;
         }
-        private Grid createBackgroundGrid(LiveTileSize tileSize, bool transparent)
+        private static Grid createBackgroundGrid(LiveTileSize tileSize, bool transparent)
         {
             Grid g = new Grid() { Background = new SolidColorBrush() { Color = Colors.Transparent } };
             g.Height = g.Width = 150;
@@ -363,7 +364,7 @@ namespace TileCreater
             }
             return g;
         }
-        private Grid createOverlay(BackgroundTemplate data, int numAlerts, bool transparent)
+        private static Grid createOverlay(BackgroundTemplate data, int numAlerts, bool transparent)
         {
             Grid g = new Grid() { Height = 150, VerticalAlignment = VerticalAlignment.Center };
             g.Children.Add(createTimeTextBlock());
@@ -380,7 +381,7 @@ namespace TileCreater
             g.Children.Add(createAlertsGrid(numAlerts));
             return g;
         }
-        private TextBlock createTimeTextBlock()
+        private static TextBlock createTimeTextBlock()
         {
             string time = "";
             if (twentyFourHrTime())
@@ -396,53 +397,53 @@ namespace TileCreater
         }
 
 
-        private TextBlock createFlickrSource(string artistName)
+        private static TextBlock createFlickrSource(string artistName)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, FontSize = 9, HorizontalAlignment = HorizontalAlignment.Right, Text = "by " + artistName, Margin = new Thickness(0, 0, 3, 0), MaxWidth = 90, FontWeight = FontWeights.Bold };
             return t;
         }
-        private StackPanel createDataStackPanel(BackgroundTemplate data)
+        private static StackPanel createDataStackPanel(BackgroundTemplate data)
         {
             StackPanel s = new StackPanel() { VerticalAlignment = VerticalAlignment.Center };
             s.Children.Add(createCenterGrid(data));
             return s;
         }
-        private Grid createCenterGrid(BackgroundTemplate data)
+        private static Grid createCenterGrid(BackgroundTemplate data)
         {
             Grid g = new Grid() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 2, 0) };
             g.Children.Add(createCentralStackPanel(data));
             return g;
         }
-        private StackPanel createCentralStackPanel(BackgroundTemplate data)
+        private static StackPanel createCentralStackPanel(BackgroundTemplate data)
         {
             StackPanel s = new StackPanel() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 150 };
             s.Children.Add(createTempTextBlock(data.weather.currentTemp));
             s.Children.Add(createForecastStackPanel(data));
             return s;
         }
-        private TextBlock createTempTextBlock(string temperature)
+        private static TextBlock createTempTextBlock(string temperature)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = temperature, FontWeight = FontWeights.Thin, FontSize = 45, CharacterSpacing = -60, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 3, 0) };
             return t;
         }
-        private StackPanel createForecastStackPanel(BackgroundTemplate data)
+        private static StackPanel createForecastStackPanel(BackgroundTemplate data)
         {
             StackPanel s = new StackPanel() { Orientation = Orientation.Vertical, VerticalAlignment = VerticalAlignment.Center, Width = 80 };
             s.Children.Add(createConditionsTextBlock(data.weather.conditions));
             s.Children.Add(createHiLoTextBlock(data.weather.high, data.weather.low));
             return s;
         }
-        private TextBlock createConditionsTextBlock(string conditions)
+        private static TextBlock createConditionsTextBlock(string conditions)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = conditions.ToUpperInvariant(), FontWeight = FontWeights.ExtraBold, TextWrapping = TextWrapping.WrapWholeWords, FontSize = 13, VerticalAlignment = VerticalAlignment.Center };
             return t;
         }
-        private TextBlock createHiLoTextBlock(string high, string low)
+        private static TextBlock createHiLoTextBlock(string high, string low)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = high + "/" + low, FontSize = 16, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right, Width = 80 };
             return t;
         }
-        private TextBlock createLocationTextBlock(string location)
+        private static TextBlock createLocationTextBlock(string location)
         {
             TextBlock t = new TextBlock() { IsTextScaleFactorEnabled = false, Text = location.ToUpper(), FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(10, 0, 0, 5), VerticalAlignment = VerticalAlignment.Bottom };
             return t;
@@ -450,7 +451,7 @@ namespace TileCreater
         #endregion
 
         //helper methods
-        public bool unitsAreSI()
+        public static bool unitsAreSI()
         {
             //determines whether tile units should be SI
             if (store.Values.ContainsKey(Values.TILE_UNITS_ARE_SI))
@@ -460,7 +461,7 @@ namespace TileCreater
             store.Values[Values.TILE_UNITS_ARE_SI] = true;
             return true;
         }
-        private bool isTransparent()
+        private static bool isTransparent()
         {
             //determines whether the tile should be transparent
             if (localStore.Values.ContainsKey(Values.TRANSPARENT_TILE))
@@ -470,7 +471,7 @@ namespace TileCreater
             localStore.Values[Values.TRANSPARENT_TILE] = true;
             return true;
         }
-        private bool twentyFourHrTime()
+        private static bool twentyFourHrTime()
         {
             if (store.Values.ContainsKey(Values.TWENTY_FOUR_HR_TIME))
             {
