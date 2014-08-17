@@ -176,8 +176,6 @@ namespace BackgroundTask
                         tomorrow = "Tomorrow: " + weatherInfo.tomorrowShort + " " + weatherInfo.tomorrowHighF + "/" + weatherInfo.tomorrowLowF;
                         tempCompare = weatherInfo.tomorrowShort + " tomorrow, and " + weatherInfo.tempCompareF.ToLowerInvariant() + " today";
                     }
-
-                    CreateTile creater = new CreateTile();
                     TileGroup tiles = null;
                     if (!isTransparent())
                     {
@@ -187,21 +185,21 @@ namespace BackgroundTask
                         {
                             if (flickrData.userName != null)
                             {
-                                tiles = creater.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
+                                tiles = CreateTile.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) }, flickrData.userName);
                             }
                             else
                             {
-                                tiles = creater.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) });
+                                tiles = CreateTile.createTileWithParams(weatherInfo, numAlerts, new ImageBrush() { ImageSource = new BitmapImage(flickrData.imageUri) });
                             }
                         }
                         else
                         {
-                            tiles = creater.createTileWithParams(weatherInfo);
+                            tiles = CreateTile.createTileWithParams(weatherInfo);
                         }
                     }
                     else
                     {
-                        tiles = creater.createTileWithParams(weatherInfo);
+                        tiles = CreateTile.createTileWithParams(weatherInfo);
                     }
                     if (tiles != null)
                     {
@@ -210,15 +208,15 @@ namespace BackgroundTask
                         await renderTile(tiles.wideTile, wideTileName);
                         if (tile != null)
                         {
-                            creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow, tile);
+                            CreateTile.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow, tile);
                         }
                         else
                         {
-                            creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow);
+                            CreateTile.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow);
                             SecondaryTile defaultTile = await getDefaultTile();
                             if (defaultTile != null)
                             {
-                                creater.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow, defaultTile);
+                                CreateTile.pushImageToTile(Values.SAVE_LOC + smallTileName, Values.SAVE_LOC + mediumTileName, Values.SAVE_LOC + wideTileName, tempCompare, current, today, tomorrow, defaultTile);
                             }
                         }
                     }

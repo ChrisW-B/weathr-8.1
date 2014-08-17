@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using StoreLabels;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -9,43 +10,42 @@ using System.Xml.Linq;
 
 namespace ForecastIOData
 {
-   public class GetForecastIOData
+    public class GetForecastIOData
     {
         //uri is formatted as such: "https://api.forecast.io/forecast/b9ee7cf875f46fc8bc2b0743efc8c800/37.8267,-122.423?units=si" 
         private Uri uri;
         private const string URL_BASE = "https://api.forecast.io/forecast/";
-        private const string API_KEY = "b9ee7cf875f46fc8bc2b0743efc8c800";
         private const string SI = "?units=si";
         private const string US = "?units=us";
 
         public GetForecastIOData(string loc)
         {
-            uri = new Uri(URL_BASE + API_KEY + loc + SI);
+            uri = new Uri(URL_BASE + Values.FORE_IO_API_KEY + loc + SI);
         }
         public GetForecastIOData(string loc, bool isSI)
         {
-            string url = URL_BASE + API_KEY + loc;
+            string url = URL_BASE + Values.FORE_IO_API_KEY + loc;
             url += isSI ? SI : US;
             uri = new Uri(url);
         }
         public GetForecastIOData(string lat, string lon)
         {
-            uri = new Uri(URL_BASE + API_KEY + "/" + lat + "," + lon + SI);
+            uri = new Uri(URL_BASE + Values.FORE_IO_API_KEY + "/" + lat + "," + lon + SI);
 
         }
         public GetForecastIOData(double lat, double lon)
         {
-            uri = new Uri(URL_BASE + API_KEY + "/" + Convert.ToDouble(lat, new CultureInfo("en-US")) + "," + Convert.ToDouble(lon, new CultureInfo("en-US")) + SI);
+            uri = new Uri(URL_BASE + Values.FORE_IO_API_KEY + "/" + Convert.ToDouble(lat, new CultureInfo("en-US")) + "," + Convert.ToDouble(lon, new CultureInfo("en-US")) + SI);
         }
         public GetForecastIOData(string lat, string lon, bool isSI)
         {
-            string url = URL_BASE + API_KEY + "/" + lat + "," + lon;
+            string url = URL_BASE + Values.FORE_IO_API_KEY + "/" + lat + "," + lon;
             url += isSI ? SI : US;
             uri = new Uri(url);
         }
         public GetForecastIOData(double lat, double lon, bool isSI)
         {
-            string url = URL_BASE + API_KEY + "/" + Convert.ToDouble(lat, new CultureInfo("en-US")) + "," + Convert.ToDouble(lon, new CultureInfo("en-US"));
+            string url = URL_BASE + Values.FORE_IO_API_KEY + "/" + Convert.ToDouble(lat, new CultureInfo("en-US")) + "," + Convert.ToDouble(lon, new CultureInfo("en-US"));
             url += isSI ? SI : US;
             uri = new Uri(url);
         }

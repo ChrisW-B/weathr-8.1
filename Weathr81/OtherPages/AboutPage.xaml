@@ -23,40 +23,74 @@
 
         <!-- Title Panel -->
         <StackPanel Grid.Row="0" Margin="19,0,0,0">
-            <TextBlock Text="WEATHR BETA" Style="{ThemeResource TitleTextBlockStyle}" Margin="0,12,0,0"/>
-            <TextBlock Text="about" Margin="0,-6.5,0,26.5" Style="{ThemeResource HeaderTextBlockStyle}" CharacterSpacing="{ThemeResource PivotHeaderItemCharacterSpacing}"/>
+            <TextBlock Text="WEATHR BETA" Style="{ThemeResource TitleTextBlockStyle}" />
+            
         </StackPanel>
-
-        <!--TODO: Content should be placed within the following grid-->
-        <Grid Grid.Row="1" x:Name="ContentRoot" Margin="19,9.5,19,0">
-            <RichTextBlock>
-                <Paragraph>
-                    <Run FontSize="20"  Text="Welcome to Weathr Beta, and thanks for helping me test!"></Run>
-                </Paragraph>
-                <Paragraph></Paragraph>
-                <Paragraph>
-                    <Run FontSize="20" Text="Here's a few things you can do to help:"></Run>
-                </Paragraph>
-                <Paragraph></Paragraph>
-                <Paragraph>
-                    <Run FontSize="20" Text="Contact me:"></Run>
-                </Paragraph>
-                <Paragraph></Paragraph>
-                <Paragraph>
-                <Hyperlink NavigateUri="http://twitter.com/cb_27">
-                        <Run FontSize="20" Text="Tweet me problems"></Run>
-                    </Hyperlink>
-                </Paragraph>
-                <Paragraph>
-                    <Hyperlink NavigateUri="http://cbstudios.uservoice.com">
-                        <Run FontSize="20" Text="Post on the UserVoice"></Run>
-                    </Hyperlink>
-                </Paragraph>
-                <Paragraph></Paragraph>
-                <Paragraph>
-                    <Run FontSize="20" Text="I will get back to you as soon as possible. Thanks again!"></Run>
-                </Paragraph>
-            </RichTextBlock>
-        </Grid>
+        <Pivot>
+            <PivotItem Header="about">
+                <RichTextBlock>
+                    <Paragraph>
+                        <Run FontSize="20"  Text="Welcome to Weathr Beta, and thanks for helping me test!"></Run>
+                    </Paragraph>
+                    <Paragraph></Paragraph>
+                    <Paragraph>
+                        <Run FontSize="20" Text="Here's a few things you can do to help:"></Run>
+                    </Paragraph>
+                    <Paragraph></Paragraph>
+                    <Paragraph>
+                        <Run FontSize="20" Text="Contact me:"></Run>
+                    </Paragraph>
+                    <Paragraph></Paragraph>
+                    <Paragraph>
+                        <Hyperlink NavigateUri="http://twitter.com/cb_27">
+                            <Run FontSize="20" Text="Tweet me problems"></Run>
+                        </Hyperlink>
+                    </Paragraph>
+                    <Paragraph>
+                        <Hyperlink NavigateUri="http://cbstudios.uservoice.com">
+                            <Run FontSize="20" Text="Post on the UserVoice"></Run>
+                        </Hyperlink>
+                    </Paragraph>
+                    <Paragraph></Paragraph>
+                    <Paragraph>
+                        <Run FontSize="20" Text="I will get back to you as soon as possible. Thanks again!"></Run>
+                    </Paragraph>
+                </RichTextBlock>
+            </PivotItem>
+            <PivotItem Header="updates">
+                <RichTextBlock FontSize="18">
+                    <Paragraph>
+                        <Run FontSize="22" Text="Version 2.0.0-"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="- Completely rewritten version for Windows Phone 8.1, now including Forecast.IO support."></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="- Other new features include:"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="     * Improved live tiles with the option to make transparent"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="     * Worldwide radar and satellite maps from OpenWeatherMap, as well as animated satellite and radar for select areas
+"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="     * Better weather alerts, no Internet Explorer required, as well as alert notifications
+"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="     * More options to control when background updates occur
+"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run Text="     * Hundreds of bugfixes for a more stable app
+"></Run>
+                    </Paragraph>
+                </RichTextBlock>
+            </PivotItem>
+        </Pivot>
+       
+       
     </Grid>
 </Page>

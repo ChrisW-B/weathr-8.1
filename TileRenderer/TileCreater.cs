@@ -74,7 +74,7 @@ namespace TileCreater
                 }
                 catch (Exception e)
                 {
-
+                    System.Diagnostics.Debug.WriteLine(e.Message);
                 }
         }
         //gets set of tile images based on parameters

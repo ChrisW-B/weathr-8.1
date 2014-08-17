@@ -36,7 +36,7 @@ namespace StoreLabels
         public const string UNITS_ARE_SI = "unitsAreSI";
         public const string UNITS_CHANGED = "unitsChanged";
         public const string LAST_HUB_SECTION = "lastHubLoc";
-        public const string WUND_API_KEY = "fb1dd3f4321d048d";
+        public const string WUND_API_KEY = "9d4c5edd8ebf2af3";
         public const string WUND_RAD_KEY = "8b22016717b94072";
         public const string OPEN_W_MAP_API = "beaca69bf7a829214ef1d6a3583df1d1";
         public const string HTTP = "http://";
@@ -49,5 +49,6 @@ namespace StoreLabels
         public const string NOTIFY_COND = "allowedToNotifyConditions";
         public const string USE_FLICKR_BG = "useFlickrOverBulitIn";
         public const string TILES_USE_FLICKR_BG="useFlickrOnTiles";
+        public const string FORE_IO_API_KEY = "b9ee7cf875f46fc8bc2b0743efc8c800";
     }
 }

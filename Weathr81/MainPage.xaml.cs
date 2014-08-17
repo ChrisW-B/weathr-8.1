@@ -20,6 +20,7 @@ using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
 using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.Email;
+using Windows.ApplicationModel.Store;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
@@ -92,7 +93,7 @@ namespace Weathr81
             this.navigationHelper.OnNavigatedFrom(e);
             if (e.Parameter != null)
             {
-                if (e.Parameter.GetType() != typeof(Location) && hub!=null && hub.SectionsInView!=null && hub.SectionsInView.Count>0)
+                if (e.Parameter.GetType() != typeof(Location) && hub != null && hub.SectionsInView != null && hub.SectionsInView.Count > 0)
                 {
                     localStore.Values[Values.LAST_HUB_SECTION] = hub.SectionsInView[0].Tag;
                 }
@@ -156,11 +157,11 @@ namespace Weathr81
             }
             if (vTemp.day == VoiceCommandDay.today)
             {
-                speechString = "It's " + temp + "degrees and " + weather.currentConditions + " right now, " + weather.todayShort + " with a high of " +high+" and low of " + low + " for the rest of the day";
+                speechString = "It's " + temp + "degrees and " + weather.currentConditions + " right now, " + weather.todayShort + " with a high of " + high + " and low of " + low + " for the rest of the day";
             }
             else
             {
-                speechString = "Tomorrow should have a high of about " + tomorrowHigh + " and low of about "+ tomorrowLow + " with a forecast of " + weather.tomorrowShort;
+                speechString = "Tomorrow should have a high of about " + tomorrowHigh + " and low of about " + tomorrowLow + " with a forecast of " + weather.tomorrowShort;
             }
             SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(speechString);
             playStream(stream);
@@ -195,13 +196,13 @@ namespace Weathr81
             {
                 cool = true;
             }
-            else if(temp<40)
+            else if (temp < 40)
             {
                 cold = true;
             }
             string poss = (precip) ? "you should definitely wear a jacket, " : (cold) ? "you should definitely wear a jacket, " : (cool) ? "You may want a jacket, its going to be" : "No, you should be good without a jacket, ";
             string tempFeel = (cold) ? "cold" : (cool) ? "cool" : "warm" + (poss == "definitely" ? ", but " : "");
-            return poss +  tempFeel + " and " + cond + dayName;
+            return poss + tempFeel + " and " + cond + dayName;
         }
         async private void speakUmbrella(SpeechSynthesizer synth, VoiceTemplate vTemp, WeatherInfo weather)
         {
@@ -299,7 +300,7 @@ namespace Weathr81
         async private Task<bool> trialNotOver()
         {
             //checks whether or not app can be run
-            if (isFullVersion() || boughtTime())
+            if (isFullVersion())
             {
                 if (!store.Values.ContainsKey(Values.FIRST_START))
                 {
@@ -324,9 +325,9 @@ namespace Weathr81
                 if (daysRemaining >= 0)
                 {
                     MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have " + daysRemaining + " left. Would you like to upgrade to unlimited for $.99?", "Welcome to Weathr!");
-                    dialog.Commands.Add(new UICommand("Upgrade", delegate(IUICommand cmd)
+                    dialog.Commands.Add(new UICommand("Upgrade", async delegate(IUICommand cmd)
                     {
-                        //navigate to the store
+                        await CurrentApp.RequestAppPurchaseAsync(true);
                     }));
                     dialog.Commands.Add(new UICommand("Not now", delegate(IUICommand cmd)
                     {
@@ -338,9 +339,9 @@ namespace Weathr81
                 else
                 {
                     MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have 0 left. Would you like to upgrade to unlimited for $.99?", "Your trial has expired!");
-                    dialog.Commands.Add(new UICommand("Upgrade", delegate(IUICommand cmd)
+                    dialog.Commands.Add(new UICommand("Upgrade", async delegate(IUICommand cmd)
                     {
-                        //navigate to the store
+                      await CurrentApp.RequestAppPurchaseAsync(true);
                     }));
                     dialog.Commands.Add(new UICommand("Close App", delegate(IUICommand cmd)
                     {
@@ -351,15 +352,10 @@ namespace Weathr81
                 }
             }
         }
-        private bool boughtTime()
-        {
-            //determines whether the time extension has been purchased
-            return false;
-        }
         private bool isFullVersion()
         {
             //determines whether the app is the full version
-            return true;
+            return CurrentApp.LicenseInformation.IsActive;
         }
 
         async private void runApp(VoiceTemplate vT = null)
@@ -449,7 +445,7 @@ namespace Weathr81
             GeoTemplate geo = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
             if (!geo.fail)
             {
-                WeatherInfo forecast=null;
+                WeatherInfo forecast = null;
                 if (geo.useCoord)
                 {
                     forecast = (await setWeather(geo.position.Position.Latitude, geo.position.Position.Longitude));
@@ -707,19 +703,23 @@ namespace Weathr81
                     displayStatusError("Couldn't download background!");
                 }
             }
+            else
+            {
+                displayStatusError(""); //screw it, this is an easy way to clear the status bar
+            }
             if (canSetTiles)
             {
-                setTiles(ref downloadedForecast, ref backBrush);
+                setTiles(downloadedForecast, backBrush);
             }
         }
-        private void setTiles(ref WeatherInfo downloadedForecast, ref ImageBrush backBrush)
+        async private void setTiles(WeatherInfo downloadedForecast, ImageBrush backBrush)
         {
             //set tile data
             string tempCompare = downloadedForecast.tomorrowShort + " tomorrow, and " + downloadedForecast.tempCompareC.ToLowerInvariant() + " today";
             string current = "Currently " + downloadedForecast.currentConditions + ", " + downloadedForecast.tempC + "°C";
             string today = "Today: " + downloadedForecast.todayShort + " " + downloadedForecast.todayHighC + "/" + downloadedForecast.todayLowC;
             string tomorrow = "Tomorrow: " + downloadedForecast.tomorrowShort + " " + downloadedForecast.tomorrowHighC + "/" + downloadedForecast.tomorrowLowC;
-            if (!(new CreateTile().unitsAreSI()))
+            if (!(CreateTile.unitsAreSI()))
             {
                 tempCompare = downloadedForecast.tomorrowShort + " tomorrow, and " + downloadedForecast.tempCompareF.ToLowerInvariant() + " today";
                 current = "Currently " + downloadedForecast.currentConditions + ", " + downloadedForecast.tempF + "°F";
@@ -728,11 +728,11 @@ namespace Weathr81
             }
             if (backBrush != null)
             {
-                updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
+                await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow, backBrush);
             }
             else
             {
-                updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow);
+                await updateCurrentTile(downloadedForecast, tempCompare, current, today, tomorrow);
             }
         }
 
@@ -819,7 +819,10 @@ namespace Weathr81
                 {
                     if ((bool)localStore.Values[Values.USE_FLICKR_BG])
                     {
-                        hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
+                        if (allowedToSetBG())
+                        {
+                            hub.Background = new ImageBrush() { ImageSource = new BitmapImage(new Uri(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "recentBG.png")), Opacity = .7, Stretch = Stretch.UniformToFill };
+                        }
                     }
                     else
                     {
@@ -1449,8 +1452,6 @@ namespace Weathr81
                             response.Dispose();
                             fileStream.Dispose();
                             outputStream.Dispose();
-
-
                         }
                     }
                 }
@@ -1470,7 +1471,6 @@ namespace Weathr81
         //updating tile for current view
         async private Task updateCurrentTile(WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow, ImageBrush background = null)
         {
-            CreateTile createTile = new CreateTile();
             if (background != null)
             {
                 try
@@ -1481,16 +1481,15 @@ namespace Weathr81
             }
             else if (currentLocation.IsDefault)
             {
-                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
+                await renderTileSet(CreateTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
             }
             else if (await tileExists())
             {
-                await renderTileSet(createTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
+                await renderTileSet(CreateTile.createTileWithParams(downloadedForecast), tempCompare, current, today, tomorrow);
             }
         }
         async private Task imageOpenedHandler(object sender, RoutedEventArgs eventArgs, WeatherInfo downloadedForecast, string tempCompare, string current, string today, string tomorrow)
         {
-            CreateTile createTile = new CreateTile();
             ImageBrush background = sender as ImageBrush;
             if (background != null)
             {
@@ -1502,7 +1501,7 @@ namespace Weathr81
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, 0, background, artistName), tempCompare, current, today, tomorrow);
+                    await renderTileSet(CreateTile.createTileWithParams(downloadedForecast, 0, background, artistName), tempCompare, current, today, tomorrow);
                 }
                 if (await tileExists())
                 {
@@ -1511,7 +1510,7 @@ namespace Weathr81
                     {
                         artistName = locTemp.PhotoDetails;
                     }
-                    await renderTileSet(createTile.createTileWithParams(downloadedForecast, 0, background, artistName), tempCompare, current, today, tomorrow);
+                    await renderTileSet(CreateTile.createTileWithParams(downloadedForecast, 0, background, artistName), tempCompare, current, today, tomorrow);
                 }
             }
             await Task.Delay(new TimeSpan(0, 0, 0, 10));
@@ -1526,22 +1525,22 @@ namespace Weathr81
             await renderTile(tiles.smTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm");
             await renderTile(tiles.sqTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq");
             await renderTile(tiles.wideTile, (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd");
-            CreateTile tileMaker = new CreateTile();
             if (currentLocation.IsDefault)
             {
-                tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow);
+                CreateTile.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow);
             }
             if (await tileExists())
             {
                 SecondaryTile currentTile = await getCurrentTile();
                 if (currentTile != null)
                 {
-                    tileMaker.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, currentTile);
+                    CreateTile.pushImageToTile(Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sm", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "sq", Values.SAVE_LOC + (currentLocation.LocUrl).Replace(":", "").Replace(".", "").Replace("/", "") + "wd", tempCompare, current, today, tomorrow, currentTile);
                 }
             }
         }
         async private Task renderTile(UIElement tile, string tileName)
         {
+            //unauthorized exception somewhere in here
             tileHider.Children.Add(tile);
             RenderTargetBitmap bm = new RenderTargetBitmap();
             await bm.RenderAsync(tile);
@@ -1648,7 +1647,7 @@ namespace Weathr81
             tryBackgroundTask(); //change this so it can be forced to turn on if not already turned off
             SecondaryTile secondaryTile = new SecondaryTile() { Arguments = currentLocation.LocUrl, TileId = currentLocation.Lat + "_" + currentLocation.Lon, DisplayName = currentLocation.LocName, RoamingEnabled = true };
             secondaryTile.RoamingEnabled = true;
-            secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
+            //secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
             secondaryTile.VisualElements.Square71x71Logo = new Uri("ms-appx:///Assets/Square71x71Logo.png");
             secondaryTile.VisualElements.Square150x150Logo = new Uri("ms-appx:///Assets/Logo.png");
             secondaryTile.VisualElements.Square310x310Logo = new Uri("ms-appx:///Assets/SmallLogo.scale-240.png");

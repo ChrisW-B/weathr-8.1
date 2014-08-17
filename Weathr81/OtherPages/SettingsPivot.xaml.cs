@@ -195,7 +195,7 @@ namespace Weathr81.OtherPages
 
             if (store.Values.ContainsKey(Values.MAIN_BG_WIFI_ONLY))
             {
-                bgOnWifi.IsOn = (bool)store.Values[Values.MAIN_BG_WIFI_ONLY];
+                bgOnWifi.IsOn = !(bool)store.Values[Values.MAIN_BG_WIFI_ONLY];
 
             }
             else
@@ -354,12 +354,8 @@ namespace Weathr81.OtherPages
                 ToggleSwitch toggle = sender as ToggleSwitch;
                 if (toggle != null)
                 {
-                    if (toggle.IsOn)
-                    {
-                        store.Values[Values.MAIN_BG_WIFI_ONLY] = true;
+                        store.Values[Values.MAIN_BG_WIFI_ONLY] = !toggle.IsOn;
                         return;
-                    }
-                    store.Values[Values.MAIN_BG_WIFI_ONLY] = false;
                 }
             }
             return;
@@ -629,7 +625,7 @@ namespace Weathr81.OtherPages
                 {
                     SecondaryTile secondaryTile = new SecondaryTile() { Arguments = location.LocUrl, TileId = location.Lat + "_" + location.Lon, DisplayName = location.LocName, RoamingEnabled = true };
                     secondaryTile.RoamingEnabled = true;
-                    secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
+                    //secondaryTile.TileOptions = TileOptions.CopyOnDeployment;
                     secondaryTile.VisualElements.Square71x71Logo = new Uri("ms-appx:///Assets/Square71x71Logo.png");
                     secondaryTile.VisualElements.Square150x150Logo = new Uri("ms-appx:///Assets/Logo.png");
                     secondaryTile.VisualElements.Square310x310Logo = new Uri("ms-appx:///Assets/SmallLogo.scale-240.png");

@@ -91,6 +91,12 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StoreLabels\StoreLabels.csproj">
+      <Project>{e77ffd98-ee0d-4901-8cd0-7d6ff6f1c899}</Project>
+      <Name>StoreLabels</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>
   </PropertyGroup>
