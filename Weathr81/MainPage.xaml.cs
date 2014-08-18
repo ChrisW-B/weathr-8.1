@@ -14,26 +14,19 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using TileCreater;
 using WeatherData;
-using WeatherDotGovAlerts;
 using Weathr81.Common;
 using Weathr81.HelperClasses;
 using Weathr81.OtherPages;
-using Windows.ApplicationModel.Activation;
-using Windows.ApplicationModel.Email;
 using Windows.ApplicationModel.Store;
 using Windows.Devices.Geolocation;
 using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Graphics.Display;
 using Windows.Graphics.Imaging;
 using Windows.Media.SpeechRecognition;
 using Windows.Media.SpeechSynthesis;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
-using Windows.Storage.Streams;
-using Windows.System;
 using Windows.UI;
-using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.StartScreen;
 using Windows.UI.ViewManagement;
@@ -252,7 +245,7 @@ namespace Weathr81
         }
         #endregion
 
-        private void startUp(NavigationEventArgs e)
+        async private void startUp(NavigationEventArgs e)
         {
             VoiceTemplate template = null;
             if (e.NavigationMode == NavigationMode.New)
@@ -265,6 +258,10 @@ namespace Weathr81
             if (loc != null)
             {
                 this.currentLocation = loc;
+            }
+            else
+            {
+                await trialNotOver(true);
             }
 
             localStore.Values.Remove(Values.LAST_CMD_BAR);
@@ -297,7 +294,7 @@ namespace Weathr81
             return prof != null;
         }
 
-        async private Task<bool> trialNotOver()
+        async private Task<bool> trialNotOver(bool showDialog)
         {
             //checks whether or not app can be run
             if (isFullVersion())
@@ -324,16 +321,19 @@ namespace Weathr81
                 daysRemaining = -1;
                 if (daysRemaining >= 0)
                 {
-                    MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have " + daysRemaining + " left. Would you like to upgrade to unlimited for $.99?", "Welcome to Weathr!");
-                    dialog.Commands.Add(new UICommand("Upgrade", async delegate(IUICommand cmd)
+                    if (showDialog)
                     {
-                        await CurrentApp.RequestAppPurchaseAsync(true);
-                    }));
-                    dialog.Commands.Add(new UICommand("Not now", delegate(IUICommand cmd)
-                    {
-                        return;
-                    }));
-                    await dialog.ShowAsync();
+                        MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have " + daysRemaining + " left. Would you like to upgrade to unlimited for $.99?", "Welcome to Weathr!");
+                        dialog.Commands.Add(new UICommand("Upgrade", async delegate(IUICommand cmd)
+                        {
+                            await CurrentApp.RequestAppPurchaseAsync(true);
+                        }));
+                        dialog.Commands.Add(new UICommand("Not now", delegate(IUICommand cmd)
+                        {
+                            return;
+                        }));
+                        await dialog.ShowAsync();
+                    }
                     return true;
                 }
                 else
@@ -341,7 +341,8 @@ namespace Weathr81
                     MessageDialog dialog = new MessageDialog("Using the best weather sources avalible isn't free, so the free trial is only 7 days. You have 0 left. Would you like to upgrade to unlimited for $.99?", "Your trial has expired!");
                     dialog.Commands.Add(new UICommand("Upgrade", async delegate(IUICommand cmd)
                     {
-                      await CurrentApp.RequestAppPurchaseAsync(true);
+                        await CurrentApp.RequestAppPurchaseAsync(true);
+                        displayStatusError("");
                     }));
                     dialog.Commands.Add(new UICommand("Close App", delegate(IUICommand cmd)
                     {
@@ -355,7 +356,9 @@ namespace Weathr81
         private bool isFullVersion()
         {
             //determines whether the app is the full version
-            return CurrentApp.LicenseInformation.IsActive;
+            //for testing
+            return !CurrentAppSimulator.LicenseInformation.IsTrial;
+            return !CurrentApp.LicenseInformation.IsTrial;
         }
 
         async private void runApp(VoiceTemplate vT = null)
@@ -363,7 +366,7 @@ namespace Weathr81
             //central point of app, runs other methods
             await statusBar.ProgressIndicator.ShowAsync();
             tryBackgroundTask();
-            if (await trialNotOver())
+            if (await trialNotOver(false))
             {
                 await statusBar.ShowAsync();
                 statusBar.BackgroundColor = Colors.Black;
@@ -1612,9 +1615,9 @@ namespace Weathr81
         async private void refresh_Click(object sender, RoutedEventArgs e)
         {
 
-            if (await trialNotOver())
+            if (connectedToInternet())
             {
-                if (connectedToInternet())
+                if (await trialNotOver(false))
                 {
                     await statusBar.ProgressIndicator.ShowAsync();
                     if (await setLocations())
@@ -1764,10 +1767,13 @@ namespace Weathr81
             if (!mapsSet && connectedToInternet())
             {
                 await statusBar.ProgressIndicator.ShowAsync();
-                GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
-                setMaps(geoMaps.position);
-                setupMaps();
-                mapsSet = true;
+                if (GetGeoposition != null)
+                {
+                    GeoTemplate geoMaps = await GetGeoposition.getLocation(new TimeSpan(0, 0, 10), new TimeSpan(1, 0, 0));
+                    setMaps(geoMaps.position);
+                    setupMaps();
+                    mapsSet = true;
+                }
             }
             await statusBar.ProgressIndicator.HideAsync();
         }

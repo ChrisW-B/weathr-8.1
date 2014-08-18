@@ -8,14 +8,13 @@ namespace StoreLabels
         public const string ALLOW_BG_TASK = "allowBackground";
         public const string ALLOW_LOC = "allowAutoLocation";
         public const string ALLOW_MAIN_BG = "allowMainBackground";
-        public const string FIRST_START = "firstStartDateTime";
+        public const string FIRST_START = "firstStartTime";
         public const string FORECAST_SAVE = "forecastSave";
         public const string FLICKR_API = "2781c025a4064160fc77a52739b552ff";
         public const string GOOGLE_POST = "&sensor=true";
         public const string GOOGLE_URL = "http://maps.googleapis.com/maps/api/geocode/xml?address=";
         public const string HOURLY_SAVE = "hourSave";
         public const string IAP_FORE_IO = "forecastIOAccess";
-        public const string IAP_NO_LIMIT = "unlimitedTime";
         public const string IS_NEW_DEVICE = "newDevice";
         public const string LAST_CMD_BAR = "lastCommandBarLoc";
         public const string LAST_LOC = "lastLoc";

@@ -30,19 +30,17 @@
             <PivotItem Header="about">
                 <RichTextBlock>
                     <Paragraph>
-                        <Run FontSize="20"  Text="Welcome to Weathr Beta, and thanks for helping me test!"></Run>
+                        <Run FontSize="20"  Text="Welcome to Weathr!"></Run>
                     </Paragraph>
                     <Paragraph></Paragraph>
                     <Paragraph>
-                        <Run FontSize="20" Text="Here's a few things you can do to help:"></Run>
+                        <Run FontSize="20" Text="Weathr is developed by CB Studios, you can contact us at:"></Run>
                     </Paragraph>
                     <Paragraph></Paragraph>
-                    <Paragraph>
-                        <Run FontSize="20" Text="Contact me:"></Run>
-                    </Paragraph>
+                    
                     <Paragraph></Paragraph>
                     <Paragraph>
-                        <Hyperlink NavigateUri="http://twitter.com/cb_27">
+                        <Hyperlink NavigateUri="http://twitter.com/WeathrWP">
                             <Run FontSize="20" Text="Tweet me problems"></Run>
                         </Hyperlink>
                     </Paragraph>
@@ -54,6 +52,13 @@
                     <Paragraph></Paragraph>
                     <Paragraph>
                         <Run FontSize="20" Text="I will get back to you as soon as possible. Thanks again!"></Run>
+                    </Paragraph>
+                    <Paragraph></Paragraph>
+                   <Paragraph>
+                    <Run FontSize="30" Text="Privacy"></Run>
+                    </Paragraph>
+                    <Paragraph>
+                        <Run FontSize="20" Text="Weathr uses data from Weather Underground, Forecast.io, OpenWeatherMap, Flickr, and Google Maps. When using autolocate, the standard Windows Phone privacy statement applies, and information is sent to Flickr, Weather Underground, and Forecast.io. If a location is manually added, it is sent to Google Maps to determine rough coordinates. These coordinates are then stored only on your phone, the developer does not see any of this information."></Run>
                     </Paragraph>
                 </RichTextBlock>
             </PivotItem>

@@ -184,23 +184,21 @@
     <Language Code="vi-vn" InMinimumRequirementSet="true" />
   </SupportedLocales>
   <ProductReservedInfo>
-    <MainPackageIdentityName>56541CBStudios.WeathrBeta</MainPackageIdentityName>
+    <MainPackageIdentityName>56541CBStudios.Weathr</MainPackageIdentityName>
     <ReservedNames>
-      <ReservedName>Weathr Beta</ReservedName>
+      <ReservedName>Weathr</ReservedName>
     </ReservedNames>
   </ProductReservedInfo>
   <AccountPackageIdentityNames>
     <MainPackageIdentityName>56541CBStudios.Sunny</MainPackageIdentityName>
-    <MainPackageIdentityName>56541CBStudios.Weathr</MainPackageIdentityName>
+    <MainPackageIdentityName>56541CBStudios.WeathrBeta</MainPackageIdentityName>
     <MainPackageIdentityName>56541CBStudios.WeathrPreview</MainPackageIdentityName>
   </AccountPackageIdentityNames>
-  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=235c6773-f051-49f5-bb50-c6ff3340216b">
-    <BundleInfo>
-      <PackageInfo>
-        <OsMinVersion>6.3.0.0</OsMinVersion>
-        <PackageArchitecture>neutral</PackageArchitecture>
-        <PackageMaxArchitectureVersion>1.1.0.35</PackageMaxArchitectureVersion>
-      </PackageInfo>
-    </BundleInfo>
+  <PackageInfoList LandingUrl="https://dev.windowsphone.com/AppSubmission/AssociationLanding?windowsProductId=3a747903-dbf6-47e2-a591-43de06f285fb">
+    <PackageInfo>
+      <OsMinVersion>6.3.0.0</OsMinVersion>
+      <PackageArchitecture>neutral</PackageArchitecture>
+      <PackageMaxArchitectureVersion>2.0.0.0</PackageMaxArchitectureVersion>
+    </PackageInfo>
   </PackageInfoList>
 </StoreAssociation>
